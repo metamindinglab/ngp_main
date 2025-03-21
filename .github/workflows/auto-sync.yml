@@ -21,25 +21,33 @@ jobs:
         run: |
           git config --global user.name 'ardylee-mml'
           git config --global user.email 'ardylee@mml.com'
+          echo "Git configuration completed"
 
       - name: Fetch and sync
         env:
           PAT: ${{ secrets.AUTO_SYNC_TOKEN }}
         run: |
+          echo "Setting up remote URL..."
           git remote set-url origin https://${PAT}@github.com/${GITHUB_REPOSITORY}.git
+          echo "Fetching updates..."
           git fetch --all
+          echo "Pulling latest changes..."
           git pull origin main
+          echo "Pushing changes..."
           git push origin main
+          echo "Sync completed successfully"
 
       - name: Check for changes
         env:
           PAT: ${{ secrets.AUTO_SYNC_TOKEN }}
         run: |
+          echo "Checking for changes..."
           if [[ -n $(git status --porcelain) ]]; then
-            echo "Changes detected"
+            echo "Changes detected, committing updates..."
             git add .
-            git commit -m "Auto-sync: Update repository"
+            git commit -m "Auto-sync: Update repository [skip ci]"
             git push origin main
+            echo "Changes committed and pushed successfully"
           else
             echo "No changes detected"
           fi 
