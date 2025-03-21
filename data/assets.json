@@ -65,12 +65,12 @@
     },
     {
       "id": "c1",
-      "name": "Nike Hoodie",
-      "description": "Comfortable Nike branded hoodie for casual wear",
+      "name": "White & Black Stitches Cozy Hoodie",
+      "description": "The white & black variant of the Eternos Digital STITCHES cozy hoodie series.",
       "assetType": "clothing",
-      "robloxAssetId": "12345672",
+      "robloxAssetId": "16478590766",
       "createdAt": "2024-03-01",
-      "updatedAt": "2024-03-20",
+      "updatedAt": "2025-03-21T13:38:28.284Z",
       "tags": [
         "nike",
         "hoodie",
@@ -97,12 +97,12 @@
     },
     {
       "id": "mg1",
-      "name": "Lucky Spin Wheel",
-      "description": "Interactive spinning wheel with customizable segments and brand placements",
+      "name": "Wheel Of Luck",
+      "description": "Embark on a journey of luck and excitement with our exclusive Wheel of Fortune Spinner, designed for the grand opening of The VIVVA UGC Game! This limited-edition accessory brings the thrill of spinning for prizes right to your avatar.\n\nGame link -> https://www.roblox.com/games/15686980350/THE-VIVVA-UGC-GAME\nJoin the group for more -> https://www.roblox.com/groups/33061982",
       "assetType": "minigame",
-      "robloxAssetId": "12345673",
+      "robloxAssetId": "15886603700",
       "createdAt": "2024-03-01",
-      "updatedAt": "2024-03-20",
+      "updatedAt": "2025-03-21T15:46:29.541Z",
       "tags": [
         "game",
         "interactive",
@@ -127,12 +127,12 @@
     },
     {
       "id": "h1",
-      "name": "Supreme Baseball Cap",
-      "description": "Limited edition Supreme branded baseball cap",
+      "name": "White 94 Baseball Cap",
+      "description": "More UGC: https://www.roblox.com/catalog?Category=1&CreatorName=Rey%20x%20Noob&CreatorType=Group&salesTypeFilter=1\n",
       "assetType": "hat",
-      "robloxAssetId": "12345674",
+      "robloxAssetId": "17881926945",
       "createdAt": "2024-03-01",
-      "updatedAt": "2024-03-20",
+      "updatedAt": "2025-03-21T14:53:38.210Z",
       "tags": [
         "supreme",
         "cap",
@@ -149,16 +149,15 @@
     },
     {
       "id": "a1",
-      "name": "Victory Dance",
+      "name": "Frosty Flair - Tommy Hilfiger",
       "description": "Celebratory dance animation for victory moments",
       "assetType": "animation",
-      "robloxAssetId": "12345675",
+      "robloxAssetId": "10214406616",
       "createdAt": "2024-03-01",
-      "updatedAt": "2024-03-20",
+      "updatedAt": "2025-03-21T15:54:01.720Z",
       "tags": [
         "dance",
-        "celebration",
-        "victory"
+        "celebration"
       ],
       "duration": "3.5 seconds",
       "category": "emote",
@@ -230,12 +229,12 @@
     },
     {
       "id": "s1",
-      "name": "Dr. Martens Boots",
-      "description": "Classic Dr. Martens boots for a bold style statement",
+      "name": "Dr. Boots",
+      "description": "Dr. Marten Boot (Black)",
       "assetType": "shoes",
-      "robloxAssetId": "12345679",
+      "robloxAssetId": "93915499446569",
       "createdAt": "2024-03-01",
-      "updatedAt": "2024-03-20",
+      "updatedAt": "2025-03-21T14:57:36.763Z",
       "tags": [
         "boots",
         "dr-martens",
@@ -259,12 +258,12 @@
     },
     {
       "id": "mg2",
-      "name": "Brand Hoops",
-      "description": "Basketball shooting game with customizable court and billboard advertisements",
+      "name": "Branded Basketball hoop",
+      "description": "Basketball hoop",
       "assetType": "minigame",
-      "robloxAssetId": "12345680",
+      "robloxAssetId": "18129904742",
       "createdAt": "2024-03-01",
-      "updatedAt": "2024-03-20",
+      "updatedAt": "2025-03-21T15:38:44.686Z",
       "tags": [
         "sports",
         "basketball",
@@ -478,12 +477,12 @@
     },
     {
       "id": "c2",
-      "name": "Adidas Sport Shirt",
-      "description": "Performance sport shirt from Adidas",
+      "name": "Adidas Black Professional Shirt",
+      "description": "Adidas Black Professional Shirt",
       "assetType": "clothing",
-      "robloxAssetId": "12345684",
+      "robloxAssetId": "16099347638",
       "createdAt": "2024-03-01",
-      "updatedAt": "2024-03-20",
+      "updatedAt": "2025-03-21T15:03:59.656Z",
       "tags": [
         "adidas",
         "sports",
@@ -506,16 +505,16 @@
     },
     {
       "id": "c3",
-      "name": "Supreme T-Shirt",
-      "description": "Streetwear essential Supreme t-shirt",
+      "name": "Adidas Anger Tracksuit Top",
+      "description": "Adidas Anger Tracksuit Top (Red)",
       "assetType": "clothing",
-      "robloxAssetId": "12345685",
+      "robloxAssetId": "15503479545",
       "createdAt": "2024-03-01",
-      "updatedAt": "2024-03-20",
+      "updatedAt": "2025-03-21T15:13:12.926Z",
       "tags": [
-        "supreme",
         "streetwear",
-        "casual"
+        "casual",
+        "Adidas"
       ],
       "image": "/customization/outfits/White-Shirt-Supreme.png",
       "compatibility": [
@@ -523,7 +522,7 @@
         "Artist"
       ],
       "brands": [
-        "Supreme"
+        "Adidas"
       ],
       "size": [
         "S",
@@ -534,12 +533,12 @@
     },
     {
       "id": "c4",
-      "name": "Gucci Jacket",
-      "description": "Luxury Gucci designer jacket",
+      "name": "Naruto Jacket",
+      "description": "Channel your inner ninja with this high-quality jacket inspired by Naruto Uzumaki. The iconic black and orange color scheme gives a bold look, perfect for fans of the series or aspiring shinobi. Made for comfort and style, this jacket is ideal for cosplay or casual wear. Show off your ninja pride wherever you go!\n",
       "assetType": "clothing",
-      "robloxAssetId": "12345686",
+      "robloxAssetId": "88031588525790",
       "createdAt": "2024-03-01",
-      "updatedAt": "2024-03-20",
+      "updatedAt": "2025-03-21T15:00:48.705Z",
       "tags": [
         "gucci",
         "luxury",
@@ -551,7 +550,7 @@
         "Lifestyle"
       ],
       "brands": [
-        "Gucci"
+        "Naruto"
       ],
       "size": [
         "S",
@@ -562,12 +561,12 @@
     },
     {
       "id": "s2",
-      "name": "Nike Air Max",
-      "description": "Classic Nike Air Max sneakers",
+      "name": "Nike Air 1's Sneakers",
+      "description": "Nike Air One (Green)",
       "assetType": "shoes",
-      "robloxAssetId": "12345687",
+      "robloxAssetId": "18474543214",
       "createdAt": "2024-03-01",
-      "updatedAt": "2024-03-20",
+      "updatedAt": "2025-03-21T15:18:31.166Z",
       "tags": [
         "nike",
         "sneakers",
@@ -591,16 +590,14 @@
     },
     {
       "id": "s3",
-      "name": "Adidas Superstar",
-      "description": "Iconic Adidas Superstar sneakers",
-      "assetType": "shoes",
-      "robloxAssetId": "12345688",
+      "name": "Large Classic Billboard",
+      "description": "Large Classic Billboard",
+      "assetType": "multi_display",
+      "robloxAssetId": "13158731202",
       "createdAt": "2024-03-01",
-      "updatedAt": "2024-03-20",
+      "updatedAt": "2025-03-21T15:50:27.126Z",
       "tags": [
-        "adidas",
-        "sneakers",
-        "casual"
+        "Billboard"
       ],
       "image": "/customization/outfits/Red-shoes-Adidas-Superstar.png",
       "compatibility": [
@@ -620,12 +617,12 @@
     },
     {
       "id": "i1",
-      "name": "Coca-Cola Can",
-      "description": "Interactive Coca-Cola can prop",
+      "name": "Coke",
+      "description": "Coca Coka Red can",
       "assetType": "item",
-      "robloxAssetId": "12345689",
+      "robloxAssetId": "17165457035",
       "createdAt": "2024-03-01",
-      "updatedAt": "2024-03-20",
+      "updatedAt": "2025-03-21T15:40:21.022Z",
       "tags": [
         "drink",
         "prop",
@@ -639,12 +636,12 @@
     },
     {
       "id": "i2",
-      "name": "Pepsi Bottle",
-      "description": "Interactive Pepsi bottle prop",
+      "name": "Pepsi Blue Soda Can",
+      "description": "Pepsi Blue Soda Can",
       "assetType": "item",
-      "robloxAssetId": "12345690",
+      "robloxAssetId": "15548194077",
       "createdAt": "2024-03-01",
-      "updatedAt": "2024-03-20",
+      "updatedAt": "2025-03-21T15:43:40.602Z",
       "tags": [
         "drink",
         "prop",
@@ -658,16 +655,17 @@
     },
     {
       "id": "i3",
-      "name": "Red Bull Energy",
-      "description": "Interactive Red Bull can prop",
+      "name": "Redbull",
+      "description": "Redbull ",
       "assetType": "item",
-      "robloxAssetId": "12345691",
+      "robloxAssetId": "73652546319715",
       "createdAt": "2024-03-01",
-      "updatedAt": "2024-03-20",
+      "updatedAt": "2025-03-21T15:45:16.222Z",
       "tags": [
         "drink",
         "prop",
-        "energy"
+        "energy",
+        "Redbull"
       ],
       "image": "/customization/items/Redbull.png",
       "brands": [
@@ -680,13 +678,14 @@
       "name": "Monster Energy",
       "description": "Interactive Monster Energy can prop",
       "assetType": "item",
-      "robloxAssetId": "12345692",
+      "robloxAssetId": "17166207664",
       "createdAt": "2024-03-01",
-      "updatedAt": "2024-03-20",
+      "updatedAt": "2025-03-21T15:37:18.649Z",
       "tags": [
         "drink",
         "prop",
-        "energy"
+        "energy",
+        "Monster"
       ],
       "image": "/customization/items/MonsterEnergy.png",
       "brands": [
@@ -696,12 +695,12 @@
     },
     {
       "id": "a2",
-      "name": "Dance Move",
-      "description": "Hip-hop style dance animation",
+      "name": "Hips Poppin' - Zara Larsson",
+      "description": "Get your groove on!",
       "assetType": "animation",
-      "robloxAssetId": "12345693",
+      "robloxAssetId": "6797919579",
       "createdAt": "2024-03-01",
-      "updatedAt": "2024-03-20",
+      "updatedAt": "2025-03-21T15:55:08.961Z",
       "tags": [
         "dance",
         "hip-hop",
@@ -717,12 +716,12 @@
     },
     {
       "id": "a3",
-      "name": "Victory Pose",
-      "description": "Celebratory victory pose animation",
+      "name": "Victory Dance",
+      "description": "BIG WINNER ENERGY",
       "assetType": "animation",
-      "robloxAssetId": "12345694",
+      "robloxAssetId": "15506503658",
       "createdAt": "2024-03-01",
-      "updatedAt": "2024-03-20",
+      "updatedAt": "2025-03-21T15:56:26.216Z",
       "tags": [
         "victory",
         "celebration",

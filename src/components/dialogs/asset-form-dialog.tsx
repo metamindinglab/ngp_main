@@ -15,6 +15,8 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { X } from 'lucide-react';
 import RobloxAssetPreview from '@/components/display-objects/roblox-asset-preview';
+import { cn } from '@/lib/utils';
+import { Checkbox } from '@/components/ui/checkbox';
 
 interface Asset {
   id: string;
@@ -69,6 +71,25 @@ interface Asset {
   fileFormat?: string;
   fileSize?: number;
   category?: string;
+  // Item specific
+  itemType?: string;
+  materials?: string[];
+  weight?: string;
+  dimensions3D?: {
+    length: number;
+    width: number;
+    height: number;
+  };
+  // Multi Display specific
+  displayType?: string;
+  displayCount?: number;
+  arrangement?: string;
+  displaySettings?: {
+    spacing: number;
+    orientation: string;
+    autoRotate?: boolean;
+    syncAnimation?: boolean;
+  };
 }
 
 interface AssetFormDialogProps {
@@ -87,7 +108,9 @@ const assetTypes = [
   'image',
   'audio',
   'video',
-  'shoes'
+  'shoes',
+  'item',
+  'multi_display'
 ];
 
 export default function AssetFormDialog({
@@ -106,6 +129,8 @@ export default function AssetFormDialog({
   const [isVerifying, setIsVerifying] = useState(false);
   const [verificationError, setVerificationError] = useState<string | null>(null);
   const [isValidAsset, setIsValidAsset] = useState(false);
+  const [lastVerifyTime, setLastVerifyTime] = useState<number>(0);
+  const VERIFY_COOLDOWN = 5000; // 5 seconds cooldown between verifications
 
   useEffect(() => {
     if (asset) {
@@ -113,41 +138,89 @@ export default function AssetFormDialog({
         ...asset,
         tags: asset.tags || [],
       });
+      // Remove automatic verification
       if (asset.robloxAssetId) {
-        verifyRobloxAsset(asset.robloxAssetId);
+        setIsValidAsset(true); // Trust existing assets as valid
       }
     }
   }, [asset]);
 
   const verifyRobloxAsset = async (id: string) => {
+    if (!id) {
+      setVerificationError('Please enter a Roblox Asset ID or Catalog ID');
+      setIsValidAsset(false);
+      return;
+    }
+
+    if (!/^\d+$/.test(id)) {
+      setVerificationError('ID must be a number');
+      setIsValidAsset(false);
+      return;
+    }
+
+    const now = Date.now();
+    if (now - lastVerifyTime < VERIFY_COOLDOWN) {
+      setVerificationError(`Please wait ${Math.ceil((VERIFY_COOLDOWN - (now - lastVerifyTime)) / 1000)} seconds before trying again`);
+      return;
+    }
+
     setIsVerifying(true);
     setVerificationError(null);
+    setLastVerifyTime(now);
+    
     try {
-      // First try as catalog ID using our proxy
-      let response = await fetch(`/api/roblox/catalog/${id}`);
-      const catalogData = await response.json();
-      
-      if (response.ok && catalogData.id) {
-        setFormData(prev => ({ ...prev, robloxAssetId: catalogData.id.toString() }));
-        setIsValidAsset(true);
+      console.log('Verifying ID:', id);
+      const response = await fetch(`/api/roblox/catalog/${id}`);
+      const data = await response.json();
+
+      console.log('Verification response:', data);
+
+      if (response.status === 429) {
+        setVerificationError('Too many requests. Please wait 30 seconds before trying again.');
+        setIsValidAsset(false);
         return;
       }
 
-      // Try as direct asset ID using our proxy
-      response = await fetch(`/api/roblox/asset/${id}`);
-      const assetData = await response.json();
-      
-      if (response.ok && assetData.id) {
-        setFormData(prev => ({ ...prev, robloxAssetId: id }));
-        setIsValidAsset(true);
+      if (!response.ok) {
+        if (response.status === 404) {
+          setVerificationError('Asset not found. Please check the ID and try again.');
+        } else {
+          setVerificationError(data.error || 'Failed to verify asset. Please try again later.');
+        }
+        setIsValidAsset(false);
         return;
       }
 
-      setVerificationError('Invalid Roblox Asset ID or Catalog ID');
-      setIsValidAsset(false);
+      if (data && data.assetId) {
+        console.log('Asset verified successfully:', data);
+        // If we got a catalogId back, it means we input a catalog ID
+        if (data.catalogId) {
+          // Update the input field with the actual asset ID
+          setFormData(prev => ({
+            ...prev,
+            robloxAssetId: data.assetId.toString(),
+            name: data.name || prev.name,
+            description: data.description || prev.description,
+            assetType: data.assetType || prev.assetType
+          }));
+        } else {
+          setFormData(prev => ({
+            ...prev,
+            robloxAssetId: id,
+            name: data.name || prev.name,
+            description: data.description || prev.description,
+            assetType: data.assetType || prev.assetType
+          }));
+        }
+        setIsValidAsset(true);
+      } else {
+        console.error('Invalid response format:', data);
+        setVerificationError('Invalid response from Roblox API. Please try again.');
+        setIsValidAsset(false);
+      }
     } catch (error) {
       console.error('Error verifying Roblox Asset ID:', error);
-      setVerificationError('Error verifying Roblox Asset ID');
+      setVerificationError('Error connecting to the server. Please try again later.');
       setIsValidAsset(false);
     } finally {
       setIsVerifying(false);
@@ -183,6 +256,35 @@ export default function AssetFormDialog({
     setFormData((prev) => ({
       ...prev,
       tags: currentTags.filter((tag) => tag !== tagToRemove),
+    }));
+  };
+
+  const handleDimensions3DChange = (
+    field: 'length' | 'width' | 'height',
+    value: string
+  ) => {
+    setFormData(prev => ({
+      ...prev,
+      dimensions3D: {
+        length: field === 'length' ? parseFloat(value) || 0 : (prev.dimensions3D?.length || 0),
+        width: field === 'width' ? parseFloat(value) || 0 : (prev.dimensions3D?.width || 0),
+        height: field === 'height' ? parseFloat(value) || 0 : (prev.dimensions3D?.height || 0)
+      }
+    }));
+  };
+
+  const handleDisplaySettingsChange = (
+    field: 'spacing' | 'orientation' | 'autoRotate' | 'syncAnimation',
+    value: string | number | boolean
+  ) => {
+    setFormData(prev => ({
+      ...prev,
+      displaySettings: {
+        spacing: field === 'spacing' ? (value as number) : (prev.displaySettings?.spacing || 0),
+        orientation: field === 'orientation' ? (value as string) : (prev.displaySettings?.orientation || 'horizontal'),
+        autoRotate: field === 'autoRotate' ? (value as boolean) : (prev.displaySettings?.autoRotate || false),
+        syncAnimation: field === 'syncAnimation' ? (value as boolean) : (prev.displaySettings?.syncAnimation || false)
+      }
     }));
   };
 
@@ -247,6 +349,155 @@ export default function AssetFormDialog({
                     brands: e.target.value.split(',').map(item => item.trim())
                   }))}
                 />
+              </div>
+            </div>
+          </>
+        );
+      case 'item':
+        return (
+          <>
+            <div className="space-y-4">
+              <div>
+                <Label>Item Type</Label>
+                <Input
+                  name="itemType"
+                  value={formData.itemType || ''}
+                  onChange={handleInputChange}
+                />
+              </div>
+              <div>
+                <Label>Materials (comma-separated)</Label>
+                <Input
+                  name="materials"
+                  value={formData.materials?.join(', ') || ''}
+                  onChange={(e) => setFormData(prev => ({
+                    ...prev,
+                    materials: e.target.value.split(',').map(item => item.trim())
+                  }))}
+                />
+              </div>
+              <div>
+                <Label>Weight</Label>
+                <Input
+                  name="weight"
+                  value={formData.weight || ''}
+                  onChange={handleInputChange}
+                />
+              </div>
+              <div>
+                <Label>3D Dimensions</Label>
+                <div className="grid grid-cols-3 gap-2">
+                  <Input
+                    name="dimensions3D.length"
+                    placeholder="Length"
+                    value={formData.dimensions3D?.length || ''}
+                    onChange={(e) => handleDimensions3DChange('length', e.target.value)}
+                    type="number"
+                  />
+                  <Input
+                    name="dimensions3D.width"
+                    placeholder="Width"
+                    value={formData.dimensions3D?.width || ''}
+                    onChange={(e) => handleDimensions3DChange('width', e.target.value)}
+                    type="number"
+                  />
+                  <Input
+                    name="dimensions3D.height"
+                    placeholder="Height"
+                    value={formData.dimensions3D?.height || ''}
+                    onChange={(e) => handleDimensions3DChange('height', e.target.value)}
+                    type="number"
+                  />
+                </div>
+              </div>
+            </div>
+          </>
+        );
+      case 'multi_display':
+        return (
+          <>
+            <div className="space-y-4">
+              <div>
+                <Label>Display Type</Label>
+                <Input
+                  name="displayType"
+                  value={formData.displayType || ''}
+                  onChange={handleInputChange}
+                />
+              </div>
+              <div>
+                <Label>Display Count</Label>
+                <Input
+                  name="displayCount"
+                  type="number"
+                  value={formData.displayCount || ''}
+                  onChange={handleInputChange}
+                />
+              </div>
+              <div>
+                <Label>Arrangement</Label>
+                <Select
+                  value={formData.arrangement}
+                  onValueChange={(value) => setFormData(prev => ({
+                    ...prev,
+                    arrangement: value
+                  }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select arrangement" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="grid">Grid</SelectItem>
+                    <SelectItem value="circle">Circle</SelectItem>
+                    <SelectItem value="line">Line</SelectItem>
+                    <SelectItem value="custom">Custom</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Display Settings</Label>
+                <div className="space-y-2">
+                  <div>
+                    <Label>Spacing (px)</Label>
+                    <Input
+                      name="displaySettings.spacing"
+                      type="number"
+                      value={formData.displaySettings?.spacing || ''}
+                      onChange={(e) => handleDisplaySettingsChange('spacing', parseFloat(e.target.value) || 0)}
+                    />
+                  </div>
+                  <div>
+                    <Label>Orientation</Label>
+                    <Select
+                      value={formData.displaySettings?.orientation || 'horizontal'}
+                      onValueChange={(value) => handleDisplaySettingsChange('orientation', value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select orientation" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="horizontal">Horizontal</SelectItem>
+                        <SelectItem value="vertical">Vertical</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="autoRotate"
+                      checked={formData.displaySettings?.autoRotate || false}
+                      onCheckedChange={(checked: boolean) => handleDisplaySettingsChange('autoRotate', checked)}
+                    />
+                    <Label htmlFor="autoRotate">Auto Rotate</Label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="syncAnimation"
+                      checked={formData.displaySettings?.syncAnimation || false}
+                      onCheckedChange={(checked: boolean) => handleDisplaySettingsChange('syncAnimation', checked)}
+                    />
+                    <Label htmlFor="syncAnimation">Sync Animation</Label>
+                  </div>
+                </div>
               </div>
             </div>
           </>
@@ -322,67 +573,74 @@ export default function AssetFormDialog({
             </Select>
           </div>
 
-          <div>
-            <Label>Roblox Asset ID</Label>
-            <div className="flex gap-2">
-              <Input
-                name="robloxAssetId"
-                value={formData.robloxAssetId || ''}
-                onChange={handleInputChange}
-                placeholder="Enter Roblox Asset ID or Catalog ID"
-              />
-              <Button
-                type="button"
-                onClick={() => formData.robloxAssetId && verifyRobloxAsset(formData.robloxAssetId)}
-                disabled={isVerifying || !formData.robloxAssetId}
-              >
-                {isVerifying ? 'Verifying...' : 'Verify'}
-              </Button>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="robloxAssetId">Roblox Asset ID or Catalog ID</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="robloxAssetId"
+                  name="robloxAssetId"
+                  value={formData.robloxAssetId || ''}
+                  onChange={handleInputChange}
+                  className={cn(
+                    verificationError && "border-red-500"
+                  )}
+                />
+                <Button
+                  type="button"
+                  onClick={() => verifyRobloxAsset(formData.robloxAssetId || '')}
+                  disabled={isVerifying}
+                >
+                  {isVerifying ? 'Verifying...' : 'Verify'}
+                </Button>
+              </div>
+              {verificationError && (
+                <p className="text-sm text-red-500">{verificationError}</p>
+              )}
             </div>
-            {verificationError && (
-              <p className="text-sm text-red-500 mt-1">{verificationError}</p>
-            )}
+
             {isValidAsset && formData.robloxAssetId && (
-              <div className="mt-4 aspect-square w-full max-w-md mx-auto bg-gray-100 rounded-lg overflow-hidden">
+              <div className="grid gap-2">
+                <Label>Asset Preview</Label>
                 <RobloxAssetPreview assetId={formData.robloxAssetId} />
               </div>
             )}
-          </div>
 
-          <div>
-            <Label>Tags</Label>
-            <div className="flex gap-2">
-              <Input
-                value={newTag}
-                onChange={(e) => setNewTag(e.target.value)}
-                placeholder="Add a tag"
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    handleAddTag();
-                  }
-                }}
-              />
-              <Button type="button" onClick={handleAddTag}>
-                Add
-              </Button>
-            </div>
-            <div className="flex flex-wrap gap-2 mt-2">
-              {formData.tags?.map((tag) => (
-                <div
-                  key={tag}
-                  className="bg-gray-100 px-2 py-1 rounded-md flex items-center gap-1"
-                >
-                  <span>{tag}</span>
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveTag(tag)}
-                    className="text-gray-500 hover:text-gray-700"
+            <div className="grid gap-2">
+              <Label>Tags</Label>
+              <div className="flex gap-2">
+                <Input
+                  value={newTag}
+                  onChange={(e) => setNewTag(e.target.value)}
+                  placeholder="Add a tag"
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleAddTag();
+                    }
+                  }}
+                />
+                <Button type="button" onClick={handleAddTag}>
+                  Add
+                </Button>
+              </div>
+              <div className="flex flex-wrap gap-2 mt-2">
+                {formData.tags?.map((tag) => (
+                  <div
+                    key={tag}
+                    className="bg-gray-100 px-2 py-1 rounded-md flex items-center gap-1"
                   >
-                    ×
-                  </button>
-                </div>
-              ))}
+                    <span>{tag}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveTag(tag)}
+                      className="text-gray-500 hover:text-gray-700"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 

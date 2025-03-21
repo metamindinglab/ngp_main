@@ -1,57 +1,70 @@
 'use client';
 
-import React, { useEffect, useRef } from 'react';
+import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { ExternalLink } from 'lucide-react';
 
 interface RobloxAssetPreviewProps {
   assetId: string;
+  className?: string;
+  height?: string;
 }
 
-interface RobloxPreview {
-  new (container: HTMLElement): {
-    load: (assetId: string) => void;
-  };
-}
+const RobloxAssetPreview: React.FC<RobloxAssetPreviewProps> = ({ 
+  assetId, 
+  className = "w-full h-[420px]",
+  height = "420px"
+}) => {
+  const [error, setError] = useState<string | null>(null);
 
-declare global {
-  interface Window {
-    RobloxPreview: RobloxPreview;
+  if (!assetId) {
+    return (
+      <div className={`${className} bg-background border rounded-md flex items-center justify-center`}>
+        <div className="text-muted-foreground">No asset ID provided</div>
+      </div>
+    );
   }
-}
 
-export default function RobloxAssetPreview({ assetId }: RobloxAssetPreviewProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const loadPreview = async () => {
-      try {
-        // Load the Roblox preview script
-        const script = document.createElement('script');
-        script.src = 'https://www.roblox.com/asset-preview/script.js';
-        script.async = true;
-        script.onload = () => {
-          // Initialize the preview
-          if (window.RobloxPreview && containerRef.current) {
-            const preview = new window.RobloxPreview(containerRef.current);
-            preview.load(assetId);
-          }
-        };
-        document.body.appendChild(script);
-
-        return () => {
-          document.body.removeChild(script);
-        };
-      } catch (error) {
-        console.error('Error loading Roblox preview:', error);
-      }
-    };
-
-    loadPreview();
-  }, [assetId]);
+  const handleOpenPreview = () => {
+    window.open(`https://www.roblox.com/catalog/${assetId}`, '_blank');
+  };
 
   return (
-    <div
-      ref={containerRef}
-      className="w-full h-full bg-gray-100 rounded-lg overflow-hidden"
-    />
+    <div className={`${className} bg-background border rounded-md overflow-hidden relative group`}>
+      {error ? (
+        <div className="w-full h-full flex items-center justify-center text-red-500 flex-col gap-4">
+          <div>{error}</div>
+          <Button 
+            onClick={handleOpenPreview}
+            variant="secondary"
+            className="flex items-center gap-2"
+          >
+            <ExternalLink className="w-4 h-4" />
+            Open in Roblox
+          </Button>
+        </div>
+      ) : (
+        <>
+          <img
+            src={`/api/roblox/thumbnail/${assetId}`}
+            alt="Asset Preview"
+            className="w-full h-full object-contain"
+            onError={() => setError('Failed to load preview')}
+          />
+          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+            <Button 
+              onClick={handleOpenPreview}
+              variant="secondary"
+              className="flex items-center gap-2"
+            >
+              <ExternalLink className="w-4 h-4" />
+              Open in Roblox
+            </Button>
+          </div>
+        </>
+      )}
+    </div>
   );
-} 
+};
+
+export default RobloxAssetPreview; 
