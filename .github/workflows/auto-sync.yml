@@ -10,32 +10,30 @@ on:
 jobs:
   sync:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.AUTO_SYNC_TOKEN }}
 
       - name: Configure Git
         run: |
-          git config --global user.name 'github-actions[bot]'
-          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git config --global user.name 'ardylee-mml'
+          git config --global user.email 'ardylee@mml.com'
 
       - name: Fetch and sync
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PAT: ${{ secrets.AUTO_SYNC_TOKEN }}
         run: |
-          git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git
+          git remote set-url origin https://${PAT}@github.com/${GITHUB_REPOSITORY}.git
           git fetch --all
           git pull origin main
           git push origin main
 
       - name: Check for changes
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PAT: ${{ secrets.AUTO_SYNC_TOKEN }}
         run: |
           if [[ -n $(git status --porcelain) ]]; then
             echo "Changes detected"
