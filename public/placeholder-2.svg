@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="300" height="300" viewBox="0 0 300 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="300" height="300" fill="#E5E7EB"/>
+  <!-- Image icon -->
+  <path d="M150 125C147.25 125 145 127.25 145 130C145 132.75 147.25 135 150 135C152.75 135 155 132.75 155 130C155 127.25 152.75 125 150 125ZM150 165C137.25 165 125 152.75 125 140C125 127.25 137.25 115 150 115C162.75 115 175 127.25 175 140C175 152.75 162.75 165 150 165ZM150 105C131.75 105 115 121.75 115 140C115 158.25 131.75 175 150 175C168.25 175 185 158.25 185 140C185 121.75 168.25 105 150 105Z" fill="#9CA3AF"/>
+  <!-- Text -->
+  <text x="150" y="200" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="14" fill="#6B7280">No Image</text>
+</svg> 

@@ -1,0 +1,123 @@
+{
+  "assets": [
+    {
+      "id": "1",
+      "name": "Shopkeeper NPC",
+      "type": "game-kol",
+      "robloxAssetId": 12345678,
+      "description": "A friendly shopkeeper who sells various items to players",
+      "thumbnailUrl": "/placeholder.svg",
+      "characterRole": "Merchant",
+      "characterPersonality": "Friendly, helpful, slightly greedy",
+      "createdAt": "2023-01-15T12:00:00.000Z",
+      "updatedAt": "2023-01-15T12:00:00.000Z"
+    },
+    {
+      "id": "2",
+      "name": "Racing Mini-game",
+      "type": "mini-game",
+      "robloxAssetId": 23456789,
+      "description": "A fast-paced racing game where players compete to reach the finish line",
+      "thumbnailUrl": "/placeholder.svg",
+      "gameType": "Racing",
+      "maxPlayers": 8,
+      "createdAt": "2023-02-10T14:30:00.000Z",
+      "updatedAt": "2023-02-10T14:30:00.000Z"
+    },
+    {
+      "id": "3",
+      "name": "Wizard Hat",
+      "type": "hat",
+      "robloxAssetId": 34567890,
+      "description": "A pointy wizard hat with stars and moons",
+      "thumbnailUrl": "/placeholder.svg",
+      "size": "Medium",
+      "color": "Blue",
+      "createdAt": "2023-03-05T09:15:00.000Z",
+      "updatedAt": "2023-03-05T09:15:00.000Z"
+    },
+    {
+      "id": "4",
+      "name": "Knight Armor",
+      "type": "clothes",
+      "robloxAssetId": 45678901,
+      "description": "Shiny metal armor for brave knights",
+      "thumbnailUrl": "/placeholder.svg",
+      "size": "Large",
+      "color": "Silver",
+      "createdAt": "2023-04-20T16:45:00.000Z",
+      "updatedAt": "2023-04-20T16:45:00.000Z"
+    },
+    {
+      "id": "5",
+      "name": "Running Shoes",
+      "type": "shoes",
+      "robloxAssetId": 56789012,
+      "description": "Shoes that increase running speed by 20%",
+      "thumbnailUrl": "/placeholder.svg",
+      "size": "Medium",
+      "color": "Red",
+      "createdAt": "2023-05-12T11:20:00.000Z",
+      "updatedAt": "2023-05-12T11:20:00.000Z"
+    },
+    {
+      "id": "6",
+      "name": "Magic Wand",
+      "type": "item",
+      "robloxAssetId": 67890123,
+      "description": "A wand that can cast various spells",
+      "thumbnailUrl": "/placeholder.svg",
+      "itemFunction": "Casts spells when clicked, has cooldown of 5 seconds",
+      "createdAt": "2023-06-08T13:10:00.000Z",
+      "updatedAt": "2023-06-08T13:10:00.000Z"
+    },
+    {
+      "id": "7",
+      "name": "Victory Dance",
+      "type": "animation",
+      "robloxAssetId": 78901234,
+      "description": "A celebratory dance animation",
+      "thumbnailUrl": "/placeholder.svg",
+      "animationDuration": 4.5,
+      "createdAt": "2023-07-17T10:05:00.000Z",
+      "updatedAt": "2023-07-17T10:05:00.000Z"
+    },
+    {
+      "id": "8",
+      "name": "Game Logo",
+      "type": "image",
+      "robloxAssetId": 89012345,
+      "description": "Official logo for the game",
+      "thumbnailUrl": "/placeholder.svg",
+      "resolution": "1024x1024",
+      "createdAt": "2023-08-22T15:30:00.000Z",
+      "updatedAt": "2023-08-22T15:30:00.000Z"
+    },
+    {
+      "id": "9",
+      "name": "Background Music",
+      "type": "audio",
+      "robloxAssetId": 90123456,
+      "description": "Ambient music for the main menu",
+      "thumbnailUrl": "/placeholder.svg",
+      "duration": 180,
+      "fileFormat": "MP3",
+      "createdAt": "2023-09-14T09:45:00.000Z",
+      "updatedAt": "2023-09-14T09:45:00.000Z"
+    },
+    {
+      "id": "10",
+      "name": "Tutorial Video",
+      "type": "video",
+      "robloxAssetId": 12345098,
+      "description": "Video explaining how to play the game",
+      "thumbnailUrl": "/placeholder.svg",
+      "duration": 120,
+      "fileFormat": "MP4",
+      "resolution": "1920x1080",
+      "createdAt": "2023-10-30T14:20:00.000Z",
+      "updatedAt": "2023-10-30T14:20:00.000Z"
+    }
+  ]
+}
+
