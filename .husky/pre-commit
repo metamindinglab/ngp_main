@@ -1,0 +1,10 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+# Run linting
+npm run lint || true
+
+# Run tests if they exist
+if [ -f "package.json" ] && grep -q "\"test\"" "package.json"; then
+  npm test
+fi 

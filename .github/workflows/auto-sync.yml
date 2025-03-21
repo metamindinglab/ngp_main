@@ -1,0 +1,40 @@
+name: Auto Sync
+
+on:
+  push:
+    branches: [ main ]
+  schedule:
+    - cron: '0 */6 * * *'  # Runs every 6 hours
+  workflow_dispatch:  # Allows manual trigger
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config --global user.name 'ardylee-mml'
+          git config --global user.email 'ardylee@mml.com'
+
+      - name: Fetch and sync
+        run: |
+          git fetch --all
+          git pull origin main
+          git push origin main
+
+      - name: Check for changes
+        id: check_changes
+        run: |
+          if [[ -n $(git status --porcelain) ]]; then
+            echo "Changes detected"
+            git add .
+            git commit -m "Auto-sync: Update repository"
+            git push origin main
+          else
+            echo "No changes detected"
+          fi 
