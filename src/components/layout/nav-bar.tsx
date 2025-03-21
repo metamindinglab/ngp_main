@@ -42,37 +42,50 @@ const navItems = [
 export default function NavBar() {
   const pathname = usePathname();
 
+  const isActive = (path: string) => {
+    return pathname === path;
+  };
+
   return (
-    <nav className="border-b bg-white">
-      <div className="container mx-auto">
-        <div className="flex items-center space-x-4 h-14">
-          <Link
-            href="/dashboard"
-            className="text-lg font-bold text-gray-900 mr-8"
-          >
-            New Gen Pulse
-          </Link>
-          <div className="flex space-x-1">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = pathname === item.href;
-              
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={cn(
-                    "inline-flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors",
-                    isActive
-                      ? "bg-gray-100 text-gray-900"
-                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                  )}
-                >
-                  <Icon className="h-4 w-4 mr-2" />
-                  {item.title}
-                </Link>
-              );
-            })}
+    <nav className="bg-white shadow">
+      <div className="container mx-auto px-6 py-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            <Link href="/dashboard" className="text-xl font-bold text-gray-800">
+              MGN Asset Manager
+            </Link>
+          </div>
+          <div className="flex space-x-4">
+            <Link
+              href="/dashboard"
+              className={`px-3 py-2 rounded-md text-sm font-medium ${
+                isActive('/dashboard')
+                  ? 'bg-gray-900 text-white'
+                  : 'text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              Dashboard
+            </Link>
+            <Link
+              href="/dashboard/games"
+              className={`px-3 py-2 rounded-md text-sm font-medium ${
+                isActive('/dashboard/games')
+                  ? 'bg-gray-900 text-white'
+                  : 'text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              Games
+            </Link>
+            <Link
+              href="/dashboard/assets"
+              className={`px-3 py-2 rounded-md text-sm font-medium ${
+                isActive('/dashboard/assets')
+                  ? 'bg-gray-900 text-white'
+                  : 'text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              Assets
+            </Link>
           </div>
         </div>
       </div>

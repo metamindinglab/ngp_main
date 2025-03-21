@@ -1,0 +1,190 @@
+{
+  "version": "1.0",
+  "lastUpdated": "2024-03-21T00:00:00Z",
+  "games": [
+    {
+      "id": "game_001",
+      "name": "Adopt Me!",
+      "robloxLink": "https://www.roblox.com/games/920587237/Adopt-Me",
+      "genre": "Role-Playing",
+      "description": "Adopt pets, trade items, and build your dream home in this enchanting role-playing experience!",
+      "metrics": {
+        "dau": 250000,
+        "mau": 4500000,
+        "day1Retention": 45.2,
+        "topGeographicPlayers": [
+          {
+            "country": "United States",
+            "percentage": 35.5
+          },
+          {
+            "country": "Brazil",
+            "percentage": 15.2
+          },
+          {
+            "country": "United Kingdom",
+            "percentage": 12.8
+          },
+          {
+            "country": "Canada",
+            "percentage": 8.5
+          },
+          {
+            "country": "Germany",
+            "percentage": 6.2
+          }
+        ]
+      },
+      "dates": {
+        "created": "2017-07-14T00:00:00Z",
+        "lastUpdated": "2024-03-15T00:00:00Z",
+        "mgnJoined": "2023-01-15T00:00:00Z"
+      },
+      "thumbnail": "/games/adopt-me.png",
+      "owner": {
+        "name": "DreamCraft Studios",
+        "discordId": "dreamcraft#1234",
+        "email": "contact@dreamcraftstudios.com",
+        "country": "United States"
+      }
+    },
+    {
+      "id": "game_002",
+      "name": "Blox Fruits",
+      "robloxLink": "https://www.roblox.com/games/2753915549/Blox-Fruits",
+      "genre": "Fighting",
+      "description": "Become the strongest warrior in this One Piece inspired fighting game! Train, battle, and collect rare fruits to gain powerful abilities.",
+      "metrics": {
+        "dau": 180000,
+        "mau": 3200000,
+        "day1Retention": 42.8,
+        "topGeographicPlayers": [
+          {
+            "country": "Philippines",
+            "percentage": 28.5
+          },
+          {
+            "country": "United States",
+            "percentage": 22.3
+          },
+          {
+            "country": "Indonesia",
+            "percentage": 15.7
+          },
+          {
+            "country": "Thailand",
+            "percentage": 10.2
+          },
+          {
+            "country": "Brazil",
+            "percentage": 8.9
+          }
+        ]
+      },
+      "dates": {
+        "created": "2019-01-25T00:00:00Z",
+        "lastUpdated": "2024-03-18T00:00:00Z",
+        "mgnJoined": "2023-03-20T00:00:00Z"
+      },
+      "thumbnail": "/games/blox-fruits.png",
+      "owner": {
+        "name": "Gamer Robot Inc",
+        "discordId": "gamerrobot#5678",
+        "email": "support@gamerrobot.com",
+        "country": "Canada"
+      }
+    },
+    {
+      "id": "game_003",
+      "name": "Phantom Forces",
+      "robloxLink": "https://www.roblox.com/games/292439477/Phantom-Forces",
+      "genre": "First-Person Shooter",
+      "description": "Experience intense tactical combat in this modern military FPS! Choose your loadout, join a team, and compete in various game modes.",
+      "metrics": {
+        "dau": 120000,
+        "mau": 2800000,
+        "day1Retention": 38.5,
+        "topGeographicPlayers": [
+          {
+            "country": "United States",
+            "percentage": 32.1
+          },
+          {
+            "country": "Russia",
+            "percentage": 18.4
+          },
+          {
+            "country": "Germany",
+            "percentage": 12.6
+          },
+          {
+            "country": "United Kingdom",
+            "percentage": 9.8
+          },
+          {
+            "country": "France",
+            "percentage": 7.5
+          }
+        ]
+      },
+      "dates": {
+        "created": "2015-09-10T00:00:00Z",
+        "lastUpdated": "2024-03-12T00:00:00Z",
+        "mgnJoined": "2023-06-01T00:00:00Z"
+      },
+      "thumbnail": "/games/phantom-forces.png",
+      "owner": {
+        "name": "StyLiS Studios",
+        "discordId": "stylis#9012",
+        "email": "contact@stylisstudios.com",
+        "country": "United States"
+      }
+    },
+    {
+      "id": "game_004",
+      "name": "Tower Defense Simulator",
+      "robloxLink": "https://www.roblox.com/games/3260590327/Tower-Defense-Simulator",
+      "genre": "Strategy",
+      "description": "Team up with friends to defend against waves of enemies! Place towers strategically and upgrade them to overcome challenging missions.",
+      "metrics": {
+        "dau": 95000,
+        "mau": 1800000,
+        "day1Retention": 41.3,
+        "topGeographicPlayers": [
+          {
+            "country": "United States",
+            "percentage": 28.9
+          },
+          {
+            "country": "Brazil",
+            "percentage": 16.7
+          },
+          {
+            "country": "Mexico",
+            "percentage": 13.4
+          },
+          {
+            "country": "Canada",
+            "percentage": 11.2
+          },
+          {
+            "country": "Argentina",
+            "percentage": 8.1
+          }
+        ]
+      },
+      "dates": {
+        "created": "2019-06-05T00:00:00Z",
+        "lastUpdated": "2024-03-19T00:00:00Z",
+        "mgnJoined": "2023-09-10T00:00:00Z"
+      },
+      "thumbnail": "/games/tower-defense-simulator.png",
+      "owner": {
+        "name": "ParadoxStudios",
+        "discordId": "paradox#3456",
+        "email": "info@paradoxstudios.net",
+        "country": "Australia"
+      }
+    }
+  ]
+} 
