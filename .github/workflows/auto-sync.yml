@@ -15,7 +15,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
-          persist-credentials: false
+          token: ${{ secrets.AUTO_SYNC_TOKEN }}
 
       - name: Configure Git
         env:
@@ -31,8 +31,7 @@ jobs:
           PAT: ${{ secrets.AUTO_SYNC_TOKEN }}
         run: |
           echo "Setting up remote URL..."
-          git remote remove origin
-          git remote add origin "https://$PAT@github.com/${GITHUB_REPOSITORY}.git"
+          git remote set-url origin "https://$PAT@github.com/${GITHUB_REPOSITORY}.git"
           echo "Fetching updates..."
           git fetch origin
           echo "Pulling latest changes..."
