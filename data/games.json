@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "lastUpdated": "2024-03-21T00:00:00Z",
+  "lastUpdated": "2025-03-22T17:58:27.741Z",
   "games": [
     {
       "id": "game_001",
@@ -185,6 +185,70 @@
         "email": "info@paradoxstudios.net",
         "country": "Australia"
       }
+    },
+    {
+      "id": "",
+      "name": "Escape to Freedom [FULL GAME!]",
+      "robloxLink": "https://www.roblox.com/games/13796067174",
+      "genre": "All",
+      "description": "An utterly unique escape game which will challenge your ability to handle a potentially disastrous situation. The journey to freedom will not only test your survival skills but will provide a taste of a life-changing experience.\n\nObjective: Complete the game safely and quickly, figure out challenges along the journey by noting instructions and status information.  Why not work with your friends in the multiplayer mode stages. \n\n🏆 Aim high at the leaderboard or just play for fun.....the choice is yours. To achieve an even higher score, just replay different parts of the game. \n\n🎮 💻 📱 Play Escape to Freedom on any device!\n\n💰 Join and verify on our Discordserver!\n\n⚙️ Feedback/questions/complaints? Let us know on our socials! \n\nCreated by MetaMinding Lab in association with Amnesty International.  Credit to Skilled Studio. \n\n⚠️ WARNING: The game contains upsetting imagery and themes related to war and refugee experiences that may be distressing. Parental guidance is advised. \n",
+      "metrics": {
+        "dau": 0,
+        "mau": 0,
+        "day1Retention": 0,
+        "topGeographicPlayers": []
+      },
+      "dates": {
+        "created": "2023-06-19T03:48:29.263Z",
+        "lastUpdated": "2025-03-22T06:57:11.9624804Z",
+        "mgnJoined": "2025-03-22T17:56:38.521Z",
+        "lastRobloxSync": "2025-03-22T17:56:38.521Z"
+      },
+      "owner": {
+        "name": "",
+        "discordId": "",
+        "email": "",
+        "country": ""
+      },
+      "authorization": {
+        "type": "api_key",
+        "status": "unverified",
+        "apiKey": "5o02SKlLRUmKXr4cVQL3rjSDKkNKsxK5qnab2pPWHAHv0r27ZXlKaGJHY2lPaUpTVXpJMU5pSXNJbXRwWkNJNkluTnBaeTB5TURJeExUQTNMVEV6VkRFNE9qVXhPalE1V2lJc0luUjVjQ0k2SWtwWFZDSjkuZXlKaVlYTmxRWEJwUzJWNUlqb2lOVzh3TWxOTGJFeFNWVzFMV0hJMFkxWlJURE55YWxORVMydE9TM040U3pWeGJtRmlNbkJRVjBoQlNIWXdjakkzSWl3aWIzZHVaWEpKWkNJNklqTXlOVEk0TWpjeUlpd2lZWFZrSWpvaVVtOWliRzk0U1c1MFpYSnVZV3dpTENKcGMzTWlPaUpEYkc5MVpFRjFkR2hsYm5ScFkyRjBhVzl1VTJWeWRtbGpaU0lzSW1WNGNDSTZNVGMwTWpZeU9ERXpOaXdpYVdGMElqb3hOelF5TmpJME5UTTJMQ0p1WW1ZaU9qRTNOREkyTWpRMU16WjkuTkV6TW5TcHVkTlRNWC1sMEdlY01uNnpiZFhaSFg2OGV1Y1N2ZG1kZjRFSGZ5THFsRkNHX0Y2VWpYQkJJWHNkY1dIc3BuRjRkcFVTZk45ZjM3a0xUejQtdFFVRWduZjhhMFlZdzFiSW56VnNIelNpcm83V1NwSXBBc25VM1g0RGFDR24yTUstdklZZUduSk5Kdmdlekxvc1BQSzZjZl8ybU02RlBTYkFBdmVmN3ZzbU9BdjRZbWpFMk5PQ2hORFVhaG1nS1l6cFFaRkQ1dXlVSUxiR0ZfQnFqS01jWVpuYzJkLXNwUXBnWDh2Wk9JRG1ZN2VEVjJ3NWJnSVJwUGxPQTlsR3MxSnN6VzZoR0VoLUFndVBsRW9LY0FYTEFPZC13ajVHeG9CcENwV0tfU01fVVNtbnpfeXlFX0Z3ZnlCc2E0NVNZS2x4azVrT1hZRVpfYzdxRFJ3"
+      },
+      "thumbnail": "",
+      "robloxInfo": {
+        "placeId": 13796067174,
+        "universeId": 4785787141,
+        "creator": {
+          "name": "MetaMinding Lab - Amnesty",
+          "id": 32528272,
+          "type": "Group"
+        },
+        "stats": {
+          "playing": 0,
+          "visits": 483010,
+          "favorites": 6179,
+          "likes": 0,
+          "dislikes": 0
+        },
+        "servers": [],
+        "media": {
+          "images": [],
+          "videos": []
+        },
+        "gameSettings": {
+          "maxPlayers": 1,
+          "allowCopying": false,
+          "allowedGearTypes": [
+            "All"
+          ],
+          "universeAvatarType": "MorphToR15",
+          "genre": "All",
+          "isAllGenres": true,
+          "isFavoritedByUser": false,
+          "price": null
+        }
+      }
     }
   ]
-} 
+}

@@ -37,6 +37,34 @@ export async function PUT(
     if (index === -1) {
       return NextResponse.json({ error: 'Game not found' }, { status: 404 })
     }
+
+    // Ensure we preserve the game ID
+    updatedGame.id = params.id
+
+    // Ensure media structure exists
+    if (!updatedGame.robloxInfo) {
+      updatedGame.robloxInfo = {}
+    }
+    if (!updatedGame.robloxInfo.media) {
+      updatedGame.robloxInfo.media = {
+        images: [],
+        videos: []
+      }
+    }
+
+    // Preserve existing media if not provided in update
+    if (!updatedGame.robloxInfo.media.images) {
+      updatedGame.robloxInfo.media.images = data.games[index].robloxInfo?.media?.images || []
+    }
+    if (!updatedGame.robloxInfo.media.videos) {
+      updatedGame.robloxInfo.media.videos = data.games[index].robloxInfo?.media?.videos || []
+    }
+    
+    // Update the game and timestamps
+    updatedGame.dates = {
+      ...updatedGame.dates,
+      lastUpdated: new Date().toISOString()
+    }
     
     data.games[index] = updatedGame
     data.lastUpdated = new Date().toISOString()

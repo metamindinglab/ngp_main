@@ -191,8 +191,10 @@ export function GamesManager() {
 
       <GameDialog
         open={isDialogOpen}
-        onOpenChange={setIsDialogOpen}
-        game={selectedGame}
+        onClose={() => {
+          setIsDialogOpen(false)
+          setSelectedGame(null)
+        }}
         onSave={async (gameData) => {
           try {
             const method = selectedGame ? 'PUT' : 'POST'
@@ -201,8 +203,16 @@ export function GamesManager() {
             const response = await fetch(url, {
               method,
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(gameData)
+              body: JSON.stringify({
+                ...gameData,
+                // Preserve the ID for updates
+                id: selectedGame?.id || gameData.id
+              })
             })
+
+            if (!response.ok) {
+              throw new Error(`Failed to save game: ${response.statusText}`)
+            }
             
             const updatedGame = await response.json()
             
@@ -213,10 +223,12 @@ export function GamesManager() {
             }
             
             setIsDialogOpen(false)
+            setSelectedGame(null)
           } catch (error) {
             console.error('Error saving game:', error)
           }
         }}
+        initialData={selectedGame || undefined}
       />
     </div>
   )
