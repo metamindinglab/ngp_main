@@ -46,7 +46,27 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    const updatedAd = await request.json()
+    const gameAd = await request.json()
+    
+    // Validate required fields
+    if (!gameAd.name || !gameAd.templateType || !gameAd.assets?.length) {
+      return NextResponse.json(
+        { error: 'Missing required fields' },
+        { status: 400 }
+      )
+    }
+
+    // Validate that all assets have required fields
+    for (const asset of gameAd.assets) {
+      if (!asset.assetType || !asset.assetId || !asset.robloxAssetId) {
+        return NextResponse.json(
+          { error: 'Missing required asset fields' },
+          { status: 400 }
+        )
+      }
+    }
+
+    // Load existing game ads
     const gameAds = await loadGameAds()
     const index = gameAds.findIndex(ad => ad.id === params.id)
 
@@ -57,26 +77,17 @@ export async function PUT(
       )
     }
 
-    // Validate required fields
-    if (!updatedAd.name || !updatedAd.templateType) {
-      return NextResponse.json(
-        { error: 'Missing required fields' },
-        { status: 400 }
-      )
-    }
-
-    // Preserve the original ID and creation date
-    updatedAd.id = params.id
-    updatedAd.createdAt = gameAds[index].createdAt
-    updatedAd.updatedAt = new Date().toISOString()
+    // Update timestamps
+    gameAd.updatedAt = new Date().toISOString()
+    gameAd.createdAt = gameAds[index].createdAt
 
     // Update the game ad
-    gameAds[index] = updatedAd
+    gameAds[index] = gameAd
 
     // Save to file
     await saveGameAds(gameAds)
 
-    return NextResponse.json(updatedAd)
+    return NextResponse.json(gameAd)
   } catch (error) {
     console.error('Error updating game ad:', error)
     return NextResponse.json(

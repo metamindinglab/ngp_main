@@ -76,6 +76,7 @@ export function GameAdsManager() {
                   assets: template.requiredAssetTypes.map(assetType => ({
                     assetType,
                     assetId: '',
+                    robloxAssetId: ''
                   })),
                 })
                 setIsDialogOpen(true)

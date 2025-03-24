@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/select"
 import { Card, CardContent } from "@/components/ui/card"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { GameAd, GameAdTemplate, GAME_AD_TEMPLATES, GameAdTemplateType, Asset, AssetType } from '@/types/gameAd'
+import { GameAd, GameAdTemplate, GAME_AD_TEMPLATES, GameAdTemplateType, Asset, AssetType, AssetData } from '@/types/gameAd'
 import RobloxAssetPreview from '@/components/display-objects/roblox-asset-preview'
 
 interface GameAdDialogProps {
@@ -29,14 +29,6 @@ interface GameAdDialogProps {
   onClose: () => void
   initialData: GameAd | null
   onSave: (data: GameAd) => Promise<void>
-}
-
-interface AssetOption {
-  id: string
-  name: string
-  assetType: string
-  robloxAssetId: string
-  description?: string
 }
 
 export function GameAdDialog({ open, onClose, initialData, onSave }: GameAdDialogProps) {
@@ -49,8 +41,8 @@ export function GameAdDialog({ open, onClose, initialData, onSave }: GameAdDialo
   })
 
   const [selectedTemplate, setSelectedTemplate] = useState<GameAdTemplate | null>(null)
-  const [availableAssets, setAvailableAssets] = useState<AssetOption[]>([])
-  const [selectedAssetDetails, setSelectedAssetDetails] = useState<Record<number, AssetOption | null>>({})
+  const [availableAssets, setAvailableAssets] = useState<AssetData[]>([])
+  const [selectedAssetDetails, setSelectedAssetDetails] = useState<Record<number, AssetData | null>>({})
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -85,7 +77,7 @@ export function GameAdDialog({ open, onClose, initialData, onSave }: GameAdDialo
       setSelectedTemplate(template || null)
       
       // Load selected asset details
-      const details: Record<number, AssetOption | null> = {}
+      const details: Record<number, AssetData | null> = {}
       initialData.assets?.forEach((asset, index) => {
         const assetDetail = availableAssets.find(a => a.id === asset.assetId)
         if (assetDetail) {
@@ -109,29 +101,62 @@ export function GameAdDialog({ open, onClose, initialData, onSave }: GameAdDialo
   const handleTemplateChange = (templateId: GameAdTemplateType) => {
     const template = GAME_AD_TEMPLATES.find(t => t.id === templateId)
     setSelectedTemplate(template || null)
+    
+    // Initialize assets array with empty values for each required asset type
+    const initializedAssets = template?.requiredAssetTypes.map(assetType => ({
+      assetType,
+      assetId: '',
+      robloxAssetId: ''
+    })) || []
+
+    console.log('Initializing assets:', JSON.stringify(initializedAssets, null, 2))
+    
     setFormData(prev => ({
       ...prev,
       templateType: templateId,
-      assets: template?.requiredAssetTypes.map(assetType => ({
-        assetType,
-        assetId: '',
-      })) || [],
+      assets: initializedAssets,
     }))
     setSelectedAssetDetails({})
   }
 
   const handleAssetChange = (index: number, assetId: string) => {
     const selectedAsset = availableAssets.find(asset => asset.id === assetId)
+    console.log('Selected asset:', selectedAsset)
+    
+    if (!selectedAsset) {
+      console.warn('No asset found for id:', assetId)
+      return
+    }
+
+    // Update selected asset details
     setSelectedAssetDetails(prev => ({
       ...prev,
-      [index]: selectedAsset || null,
+      [index]: selectedAsset,
     }))
+    
+    // Update form data assets
     setFormData(prev => {
       const newAssets = [...(prev.assets || [])]
+      
+      // Ensure all required fields are set
       newAssets[index] = {
-        ...newAssets[index],
-        assetId,
+        assetType: selectedAsset.assetType,
+        assetId: selectedAsset.id,
+        robloxAssetId: selectedAsset.robloxAssetId
       }
+      
+      // Log the updated array for debugging
+      console.log('Updated assets array:', JSON.stringify(newAssets, null, 2))
+
+      // Validate the updated array
+      const hasInvalidAssets = newAssets.some(asset => 
+        !asset || !asset.assetType || !asset.assetId || !asset.robloxAssetId
+      )
+
+      if (hasInvalidAssets) {
+        console.warn('Invalid assets in array:', newAssets)
+      }
+
       return { ...prev, assets: newAssets }
     })
   }
@@ -140,7 +165,7 @@ export function GameAdDialog({ open, onClose, initialData, onSave }: GameAdDialo
     return availableAssets.filter(asset => asset.assetType === assetType)
   }
 
-  const renderAssetPreview = (asset: AssetOption | null, assetType: AssetType) => {
+  const renderAssetPreview = (asset: AssetData | null, assetType: AssetType) => {
     if (!asset) return null
 
     return (
@@ -160,20 +185,66 @@ export function GameAdDialog({ open, onClose, initialData, onSave }: GameAdDialo
     )
   }
 
+  // Add a function to validate assets
+  const validateAssets = (assets: Asset[]) => {
+    const invalidAssets = assets.filter(asset => {
+      if (!asset.assetType || !asset.assetId) return true
+      
+      const selectedAsset = availableAssets.find(a => a.id === asset.assetId)
+      return !selectedAsset?.robloxAssetId
+    })
+
+    return {
+      isValid: invalidAssets.length === 0,
+      invalidAssets
+    }
+  }
+
   const handleSubmit = async () => {
     if (!formData.name) {
-      alert('Please fill in the name field')
+      setError('Please fill in the name field')
+      return
+    }
+
+    // Add debug logging
+    console.log('Submitting form data:', JSON.stringify(formData, null, 2))
+    console.log('Selected asset details:', JSON.stringify(selectedAssetDetails, null, 2))
+    
+    const gameAdData = {
+      ...formData,
+      id: initialData?.id || `ad_${Date.now()}`,
+      updatedAt: new Date().toISOString(),
+    } as GameAd
+
+    // Validate that all required assets are present and have all required fields
+    const requiredAssetTypes = GAME_AD_TEMPLATES.find(t => t.id === gameAdData.templateType)?.requiredAssetTypes || []
+    const assets = gameAdData.assets || []
+
+    // Check if we have all required asset types
+    const missingAssetTypes = requiredAssetTypes.filter(type => 
+      !assets.some(asset => asset.assetType === type)
+    )
+
+    if (missingAssetTypes.length > 0) {
+      setError(`Missing required assets: ${missingAssetTypes.join(', ')}`)
+      return
+    }
+
+    // Check if all assets have required fields
+    const invalidAssets = assets.filter(asset => 
+      !asset.assetType || !asset.assetId || !asset.robloxAssetId
+    )
+
+    if (invalidAssets.length > 0) {
+      setError('Some assets are missing required fields')
+      console.error('Invalid assets:', invalidAssets)
       return
     }
 
     try {
       setLoading(true)
       setError(null)
-      await onSave({
-        ...formData,
-        id: initialData?.id || `ad_${Date.now()}`,
-        updatedAt: new Date().toISOString(),
-      } as GameAd)
+      await onSave(gameAdData)
     } catch (error) {
       console.error('Error saving game ad:', error)
       setError('Failed to save game ad. Please try again.')

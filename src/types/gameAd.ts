@@ -1,25 +1,21 @@
-export type AssetType = 
-  | 'signage' 
-  | 'billboard'
-  | 'image' 
-  | 'video'
-  | 'kol_character'
-  | 'hat'
-  | 'clothing'
-  | 'item'
-  | 'shoes'
-  | 'animation'
-  | 'audio'
-  | 'minigame';
+export type AssetType = 'kol_character' | 'hat' | 'clothing' | 'item' | 'audio' | 'animation' | 'shoes' | 'multi_display';
 
+// Asset in the assets.json database
+export interface AssetData {
+  id: string
+  name: string
+  description?: string
+  assetType: AssetType
+  robloxAssetId: string
+  previewUrl?: string
+  properties?: Record<string, any>
+}
+
+// Asset in a game ad
 export interface Asset {
-  id: string;
-  name: string;
-  description: string;
-  assetType: AssetType;
-  previewUrl: string;
-  robloxAssetId?: string;
-  properties?: Record<string, any>;
+  assetType: AssetType
+  assetId: string
+  robloxAssetId: string
 }
 
 export type GameAdTemplateType = 
@@ -41,10 +37,7 @@ export interface GameAd {
   templateType: GameAdTemplateType;
   createdAt: string;
   updatedAt: string;
-  assets: {
-    assetType: AssetType;
-    assetId: string;
-  }[];
+  assets: Asset[];
 }
 
 export const GAME_AD_TEMPLATES: GameAdTemplate[] = [
@@ -53,7 +46,7 @@ export const GAME_AD_TEMPLATES: GameAdTemplate[] = [
     name: 'Multi-media Display Ad',
     description: 'Create an engaging multi-media display combining signage and media assets',
     thumbnail: '/templates/multimedia-display.png',
-    requiredAssetTypes: ['signage', 'billboard', 'image', 'video']
+    requiredAssetTypes: ['multi_display', 'audio']
   },
   {
     id: 'dancing_npc',
@@ -67,6 +60,6 @@ export const GAME_AD_TEMPLATES: GameAdTemplate[] = [
     name: 'Mini-game Ad',
     description: 'Create an interactive mini-game experience with brand integration',
     thumbnail: '/templates/minigame-ad.png',
-    requiredAssetTypes: ['minigame', 'image']
+    requiredAssetTypes: ['multi_display', 'audio']
   }
 ]; 

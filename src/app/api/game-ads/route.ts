@@ -45,11 +45,21 @@ export async function POST(request: Request) {
     const gameAd = await request.json()
     
     // Validate required fields
-    if (!gameAd.name || !gameAd.templateType) {
+    if (!gameAd.name || !gameAd.templateType || !gameAd.assets?.length) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
       )
+    }
+
+    // Validate that all assets have required fields
+    for (const asset of gameAd.assets) {
+      if (!asset.assetType || !asset.assetId || !asset.robloxAssetId) {
+        return NextResponse.json(
+          { error: 'Missing required asset fields' },
+          { status: 400 }
+        )
+      }
     }
 
     // Load existing game ads

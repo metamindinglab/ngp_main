@@ -2,38 +2,45 @@
   "gameAds": [
     {
       "id": "ad_1742820645812",
-      "name": "Adidas+MonsterDrink+DrMartenBoots",
+      "name": "Adidas+Pepsi+DrMartenBoots",
       "templateType": "dancing_npc",
       "createdAt": "2025-03-24T12:50:45.987Z",
-      "updatedAt": "2025-03-24T12:50:45.987Z",
+      "updatedAt": "2025-03-24T16:22:06.347Z",
       "assets": [
         {
           "assetType": "kol_character",
-          "assetId": "k2"
+          "assetId": "k2",
+          "robloxAssetId": "12345681"
         },
         {
           "assetType": "hat",
-          "assetId": ""
+          "assetId": "h1",
+          "robloxAssetId": "17881926945"
         },
         {
           "assetType": "clothing",
-          "assetId": "c3"
+          "assetId": "c3",
+          "robloxAssetId": "15503479545"
         },
         {
           "assetType": "item",
-          "assetId": "i4"
+          "assetId": "i2",
+          "robloxAssetId": "15548194077"
         },
         {
           "assetType": "shoes",
-          "assetId": "s1"
+          "assetId": "s1",
+          "robloxAssetId": "93915499"
         },
         {
           "assetType": "animation",
-          "assetId": "a2"
+          "assetId": "a2",
+          "robloxAssetId": "6797919579"
         },
         {
           "assetType": "audio",
-          "assetId": "aud1"
+          "assetId": "aud1",
+          "robloxAssetId": "12345677"
         }
       ]
     }
