@@ -20,7 +20,9 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Card, CardContent } from "@/components/ui/card"
+import { ScrollArea } from "@/components/ui/scroll-area"
 import { GameAd, GameAdTemplate, GAME_AD_TEMPLATES, GameAdTemplateType, Asset, AssetType } from '@/types/gameAd'
+import RobloxAssetPreview from '@/components/display-objects/roblox-asset-preview'
 
 interface GameAdDialogProps {
   open: boolean
@@ -35,12 +37,6 @@ interface AssetOption {
   assetType: string
   robloxAssetId: string
   description?: string
-  image?: string
-  previewUrl?: string
-  dimensions?: {
-    width: number
-    height: number
-  }
 }
 
 export function GameAdDialog({ open, onClose, initialData, onSave }: GameAdDialogProps) {
@@ -55,20 +51,32 @@ export function GameAdDialog({ open, onClose, initialData, onSave }: GameAdDialo
   const [selectedTemplate, setSelectedTemplate] = useState<GameAdTemplate | null>(null)
   const [availableAssets, setAvailableAssets] = useState<AssetOption[]>([])
   const [selectedAssetDetails, setSelectedAssetDetails] = useState<Record<number, AssetOption | null>>({})
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   // Load available assets
   useEffect(() => {
     const loadAssets = async () => {
       try {
+        setLoading(true)
+        setError(null)
         const response = await fetch('/api/assets')
+        if (!response.ok) {
+          throw new Error('Failed to load assets')
+        }
         const data = await response.json()
         setAvailableAssets(data.assets)
       } catch (error) {
         console.error('Error loading assets:', error)
+        setError('Failed to load assets. Please try again.')
+      } finally {
+        setLoading(false)
       }
     }
-    loadAssets()
-  }, [])
+    if (open) {
+      loadAssets()
+    }
+  }, [open])
 
   useEffect(() => {
     if (initialData) {
@@ -135,30 +143,17 @@ export function GameAdDialog({ open, onClose, initialData, onSave }: GameAdDialo
   const renderAssetPreview = (asset: AssetOption | null, assetType: AssetType) => {
     if (!asset) return null
 
-    const previewUrl = asset.image || asset.previewUrl || `https://tr.rbxcdn.com/${asset.robloxAssetId}/420/420/Image/Png`
-    
     return (
       <Card className="mt-2">
         <CardContent className="p-4">
-          <div className="aspect-video relative">
-            <img
-              src={previewUrl}
-              alt={asset.name}
-              className="rounded-lg object-cover w-full h-full"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement
-                target.src = '/placeholder-asset.png' // Fallback image
-              }}
-            />
-          </div>
+          <RobloxAssetPreview
+            assetId={asset.robloxAssetId}
+            className="w-full h-[200px]"
+            height="200px"
+          />
           <div className="mt-2 text-sm">
             <p className="font-medium">{asset.name}</p>
             <p className="text-muted-foreground text-xs">{asset.description}</p>
-            {asset.dimensions && (
-              <p className="text-xs text-muted-foreground">
-                {asset.dimensions.width} × {asset.dimensions.height}
-              </p>
-            )}
           </div>
         </CardContent>
       </Card>
@@ -166,12 +161,14 @@ export function GameAdDialog({ open, onClose, initialData, onSave }: GameAdDialo
   }
 
   const handleSubmit = async () => {
-    if (!formData.name || !formData.templateType) {
-      alert('Please fill in all required fields')
+    if (!formData.name) {
+      alert('Please fill in the name field')
       return
     }
 
     try {
+      setLoading(true)
+      setError(null)
       await onSave({
         ...formData,
         id: initialData?.id || `ad_${Date.now()}`,
@@ -179,100 +176,88 @@ export function GameAdDialog({ open, onClose, initialData, onSave }: GameAdDialo
       } as GameAd)
     } catch (error) {
       console.error('Error saving game ad:', error)
+      setError('Failed to save game ad. Please try again.')
+    } finally {
+      setLoading(false)
     }
   }
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl">
-        <DialogHeader>
-          <DialogTitle>{initialData ? 'Edit Game Ad' : 'Create New Game Ad'}</DialogTitle>
+      <DialogContent className="max-w-4xl max-h-[90vh] p-0">
+        <DialogHeader className="px-6 pt-6">
+          <DialogTitle>{initialData?.id ? 'Edit Game Ad' : 'Create New Game Ad'}</DialogTitle>
           <DialogDescription>
-            {initialData ? 'Update your game ad details' : 'Create a new game ad using a template'}
+            {initialData?.id ? 'Update your game ad details' : `Create a new ${selectedTemplate?.name}`}
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="name" className="text-right">
-              Name
-            </Label>
-            <Input
-              id="name"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="col-span-3"
-            />
-          </div>
+        <ScrollArea className="px-6 py-4 max-h-[calc(90vh-180px)]">
+          {error && (
+            <div className="bg-destructive/15 text-destructive px-4 py-2 rounded-md mb-4">
+              {error}
+            </div>
+          )}
 
-          {!initialData && (
+          <div className="grid gap-4">
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="template" className="text-right">
-                Template
+              <Label htmlFor="name" className="text-right">
+                Name
               </Label>
-              <Select
-                value={formData.templateType}
-                onValueChange={handleTemplateChange}
-              >
-                <SelectTrigger className="col-span-3">
-                  <SelectValue placeholder="Select a template" />
-                </SelectTrigger>
-                <SelectContent>
-                  {GAME_AD_TEMPLATES.map(template => (
-                    <SelectItem key={template.id} value={template.id}>
-                      {template.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Input
+                id="name"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                className="col-span-3"
+              />
             </div>
-          )}
 
-          {selectedTemplate && (
-            <div className="mt-4">
-              <h3 className="font-semibold mb-4">Required Assets</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {formData.assets?.map((asset, index) => {
-                  const assetsOfType = getAssetsByType(asset.assetType)
-                  return (
-                    <div key={index} className="space-y-4">
-                      <div className="grid grid-cols-4 items-center gap-4">
-                        <Label className="text-right">
-                          {asset.assetType}
-                        </Label>
-                        <div className="col-span-3">
-                          <Select
-                            value={asset.assetId}
-                            onValueChange={(value) => handleAssetChange(index, value)}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder={`Select ${asset.assetType}`} />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {assetsOfType.map(option => (
-                                <SelectItem key={option.id} value={option.id}>
-                                  {option.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+            {selectedTemplate && (
+              <div className="mt-4">
+                <h3 className="font-semibold mb-4">Required Assets</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {formData.assets?.map((asset, index) => {
+                    const assetsOfType = getAssetsByType(asset.assetType)
+                    return (
+                      <div key={index} className="space-y-4">
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <Label className="text-right">
+                            {asset.assetType}
+                          </Label>
+                          <div className="col-span-3">
+                            <Select
+                              value={asset.assetId}
+                              onValueChange={(value) => handleAssetChange(index, value)}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder={`Select ${asset.assetType}`} />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {assetsOfType.map(option => (
+                                  <SelectItem key={option.id} value={option.id}>
+                                    {option.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
                         </div>
+                        {renderAssetPreview(selectedAssetDetails[index], asset.assetType)}
                       </div>
-                      {renderAssetPreview(selectedAssetDetails[index], asset.assetType)}
-                    </div>
-                  )
-                })}
+                    )
+                  })}
+                </div>
               </div>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        </ScrollArea>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
+        <DialogFooter className="px-6 py-4 border-t">
+          <Button variant="outline" onClick={onClose} disabled={loading}>
             Cancel
           </Button>
-          <Button onClick={handleSubmit}>
-            {initialData ? 'Update' : 'Create'}
+          <Button onClick={handleSubmit} disabled={loading}>
+            {loading ? 'Saving...' : initialData?.id ? 'Update' : 'Create'}
           </Button>
         </DialogFooter>
       </DialogContent>

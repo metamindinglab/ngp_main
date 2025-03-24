@@ -1,1 +1,41 @@
-{"gameAds": []}
+{
+  "gameAds": [
+    {
+      "id": "ad_1742820645812",
+      "name": "Adidas+MonsterDrink+DrMartenBoots",
+      "templateType": "dancing_npc",
+      "createdAt": "2025-03-24T12:50:45.987Z",
+      "updatedAt": "2025-03-24T12:50:45.987Z",
+      "assets": [
+        {
+          "assetType": "kol_character",
+          "assetId": "k2"
+        },
+        {
+          "assetType": "hat",
+          "assetId": ""
+        },
+        {
+          "assetType": "clothing",
+          "assetId": "c3"
+        },
+        {
+          "assetType": "item",
+          "assetId": "i4"
+        },
+        {
+          "assetType": "shoes",
+          "assetId": "s1"
+        },
+        {
+          "assetType": "animation",
+          "assetId": "a2"
+        },
+        {
+          "assetType": "audio",
+          "assetId": "aud1"
+        }
+      ]
+    }
+  ]
+}

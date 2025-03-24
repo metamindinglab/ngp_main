@@ -67,7 +67,17 @@ export function GameAdsManager() {
           {GAME_AD_TEMPLATES.map(template => (
             <Card key={template.id} className="cursor-pointer hover:bg-accent/50 transition-colors"
               onClick={() => {
-                setSelectedAd(null)
+                setSelectedAd({
+                  id: '',
+                  name: '',
+                  templateType: template.id,
+                  createdAt: new Date().toISOString(),
+                  updatedAt: new Date().toISOString(),
+                  assets: template.requiredAssetTypes.map(assetType => ({
+                    assetType,
+                    assetId: '',
+                  })),
+                })
                 setIsDialogOpen(true)
               }}
             >
@@ -140,8 +150,10 @@ export function GameAdsManager() {
         initialData={selectedAd}
         onSave={async (adData) => {
           try {
-            const method = selectedAd ? 'PUT' : 'POST'
-            const url = selectedAd ? `/api/game-ads/${selectedAd.id}` : '/api/game-ads'
+            const method = selectedAd?.id ? 'PUT' : 'POST'
+            const url = selectedAd?.id ? `/api/game-ads/${selectedAd.id}` : '/api/game-ads'
+            
+            console.log('Saving game ad:', { method, url, adData })
             
             const response = await fetch(url, {
               method,
@@ -150,12 +162,15 @@ export function GameAdsManager() {
             })
 
             if (!response.ok) {
-              throw new Error('Failed to save game ad')
+              const errorData = await response.json()
+              console.error('Server error:', errorData)
+              throw new Error(`Failed to save game ad: ${errorData.error || response.statusText}`)
             }
 
             const savedAd = await response.json()
+            console.log('Saved game ad:', savedAd)
             
-            if (selectedAd) {
+            if (selectedAd?.id) {
               setGameAds(ads => ads.map(ad => ad.id === selectedAd.id ? savedAd : ad))
             } else {
               setGameAds(ads => [...ads, savedAd])
@@ -165,6 +180,7 @@ export function GameAdsManager() {
             setSelectedAd(null)
           } catch (error) {
             console.error('Error saving game ad:', error)
+            alert('Failed to save game ad. Please try again.')
           }
         }}
       />
