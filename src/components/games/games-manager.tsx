@@ -214,18 +214,20 @@ export function GamesManager() {
               throw new Error(`Failed to save game: ${response.statusText}`)
             }
             
-            const updatedGame = await response.json()
+            const savedGame = await response.json()
             
+            // Update the games list
             if (selectedGame) {
-              setGames(games.map(g => g.id === selectedGame.id ? updatedGame : g))
+              setGames(games.map(g => g.id === selectedGame.id ? savedGame : g))
             } else {
-              setGames([...games, updatedGame])
+              setGames([...games, savedGame])
             }
-            
-            setIsDialogOpen(false)
-            setSelectedGame(null)
+
+            // Return the saved game so the dialog can use it
+            return savedGame
           } catch (error) {
             console.error('Error saving game:', error)
+            throw error
           }
         }}
         initialData={selectedGame || undefined}

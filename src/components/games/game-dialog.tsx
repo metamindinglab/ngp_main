@@ -30,7 +30,7 @@ import { Upload, X } from 'lucide-react'
 interface GameDialogProps {
   open: boolean
   onClose: () => void
-  onSave: (game: Game) => void
+  onSave: (game: Game) => Promise<Game>
   initialData?: Game
 }
 
@@ -237,9 +237,10 @@ export function GameDialog({ open, onClose, onSave, initialData }: GameDialogPro
   };
 
   const handleUploadFiles = async () => {
-    const gameId = formData.id || formData.robloxInfo?.placeId?.toString();
-    if (!gameId) {
-      console.error('No game ID available');
+    // Always use the game ID (game_XXX format)
+    const gameId = formData.id;
+    if (!gameId || !gameId.startsWith('game_')) {
+      console.error('Invalid game ID format:', gameId);
       return;
     }
 
@@ -256,18 +257,77 @@ export function GameDialog({ open, onClose, onSave, initialData }: GameDialogPro
           formData.append('type', mediaFile.type);
           formData.append('gameId', gameId);
 
+          console.log('Uploading file for game:', gameId);
           const response = await fetch('/api/upload-media', {
             method: 'POST',
-            body: formData
+            body: formData,
           });
 
           if (!response.ok) {
-            throw new Error(`Upload failed: ${response.statusText}`);
+            const errorData = await response.json().catch(() => ({ error: response.statusText }));
+            throw new Error(`Upload failed: ${errorData.error || response.statusText}`);
           }
 
+          const data = await response.json();
+          console.log('Upload successful:', data);
+          
           setMediaFiles(prev => 
             prev.map(f => f.id === mediaFile.id ? { ...f, uploadStatus: 'success' } : f)
           );
+
+          // Update the formData with the new media info
+          setFormData(prev => {
+            const updatedGame = { ...prev };
+            if (!updatedGame.robloxInfo) {
+              updatedGame.robloxInfo = {
+                placeId: Number(updatedGame.robloxLink.split('/').pop()) || 0,
+                creator: {
+                  id: 0,
+                  type: 'User',
+                  name: 'Unknown'
+                },
+                stats: {
+                  playing: 0,
+                  visits: 0,
+                  favorites: 0,
+                  likes: 0,
+                  dislikes: 0
+                },
+                gameSettings: {
+                  maxPlayers: 0,
+                  allowCopying: false,
+                  allowedGearTypes: [],
+                  universeAvatarType: 'MorphToR6',
+                  genre: 'All',
+                  isAllGenres: false,
+                  isFavoritedByUser: false,
+                  price: null
+                },
+                servers: [],
+                media: {
+                  images: [],
+                  videos: []
+                }
+              };
+            }
+
+            if (!updatedGame.robloxInfo.media) {
+              updatedGame.robloxInfo.media = {
+                images: [],
+                videos: []
+              };
+            }
+
+            if (mediaFile.type === 'image') {
+              updatedGame.robloxInfo.media.images.push(data.file);
+            } else {
+              updatedGame.robloxInfo.media.videos.push(data.file);
+            }
+
+            return updatedGame;
+          });
+
+          return data;
         } catch (error) {
           console.error('Upload error:', error);
           setMediaFiles(prev => 
@@ -277,10 +337,15 @@ export function GameDialog({ open, onClose, onSave, initialData }: GameDialogPro
               error: error instanceof Error ? error.message : 'Upload failed'
             } : f)
           );
+          throw error;
         }
       });
 
-    await Promise.all(uploadPromises);
+    try {
+      await Promise.all(uploadPromises);
+    } catch (error) {
+      console.error('Some uploads failed:', error);
+    }
   };
 
   const removeFile = (id: string) => {
@@ -689,12 +754,32 @@ export function GameDialog({ open, onClose, onSave, initialData }: GameDialogPro
                   <Label>Uploaded Media</Label>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {formData.robloxInfo.media.images.map((image) => (
-                      <div key={image.id} className="border rounded-lg overflow-hidden">
-                        <img 
-                          src={image.localPath}
-                          alt={image.title || 'Game image'} 
-                          className="w-full h-48 object-cover"
-                        />
+                      <div key={`${image.id}_${image.uploadedAt}`} className="border rounded-lg overflow-hidden">
+                        <div className="relative">
+                          <img 
+                            src={image.localPath}
+                            alt={image.title || 'Game image'} 
+                            className="w-full h-48 object-cover"
+                            onError={(e) => {
+                              console.error('Failed to load image:', image.localPath);
+                              e.currentTarget.src = '/placeholder-image.png';
+                            }}
+                          />
+                          <div className="absolute top-2 right-2 flex gap-2">
+                            <Button
+                              variant={formData.thumbnail === image.localPath ? "default" : "secondary"}
+                              size="sm"
+                              onClick={() => {
+                                setFormData(prev => ({
+                                  ...prev,
+                                  thumbnail: image.localPath
+                                }));
+                              }}
+                            >
+                              {formData.thumbnail === image.localPath ? "Current Thumbnail" : "Set as Thumbnail"}
+                            </Button>
+                          </div>
+                        </div>
                         <div className="p-3 space-y-1">
                           {image.title && (
                             <div className="font-medium">{image.title}</div>
@@ -706,11 +791,14 @@ export function GameDialog({ open, onClose, onSave, initialData }: GameDialogPro
                       </div>
                     ))}
                     {formData.robloxInfo.media.videos.map((video) => (
-                      <div key={video.id} className="border rounded-lg overflow-hidden">
+                      <div key={`${video.id}_${video.uploadedAt}`} className="border rounded-lg overflow-hidden">
                         <video 
                           src={video.localPath}
                           className="w-full h-48 object-cover"
                           controls
+                          onError={(e) => {
+                            console.error('Failed to load video:', video.localPath);
+                          }}
                         />
                         <div className="p-3 space-y-1">
                           <div className="font-medium">{video.title}</div>
@@ -770,7 +858,33 @@ export function GameDialog({ open, onClose, onSave, initialData }: GameDialogPro
 
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button onClick={() => onSave(formData)} disabled={isLoading}>Save</Button>
+          <Button 
+            onClick={async () => {
+              try {
+                setIsLoading(true);
+                // First save the game to get an ID if it's a new game
+                const savedGame = await onSave(formData);
+                
+                // Update the form data with the saved game info
+                setFormData(savedGame);
+                
+                // If there are pending media files, upload them using the saved game ID
+                if (mediaFiles.some(f => f.uploadStatus === 'pending')) {
+                  await handleUploadFiles();
+                }
+
+                // Close the dialog after everything is done
+                onClose();
+              } catch (error) {
+                console.error('Error saving game or uploading media:', error);
+              } finally {
+                setIsLoading(false);
+              }
+            }} 
+            disabled={isLoading}
+          >
+            {isLoading ? 'Saving...' : 'Save'}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

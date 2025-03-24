@@ -817,6 +817,164 @@
         "Product Placement",
         "Competitive Gaming"
       ]
+    },
+    {
+      "id": "bb1",
+      "name": "Premium Billboard - Landscape",
+      "description": "Large format landscape billboard for premium game advertising",
+      "assetType": "billboard",
+      "robloxAssetId": "18001001",
+      "createdAt": "2024-03-01",
+      "updatedAt": "2024-03-24",
+      "tags": [
+        "billboard",
+        "landscape",
+        "premium"
+      ],
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "location": "game_spawn",
+      "visibility": "high",
+      "illuminated": true,
+      "interactable": true
+    },
+    {
+      "id": "bb2",
+      "name": "City Square Billboard",
+      "description": "Central square billboard with high visibility",
+      "assetType": "billboard",
+      "robloxAssetId": "18001002",
+      "createdAt": "2024-03-01",
+      "updatedAt": "2024-03-24",
+      "tags": [
+        "billboard",
+        "square",
+        "central"
+      ],
+      "dimensions": {
+        "width": 2560,
+        "height": 1440
+      },
+      "location": "city_center",
+      "visibility": "high",
+      "illuminated": true,
+      "interactable": false
+    },
+    {
+      "id": "bb3",
+      "name": "Digital Billboard - Portrait",
+      "description": "Vertical digital billboard with animation support",
+      "assetType": "billboard",
+      "robloxAssetId": "18001003",
+      "createdAt": "2024-03-01",
+      "updatedAt": "2024-03-24",
+      "tags": [
+        "billboard",
+        "portrait",
+        "digital"
+      ],
+      "dimensions": {
+        "width": 1080,
+        "height": 1920
+      },
+      "location": "mall_entrance",
+      "visibility": "medium",
+      "illuminated": true,
+      "interactable": true,
+      "supportsAnimation": true
+    },
+    {
+      "id": "sg1",
+      "name": "Neon Shop Signage",
+      "description": "Bright neon signage for shop fronts",
+      "assetType": "signage",
+      "robloxAssetId": "18002001",
+      "createdAt": "2024-03-01",
+      "updatedAt": "2024-03-24",
+      "tags": [
+        "signage",
+        "neon",
+        "shop"
+      ],
+      "dimensions": {
+        "width": 800,
+        "height": 400
+      },
+      "style": "neon",
+      "location": "shop_front",
+      "illuminated": true,
+      "customizable": true
+    },
+    {
+      "id": "sg2",
+      "name": "LED Wall Display",
+      "description": "High-resolution LED wall display for dynamic content",
+      "assetType": "signage",
+      "robloxAssetId": "18002002",
+      "createdAt": "2024-03-01",
+      "updatedAt": "2024-03-24",
+      "tags": [
+        "signage",
+        "LED",
+        "wall"
+      ],
+      "dimensions": {
+        "width": 3840,
+        "height": 2160
+      },
+      "style": "digital",
+      "location": "interior_wall",
+      "illuminated": true,
+      "supportsAnimation": true,
+      "resolution": "4K"
+    },
+    {
+      "id": "sg3",
+      "name": "Holographic Display Sign",
+      "description": "Futuristic holographic display for special promotions",
+      "assetType": "signage",
+      "robloxAssetId": "18002003",
+      "createdAt": "2024-03-01",
+      "updatedAt": "2024-03-24",
+      "tags": [
+        "signage",
+        "holographic",
+        "special"
+      ],
+      "dimensions": {
+        "width": 1000,
+        "height": 1000
+      },
+      "style": "holographic",
+      "location": "floating",
+      "illuminated": true,
+      "interactable": true,
+      "special_effects": ["float", "rotate", "pulse"]
+    },
+    {
+      "id": "sg4",
+      "name": "Wayfinding Signage",
+      "description": "Interactive wayfinding signage for navigation",
+      "assetType": "signage",
+      "robloxAssetId": "18002004",
+      "createdAt": "2024-03-01",
+      "updatedAt": "2024-03-24",
+      "tags": [
+        "signage",
+        "wayfinding",
+        "interactive"
+      ],
+      "dimensions": {
+        "width": 600,
+        "height": 1200
+      },
+      "style": "modern",
+      "location": "corridor",
+      "illuminated": true,
+      "interactable": true,
+      "features": ["touch_screen", "map_view", "directions"]
     }
   ]
 }

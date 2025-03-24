@@ -2,16 +2,14 @@ import { NextResponse } from 'next/server';
 import { promises as fs } from 'fs';
 import path from 'path';
 
+const DATA_FILE = path.join(process.cwd(), 'data', 'assets.json');
+
 export async function GET() {
   try {
-    // Read the assets.json file
-    const jsonPath = path.join(process.cwd(), 'data', 'assets.json');
-    const fileContents = await fs.readFile(jsonPath, 'utf8');
-    const data = JSON.parse(fileContents);
-
-    return NextResponse.json(data);
+    const data = await fs.readFile(DATA_FILE, 'utf-8');
+    return NextResponse.json(JSON.parse(data));
   } catch (error) {
-    console.error('Error reading assets:', error);
+    console.error('Error loading assets:', error);
     return NextResponse.json(
       { error: 'Failed to load assets' },
       { status: 500 }

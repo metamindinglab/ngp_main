@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "lastUpdated": "2025-03-22T17:58:27.741Z",
+  "lastUpdated": "2025-03-24T07:10:04.129Z",
   "games": [
     {
       "id": "game_001",
@@ -187,7 +187,7 @@
       }
     },
     {
-      "id": "",
+      "id": "game_005",
       "name": "Escape to Freedom [FULL GAME!]",
       "robloxLink": "https://www.roblox.com/games/13796067174",
       "genre": "All",
@@ -200,7 +200,7 @@
       },
       "dates": {
         "created": "2023-06-19T03:48:29.263Z",
-        "lastUpdated": "2025-03-22T06:57:11.9624804Z",
+        "lastUpdated": "2025-03-24T07:10:04.129Z",
         "mgnJoined": "2025-03-22T17:56:38.521Z",
         "lastRobloxSync": "2025-03-22T17:56:38.521Z"
       },
@@ -215,7 +215,7 @@
         "status": "unverified",
         "apiKey": "5o02SKlLRUmKXr4cVQL3rjSDKkNKsxK5qnab2pPWHAHv0r27ZXlKaGJHY2lPaUpTVXpJMU5pSXNJbXRwWkNJNkluTnBaeTB5TURJeExUQTNMVEV6VkRFNE9qVXhPalE1V2lJc0luUjVjQ0k2SWtwWFZDSjkuZXlKaVlYTmxRWEJwUzJWNUlqb2lOVzh3TWxOTGJFeFNWVzFMV0hJMFkxWlJURE55YWxORVMydE9TM040U3pWeGJtRmlNbkJRVjBoQlNIWXdjakkzSWl3aWIzZHVaWEpKWkNJNklqTXlOVEk0TWpjeUlpd2lZWFZrSWpvaVVtOWliRzk0U1c1MFpYSnVZV3dpTENKcGMzTWlPaUpEYkc5MVpFRjFkR2hsYm5ScFkyRjBhVzl1VTJWeWRtbGpaU0lzSW1WNGNDSTZNVGMwTWpZeU9ERXpOaXdpYVdGMElqb3hOelF5TmpJME5UTTJMQ0p1WW1ZaU9qRTNOREkyTWpRMU16WjkuTkV6TW5TcHVkTlRNWC1sMEdlY01uNnpiZFhaSFg2OGV1Y1N2ZG1kZjRFSGZ5THFsRkNHX0Y2VWpYQkJJWHNkY1dIc3BuRjRkcFVTZk45ZjM3a0xUejQtdFFVRWduZjhhMFlZdzFiSW56VnNIelNpcm83V1NwSXBBc25VM1g0RGFDR24yTUstdklZZUduSk5Kdmdlekxvc1BQSzZjZl8ybU02RlBTYkFBdmVmN3ZzbU9BdjRZbWpFMk5PQ2hORFVhaG1nS1l6cFFaRkQ1dXlVSUxiR0ZfQnFqS01jWVpuYzJkLXNwUXBnWDh2Wk9JRG1ZN2VEVjJ3NWJnSVJwUGxPQTlsR3MxSnN6VzZoR0VoLUFndVBsRW9LY0FYTEFPZC13ajVHeG9CcENwV0tfU01fVVNtbnpfeXlFX0Z3ZnlCc2E0NVNZS2x4azVrT1hZRVpfYzdxRFJ3"
       },
-      "thumbnail": "",
+      "thumbnail": "/media/game_005/1742794313661-ETF-V3.webp",
       "robloxInfo": {
         "placeId": 13796067174,
         "universeId": 4785787141,
@@ -233,7 +233,56 @@
         },
         "servers": [],
         "media": {
-          "images": [],
+          "images": [
+            {
+              "id": "image_1742794313661",
+              "robloxId": null,
+              "type": "Image",
+              "approved": true,
+              "title": "ETF-V3.webp",
+              "localPath": "/media/game_005/1742794313661-ETF-V3.webp",
+              "thumbnailUrl": "/media/game_005/1742794313661-ETF-V3.webp",
+              "width": 768,
+              "height": 432,
+              "uploadedAt": "2025-03-24T05:31:53.662Z"
+            },
+            {
+              "id": "image_1742794313661",
+              "robloxId": null,
+              "type": "Image",
+              "approved": true,
+              "title": "ETF-V3.webp",
+              "localPath": "/media/game_005/1742794313661-ETF-V3.webp",
+              "thumbnailUrl": "/media/game_005/1742794313661-ETF-V3.webp",
+              "width": 768,
+              "height": 432,
+              "uploadedAt": "2025-03-24T05:31:53.662Z"
+            },
+            {
+              "id": "image_1742794313862",
+              "robloxId": null,
+              "type": "Image",
+              "approved": true,
+              "title": "ETF-v2.webp",
+              "localPath": "/media/game_005/1742794313862-ETF-v2.webp",
+              "thumbnailUrl": "/media/game_005/1742794313862-ETF-v2.webp",
+              "width": 768,
+              "height": 432,
+              "uploadedAt": "2025-03-24T05:31:53.862Z"
+            },
+            {
+              "id": "image_1742794313862",
+              "robloxId": null,
+              "type": "Image",
+              "approved": true,
+              "title": "ETF-v2.webp",
+              "localPath": "/media/game_005/1742794313862-ETF-v2.webp",
+              "thumbnailUrl": "/media/game_005/1742794313862-ETF-v2.webp",
+              "width": 768,
+              "height": 432,
+              "uploadedAt": "2025-03-24T05:31:53.862Z"
+            }
+          ],
           "videos": []
         },
         "gameSettings": {
