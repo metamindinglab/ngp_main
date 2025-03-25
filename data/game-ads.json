@@ -43,6 +43,25 @@
           "robloxAssetId": "12345677"
         }
       ]
+    },
+    {
+      "id": "ad_1742883681966",
+      "name": "Sign board",
+      "templateType": "multimedia_display",
+      "createdAt": "2025-03-25T06:21:22.295Z",
+      "updatedAt": "2025-03-25T06:21:22.295Z",
+      "assets": [
+        {
+          "assetType": "multi_display",
+          "assetId": "s3",
+          "robloxAssetId": "13158731202"
+        },
+        {
+          "assetType": "audio",
+          "assetId": "aud1",
+          "robloxAssetId": "12345677"
+        }
+      ]
     }
   ]
 }

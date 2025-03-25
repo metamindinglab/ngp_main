@@ -1,0 +1,159 @@
+{
+  "version": "1.0",
+  "lastUpdated": "2024-03-20T00:00:00Z",
+  "performanceData": [
+    {
+      "id": "perf_001",
+      "gameAdId": "ad_1742820645812",
+      "gameId": "game_001",
+      "playlistId": "playlist_1742835474241",
+      "date": "2024-03-20",
+      "metrics": {
+        "totalImpressions": 15000,
+        "uniqueImpressions": 12000,
+        "totalEngagements": 4500,
+        "uniqueEngagements": 3800,
+        "averageEngagementDuration": 45,
+        "engagementRate": 30,
+        "completionRate": 85,
+        "conversionRate": 31.67
+      },
+      "demographics": {
+        "gender": {
+          "male": 55,
+          "female": 40,
+          "other": 3,
+          "unknown": 2
+        },
+        "ageGroup": {
+          "under13": 65,
+          "over13": 30,
+          "unknown": 5
+        },
+        "geographicRegion": {
+          "North America": 40,
+          "Europe": 25,
+          "Asia": 20,
+          "South America": 10,
+          "Oceania": 5
+        },
+        "language": {
+          "English": 45,
+          "Spanish": 15,
+          "French": 10,
+          "German": 8,
+          "Portuguese": 7,
+          "Other": 15
+        },
+        "deviceType": {
+          "desktop": 40,
+          "mobile": 35,
+          "tablet": 15,
+          "console": 8,
+          "unknown": 2
+        },
+        "platform": {
+          "windows": 35,
+          "mac": 15,
+          "ios": 20,
+          "android": 15,
+          "xbox": 10,
+          "unknown": 5
+        }
+      },
+      "engagements": [
+        {
+          "timestamp": "2024-03-20T10:15:30Z",
+          "duration": 60,
+          "interactionType": "view",
+          "interactionDetails": {
+            "timeSpent": 60
+          }
+        },
+        {
+          "timestamp": "2024-03-20T10:16:00Z",
+          "duration": 120,
+          "interactionType": "interact",
+          "interactionDetails": {
+            "buttonClicked": "shop_button",
+            "timeSpent": 120,
+            "completionStatus": "completed"
+          }
+        }
+      ],
+      "playerDetails": {
+        "totalPlayers": 15000,
+        "uniquePlayers": 12000,
+        "returningPlayers": 8000,
+        "newPlayers": 4000
+      },
+      "timeDistribution": {
+        "hourOfDay": {
+          "0": 500,
+          "1": 300,
+          "2": 200,
+          "3": 150,
+          "4": 100,
+          "5": 150,
+          "6": 300,
+          "7": 600,
+          "8": 1000,
+          "9": 1500,
+          "10": 2000,
+          "11": 2500,
+          "12": 3000,
+          "13": 2800,
+          "14": 2500,
+          "15": 2200,
+          "16": 2000,
+          "17": 1800,
+          "18": 1600,
+          "19": 1400,
+          "20": 1200,
+          "21": 1000,
+          "22": 800,
+          "23": 600
+        },
+        "dayOfWeek": {
+          "0": 2500,
+          "1": 2200,
+          "2": 2000,
+          "3": 1800,
+          "4": 1600,
+          "5": 3000,
+          "6": 2800
+        }
+      },
+      "performanceTrends": {
+        "daily": [
+          {
+            "date": "2024-03-14",
+            "impressions": 14000,
+            "engagements": 4200,
+            "engagementRate": 30
+          },
+          {
+            "date": "2024-03-15",
+            "impressions": 14500,
+            "engagements": 4350,
+            "engagementRate": 30
+          },
+          {
+            "date": "2024-03-16",
+            "impressions": 15000,
+            "engagements": 4500,
+            "engagementRate": 30
+          }
+        ],
+        "weekly": [
+          {
+            "weekStart": "2024-03-14",
+            "impressions": 43500,
+            "engagements": 13050,
+            "engagementRate": 30
+          }
+        ]
+      }
+    }
+  ]
+} 

@@ -1,5 +1,4 @@
 import { ReactNode } from 'react'
-import NavBar from '@/components/layout/nav-bar';
 
 export const metadata = {
   title: 'Next.js',
@@ -13,8 +12,7 @@ interface DashboardLayoutProps {
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
     <div className="min-h-screen bg-background">
-      <NavBar />
-      <main className="container mx-auto py-6">
+      <main>
         {children}
       </main>
     </div>

@@ -6,7 +6,7 @@
       "description": "",
       "schedules": [
         {
-          "id": "schedule_1742835474241_0",
+          "id": "schedule_1742883863754_0",
           "gameAdId": "ad_1742820645812",
           "startDate": "2025-03-24T16:56:22.419Z",
           "duration": 7,
@@ -15,32 +15,44 @@
       ],
       "deployments": [
         {
-          "id": "deployment_1742835474241_0_0",
+          "id": "deployment_1742883863754_0_0",
           "gameId": "game_001",
-          "scheduleId": "schedule_1742835474241_0",
+          "scheduleId": "schedule_1742883863754_0",
           "deploymentStatus": "pending"
         },
         {
-          "id": "deployment_1742835474241_0_1",
+          "id": "deployment_1742883863754_0_1",
           "gameId": "game_001",
-          "scheduleId": "schedule_1742835474241_0",
+          "scheduleId": "schedule_1742883863754_0",
           "deploymentStatus": "pending"
         },
         {
-          "id": "deployment_1742835474241_0_2",
+          "id": "deployment_1742883863754_0_2",
           "gameId": "game_005",
-          "scheduleId": "schedule_1742835474241_0",
+          "scheduleId": "schedule_1742883863754_0",
           "deploymentStatus": "pending"
         },
         {
-          "id": "deployment_1742835474241_0_3",
+          "id": "deployment_1742883863754_0_3",
           "gameId": "game_005",
-          "scheduleId": "schedule_1742835474241_0",
+          "scheduleId": "schedule_1742883863754_0",
+          "deploymentStatus": "pending"
+        },
+        {
+          "id": "deployment_1742883863754_0_4",
+          "gameId": "game_003",
+          "scheduleId": "schedule_1742883863754_0",
+          "deploymentStatus": "pending"
+        },
+        {
+          "id": "deployment_1742883863754_0_5",
+          "gameId": "game_003",
+          "scheduleId": "schedule_1742883863754_0",
           "deploymentStatus": "pending"
         }
       ],
       "createdAt": "2025-03-24T16:57:54.241Z",
-      "updatedAt": "2025-03-24T16:57:54.241Z",
+      "updatedAt": "2025-03-25T06:24:23.754Z",
       "status": "active"
     }
   ]

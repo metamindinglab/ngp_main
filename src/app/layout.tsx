@@ -6,7 +6,10 @@ const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'New Gen Pulse',
-  description: 'Asset Management System',
+  description: 'Next Generation Game Asset Management Platform',
+  icons: {
+    icon: '/favicon.ico'
+  }
 };
 
 export default function RootLayout({

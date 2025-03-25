@@ -131,6 +131,12 @@ export function GameAdsManager() {
                   Edit
                 </Button>
                 <Button
+                  variant="outline"
+                  onClick={() => window.location.href = `/dashboard/game-ads/${ad.id}/performance`}
+                >
+                  Performance
+                </Button>
+                <Button
                   variant="destructive"
                   onClick={() => handleDeleteAd(ad.id)}
                 >

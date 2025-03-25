@@ -73,4 +73,24 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+.perspective {
+  perspective: 1000px;
+}
+
+.group:hover .group-hover\:rotate-2 {
+  transform: rotateY(2deg) rotateX(2deg);
+}
+
+.group:hover .group-hover\:-rotate-2 {
+  transform: rotateY(-2deg) rotateX(-2deg);
+}
+
+.group:hover .group-hover\:rotate-12 {
+  transform: rotate(12deg);
+}
+
+.group:hover .group-hover\:-rotate-12 {
+  transform: rotate(-12deg);
 } 
