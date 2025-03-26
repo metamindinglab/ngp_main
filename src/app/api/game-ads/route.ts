@@ -10,21 +10,34 @@ async function initDataFile() {
   try {
     await fs.access(DATA_FILE)
   } catch {
+    // Create data directory if it doesn't exist
     await fs.mkdir(path.dirname(DATA_FILE), { recursive: true })
-    await fs.writeFile(DATA_FILE, JSON.stringify({ gameAds: [] }))
+    // Create initial data file with empty game ads array
+    await fs.writeFile(DATA_FILE, JSON.stringify({ gameAds: [] }, null, 2))
   }
 }
 
 // Load game ads from file
 async function loadGameAds(): Promise<GameAd[]> {
-  await initDataFile()
-  const data = await fs.readFile(DATA_FILE, 'utf-8')
-  return JSON.parse(data).gameAds
+  try {
+    await initDataFile()
+    const data = await fs.readFile(DATA_FILE, 'utf-8')
+    const parsed = JSON.parse(data)
+    return parsed.gameAds || []
+  } catch (error) {
+    console.error('Error loading game ads:', error)
+    return []
+  }
 }
 
 // Save game ads to file
 async function saveGameAds(gameAds: GameAd[]) {
-  await fs.writeFile(DATA_FILE, JSON.stringify({ gameAds }, null, 2))
+  try {
+    await fs.writeFile(DATA_FILE, JSON.stringify({ gameAds }, null, 2))
+  } catch (error) {
+    console.error('Error saving game ads:', error)
+    throw new Error('Failed to save game ads')
+  }
 }
 
 export async function GET() {
@@ -32,7 +45,7 @@ export async function GET() {
     const gameAds = await loadGameAds()
     return NextResponse.json({ gameAds })
   } catch (error) {
-    console.error('Error loading game ads:', error)
+    console.error('Error in GET /api/game-ads:', error)
     return NextResponse.json(
       { error: 'Failed to load game ads' },
       { status: 500 }
@@ -77,7 +90,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json(gameAd)
   } catch (error) {
-    console.error('Error creating game ad:', error)
+    console.error('Error in POST /api/game-ads:', error)
     return NextResponse.json(
       { error: 'Failed to create game ad' },
       { status: 500 }

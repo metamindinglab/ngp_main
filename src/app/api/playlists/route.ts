@@ -1,99 +1,161 @@
-import { NextResponse } from 'next/server'
-import { promises as fs } from 'fs'
-import path from 'path'
-import { Playlist, PlaylistFormData } from '@/types/playlist'
+import { NextRequest, NextResponse } from 'next/server'
+import { readFile, writeFile, mkdir } from 'fs/promises'
+import { join } from 'path'
 
-const DATA_FILE = path.join(process.cwd(), 'data', 'playlists.json')
+interface Playlist {
+  id: string
+  name: string
+  description: string
+  games: string[]
+  createdAt: string
+  updatedAt: string
+}
+
+interface PlaylistsDatabase {
+  version: string
+  lastUpdated: string
+  playlists: Playlist[]
+}
+
+const playlistsPath = join(process.cwd(), 'data/playlists.json')
 
 // Initialize data file if it doesn't exist
 async function initDataFile() {
   try {
-    await fs.access(DATA_FILE)
+    await readFile(playlistsPath, 'utf8')
   } catch {
-    await fs.mkdir(path.dirname(DATA_FILE), { recursive: true })
-    await fs.writeFile(DATA_FILE, JSON.stringify({ playlists: [] }))
+    // Create data directory if it doesn't exist
+    await mkdir(join(process.cwd(), 'data'), { recursive: true })
+    // Create initial data file
+    const initialData: PlaylistsDatabase = {
+      version: '1.0',
+      lastUpdated: new Date().toISOString(),
+      playlists: []
+    }
+    await writeFile(playlistsPath, JSON.stringify(initialData, null, 2))
   }
-}
-
-// Load playlists from file
-async function loadPlaylists(): Promise<Playlist[]> {
-  await initDataFile()
-  const data = await fs.readFile(DATA_FILE, 'utf-8')
-  return JSON.parse(data).playlists
-}
-
-// Save playlists to file
-async function savePlaylists(playlists: Playlist[]) {
-  await fs.writeFile(DATA_FILE, JSON.stringify({ playlists }, null, 2))
 }
 
 export async function GET() {
   try {
-    const playlists = await loadPlaylists()
-    return NextResponse.json({ playlists })
+    await initDataFile()
+    const content = await readFile(playlistsPath, 'utf8')
+    const data: PlaylistsDatabase = JSON.parse(content)
+    return NextResponse.json({ playlists: data.playlists })
   } catch (error) {
-    console.error('Error loading playlists:', error)
+    console.error('Error reading playlists:', error)
     return NextResponse.json(
-      { error: 'Failed to load playlists' },
+      { error: 'Failed to read playlists' },
       { status: 500 }
     )
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
-    const formData: PlaylistFormData = await request.json()
+    await initDataFile()
+    const playlist = await request.json()
+    const content = await readFile(playlistsPath, 'utf8')
+    const data: PlaylistsDatabase = JSON.parse(content)
     
-    // Validate required fields
-    if (!formData.name) {
-      return NextResponse.json(
-        { error: 'Missing required fields' },
-        { status: 400 }
-      )
-    }
-
-    // Load existing playlists
-    const playlists = await loadPlaylists()
-
-    // Create new playlist
+    // Generate next playlist ID
+    const existingIds = data.playlists.map((playlist: Playlist): number => parseInt(playlist.id.replace('playlist_', '')) || 0)
+    const nextId = Math.max(...existingIds, 0) + 1
+    const playlistId = `playlist_${nextId.toString().padStart(3, '0')}`
+    
     const newPlaylist: Playlist = {
-      id: `playlist_${Date.now()}`,
-      name: formData.name,
-      description: formData.description,
-      schedules: formData.schedules.map((schedule, index) => ({
-        id: `schedule_${Date.now()}_${index}`,
-        gameAdId: schedule.gameAdId,
-        startDate: schedule.startDate,
-        duration: schedule.duration,
-        status: 'scheduled'
-      })),
-      deployments: formData.schedules.flatMap((schedule, scheduleIndex) => 
-        schedule.selectedGames.map((gameId, gameIndex) => ({
-          id: `deployment_${Date.now()}_${scheduleIndex}_${gameIndex}`,
-          gameId,
-          scheduleId: `schedule_${Date.now()}_${scheduleIndex}`,
-          deploymentStatus: 'pending' as const,
-          deployedAt: undefined,
-          removedAt: undefined,
-          errorMessage: undefined
-        }))
-      ),
+      id: playlistId,
+      name: playlist.name,
+      description: playlist.description,
+      games: playlist.games || [],
       createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      status: 'active'
+      updatedAt: new Date().toISOString()
     }
 
-    // Add the new playlist
-    playlists.push(newPlaylist)
-
-    // Save to file
-    await savePlaylists(playlists)
-
-    return NextResponse.json(newPlaylist)
+    data.playlists.push(newPlaylist)
+    data.lastUpdated = new Date().toISOString()
+    
+    await writeFile(playlistsPath, JSON.stringify(data, null, 2))
+    
+    return NextResponse.json({ success: true, playlist: newPlaylist })
   } catch (error) {
     console.error('Error creating playlist:', error)
     return NextResponse.json(
       { error: 'Failed to create playlist' },
+      { status: 500 }
+    )
+  }
+}
+
+export async function PUT(request: NextRequest) {
+  try {
+    await initDataFile()
+    const { id, ...updates } = await request.json()
+    const content = await readFile(playlistsPath, 'utf8')
+    const data: PlaylistsDatabase = JSON.parse(content)
+    
+    const playlistIndex = data.playlists.findIndex((playlist: Playlist): boolean => playlist.id === id)
+    if (playlistIndex === -1) {
+      return NextResponse.json(
+        { error: 'Playlist not found' },
+        { status: 404 }
+      )
+    }
+    
+    data.playlists[playlistIndex] = {
+      ...data.playlists[playlistIndex],
+      ...updates,
+      id, // Preserve the original ID
+      updatedAt: new Date().toISOString()
+    }
+    data.lastUpdated = new Date().toISOString()
+    
+    await writeFile(playlistsPath, JSON.stringify(data, null, 2))
+    
+    return NextResponse.json({ success: true, playlist: data.playlists[playlistIndex] })
+  } catch (error) {
+    console.error('Error updating playlist:', error)
+    return NextResponse.json(
+      { error: 'Failed to update playlist' },
+      { status: 500 }
+    )
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    await initDataFile()
+    const { searchParams } = new URL(request.url)
+    const id = searchParams.get('id')
+    
+    if (!id) {
+      return NextResponse.json(
+        { error: 'Playlist ID is required' },
+        { status: 400 }
+      )
+    }
+    
+    const content = await readFile(playlistsPath, 'utf8')
+    const data: PlaylistsDatabase = JSON.parse(content)
+    
+    const playlistIndex = data.playlists.findIndex((playlist: Playlist): boolean => playlist.id === id)
+    if (playlistIndex === -1) {
+      return NextResponse.json(
+        { error: 'Playlist not found' },
+        { status: 404 }
+      )
+    }
+    
+    data.playlists.splice(playlistIndex, 1)
+    data.lastUpdated = new Date().toISOString()
+    
+    await writeFile(playlistsPath, JSON.stringify(data, null, 2))
+    
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error('Error deleting playlist:', error)
+    return NextResponse.json(
+      { error: 'Failed to delete playlist' },
       { status: 500 }
     )
   }

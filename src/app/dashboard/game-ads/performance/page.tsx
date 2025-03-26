@@ -1,239 +1,247 @@
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
-import { BarChart3, Calendar, Clock, Users, Gamepad2 } from "lucide-react";
-import { GameAd } from "@/types/gameAd";
-import path from 'path';
-import fs from 'fs/promises';
-import { Badge } from "@/components/ui/badge";
+"use client";
 
-interface Game {
+import React from "react";
+import { useRouter } from "next/navigation";
+import { useToast } from "@/components/ui/use-toast";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
+import Image from 'next/image';
+import { ArrowRight } from 'lucide-react';
+
+// Add color constants
+const COLORS = {
+  primary: '#2563eb',    // Blue
+  secondary: '#16a34a',  // Green
+  accent: '#9333ea',     // Purple
+  muted: '#64748b',      // Slate
+};
+
+interface GameAdPerformanceOverview {
   id: string;
   name: string;
-  genre: string;
+  impressions: number;
+  engagements: number;
+  engagementRate: number;
+  deployedGames: number;
+  startDate: string;
+  duration: number;
 }
 
-interface Deployment {
-  id: string;
-  gameId: string;
-  scheduleId: string;
-  deploymentStatus: string;
-  gameName?: string;
-}
+export default function PerformancePage() {
+  const router = useRouter();
+  const { toast } = useToast();
+  const [performanceData, setPerformanceData] = React.useState<GameAdPerformanceOverview[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
 
-interface ScheduleInfo {
-  schedules: {
-    id: string;
-    gameAdId: string;
-    startDate: string;
-    duration: number;
-    status: string;
-  }[];
-  deployments: Deployment[];
-  playlistName: string;
-}
-
-interface GameAdWithSchedule extends GameAd {
-  scheduleInfo: ScheduleInfo;
-}
-
-interface Playlist {
-  id: string;
-  name: string;
-  schedules: {
-    id: string;
-    gameAdId: string;
-    startDate: string;
-    duration: number;
-    status: string;
-  }[];
-  deployments: Deployment[];
-  status: string;
-}
-
-async function getScheduledGameAds(): Promise<GameAdWithSchedule[]> {
-  try {
-    // Read playlists to get scheduled game ads
-    const playlistsPath = path.join(process.cwd(), 'data', 'playlists.json');
-    const playlistsData = JSON.parse(await fs.readFile(playlistsPath, 'utf-8'));
-    
-    // Read games data to get game names
-    const gamesPath = path.join(process.cwd(), 'data', 'games.json');
-    const gamesData = JSON.parse(await fs.readFile(gamesPath, 'utf-8'));
-    const gameMap = new Map(gamesData.games.map((game: Game) => [game.id, game]));
-    
-    // Get all unique gameAdIds from active playlists
-    const scheduledAdIds = new Set<string>();
-    const scheduledAdsInfo = new Map<string, ScheduleInfo>();
-
-    playlistsData.playlists.forEach((playlist: Playlist) => {
-      if (playlist.status === 'active') {
-        playlist.schedules.forEach(schedule => {
-          scheduledAdIds.add(schedule.gameAdId);
-          scheduledAdsInfo.set(schedule.gameAdId, {
-            schedules: playlist.schedules.filter(s => s.gameAdId === schedule.gameAdId),
-            deployments: playlist.deployments
-              .filter(d => d.scheduleId === schedule.id)
-              .map(deployment => ({
-                ...deployment,
-                gameName: gameMap.get(deployment.gameId)?.name || deployment.gameId
-              })),
-            playlistName: playlist.name
+  React.useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setIsLoading(true);
+        // Fetch playlists to get game ads
+        const playlistsResponse = await fetch('/api/playlists');
+        if (!playlistsResponse.ok) {
+          throw new Error('Failed to fetch playlists');
+        }
+        const playlistsData = await playlistsResponse.json();
+        
+        // Get unique game ad IDs from all playlists
+        const gameAdIds = new Set<string>();
+        playlistsData.playlists.forEach((playlist: any) => {
+          playlist.schedules.forEach((schedule: any) => {
+            if (schedule.gameAdId) {
+              gameAdIds.add(schedule.gameAdId);
+            }
           });
         });
-      }
-    });
 
-    // Fetch game ads details
-    const gameAdsPath = path.join(process.cwd(), 'data', 'game-ads.json');
-    const gameAdsData = JSON.parse(await fs.readFile(gameAdsPath, 'utf-8'));
-    
-    // Filter and enrich game ads with schedule info
-    const scheduledAds = gameAdsData.gameAds
-      .filter((ad: GameAd) => scheduledAdIds.has(ad.id))
-      .map((ad: GameAd): GameAdWithSchedule => {
-        const info = scheduledAdsInfo.get(ad.id);
-        if (!info) {
-          throw new Error(`No schedule info found for game ad ${ad.id}`);
+        // Fetch game ads details
+        const gameAdsResponse = await fetch('/api/game-ads');
+        if (!gameAdsResponse.ok) {
+          throw new Error('Failed to fetch game ads');
         }
-        return {
-          ...ad,
-          scheduleInfo: info
-        };
-      });
+        const gameAdsData = await gameAdsResponse.json();
 
-    return scheduledAds;
-  } catch (error) {
-    console.error('Error fetching scheduled game ads:', error);
-    return [];
-  }
-}
+        // Fetch performance data
+        const performanceResponse = await fetch('/api/game-ad-performance');
+        if (!performanceResponse.ok) {
+          throw new Error('Failed to fetch performance data');
+        }
+        const performanceData = await performanceResponse.json();
 
-export default async function GameAdsPerformancePage() {
-  const scheduledAds = await getScheduledGameAds();
+        // Combine data
+        const overview = Array.from(gameAdIds).map(gameAdId => {
+          const gameAd = gameAdsData.gameAds.find((ad: any) => ad.id === gameAdId);
+          const playlist = playlistsData.playlists.find((p: any) => 
+            p.schedules.some((s: any) => s.gameAdId === gameAdId)
+          );
+          const schedule = playlist?.schedules.find((s: any) => s.gameAdId === gameAdId);
+          const deployments = playlist?.deployments.filter((d: any) => d.scheduleId === schedule?.id) || [];
+          const performance = performanceData.performanceData?.find((p: any) => p.gameAdId === gameAdId);
 
-  if (!scheduledAds?.length) {
+          return {
+            id: gameAdId,
+            name: gameAd?.name || 'Unknown Ad',
+            impressions: performance?.metrics?.totalImpressions || 0,
+            engagements: performance?.metrics?.totalEngagements || 0,
+            engagementRate: performance?.metrics?.engagementRate || 0,
+            deployedGames: deployments.length,
+            startDate: schedule?.startDate || '',
+            duration: schedule?.duration || 0
+          };
+        });
+
+        setPerformanceData(overview);
+      } catch (err) {
+        console.error('Error fetching data:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load performance data');
+        toast({
+          title: 'Error',
+          content: 'Failed to load performance data. Please try again.',
+          variant: 'destructive',
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [toast]);
+
+  if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center h-[60vh] space-y-4">
-        <h1 className="text-2xl font-bold text-muted-foreground">No Scheduled Game Ads</h1>
-        <p className="text-muted-foreground">Schedule some game ads in playlists to track their performance.</p>
-        <Link href="/dashboard/playlists">
-          <Button>Go to Playlist Manager</Button>
+      <div className="container mx-auto p-6">
+        <Link href="/" className="self-start transform hover:scale-105 transition-transform block mb-6">
+          <Image
+            src="/MML-logo.png"
+            alt="MML Logo"
+            width={126}
+            height={42}
+            className="object-contain"
+            priority
+            style={{ width: '126px', height: '42px' }}
+          />
         </Link>
+        <div className="flex items-center justify-center h-[60vh]">
+          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-gray-900"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto p-6">
+        <Link href="/" className="self-start transform hover:scale-105 transition-transform block mb-6">
+          <Image
+            src="/MML-logo.png"
+            alt="MML Logo"
+            width={126}
+            height={42}
+            className="object-contain"
+            priority
+            style={{ width: '126px', height: '42px' }}
+          />
+        </Link>
+        <div className="flex flex-col items-center justify-center h-[60vh]">
+          <p className="text-red-500 mb-4">{error}</p>
+          <Button onClick={() => router.refresh()}>Try Again</Button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Scheduled Game Ads Performance</h1>
-        <div className="space-x-4">
-          <Link href="/dashboard/playlists">
-            <Button variant="outline">Playlist Manager</Button>
-          </Link>
-          <Link href="/dashboard/game-ads">
-            <Button variant="outline">Game Ads Manager</Button>
-          </Link>
-        </div>
-      </div>
+    <div className="container mx-auto p-6">
+      <Link href="/" className="self-start transform hover:scale-105 transition-transform block mb-6">
+        <Image
+          src="/MML-logo.png"
+          alt="MML Logo"
+          width={126}
+          height={42}
+          className="object-contain"
+          priority
+          style={{ width: '126px', height: '42px' }}
+        />
+      </Link>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-        {scheduledAds.map((ad: GameAdWithSchedule) => (
-          <Card key={ad.id} className="overflow-hidden border-2 hover:border-primary/50 transition-all">
-            <CardHeader className="bg-gradient-to-r from-primary/5 to-primary/10 pb-4">
-              <div className="flex items-start justify-between">
-                <div className="space-y-1">
-                  <CardTitle className="text-xl font-bold text-primary">
-                    {ad.name}
-                  </CardTitle>
-                  <CardDescription className="flex items-center gap-2">
-                    <span className="px-2 py-1 rounded-md bg-secondary text-secondary-foreground text-xs font-medium">
-                      {ad.templateType}
+      <div className="space-y-6">
+        <h1 className="text-3xl font-bold text-primary">Game Ads Performance</h1>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {performanceData.map((ad) => (
+            <Card 
+              key={ad.id} 
+              className="hover:bg-accent/5 transition-all duration-300 border-l-4 transform hover:-translate-y-1 hover:shadow-lg"
+              style={{ borderLeftColor: COLORS.primary }}
+            >
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg font-semibold text-primary">{ad.name}</CardTitle>
+                <CardDescription className="text-sm space-y-1">
+                  <div className="flex justify-between items-center">
+                    <span>Deployed in:</span>
+                    <span className="font-medium text-foreground">{ad.deployedGames} games</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span>Start Date:</span>
+                    <span className="font-medium text-foreground">
+                      {new Date(ad.startDate).toLocaleDateString()}
                     </span>
-                  </CardDescription>
-                </div>
-                <Link href={`/dashboard/game-ads/${ad.id}/performance`}>
-                  <Button variant="secondary" size="icon" className="rounded-full">
-                    <BarChart3 className="h-4 w-4" />
-                  </Button>
-                </Link>
-              </div>
-            </CardHeader>
-            
-            <CardContent className="p-6 space-y-6">
-              {/* Playlist Section */}
-              <div className="space-y-3">
-                <div className="flex items-center gap-2 text-sm font-medium text-primary">
-                  <Users className="h-4 w-4" />
-                  <span>Playlist</span>
-                </div>
-                <div className="pl-6 py-2 border-l-2 border-primary/20">
-                  <span className="text-base font-medium">{ad.scheduleInfo.playlistName}</span>
-                </div>
-              </div>
-
-              {/* Schedule Section */}
-              <div className="space-y-3">
-                <div className="flex items-center gap-2 text-sm font-medium text-blue-600">
-                  <Calendar className="h-4 w-4" />
-                  <span>Schedule</span>
-                </div>
-                <div className="pl-6 space-y-2 border-l-2 border-blue-200">
-                  {ad.scheduleInfo.schedules.map((schedule) => (
-                    <div key={schedule.id} className="flex items-center gap-3 text-sm">
-                      <Clock className="h-4 w-4 text-blue-500" />
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-medium">
-                          {new Date(schedule.startDate).toLocaleDateString()}
-                        </span>
-                        <Badge variant="outline" className="bg-blue-50">
-                          {schedule.duration} days
-                        </Badge>
-                      </div>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span>Duration:</span>
+                    <span className="font-medium text-foreground">{ad.duration} days</span>
+                  </div>
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center p-2 rounded hover:bg-primary/5 group relative">
+                    <span className="text-sm font-medium text-gray-700">Impressions</span>
+                    <span className="font-semibold text-gray-900">{ad.impressions.toLocaleString()}</span>
+                    <div className="absolute invisible group-hover:visible bg-gray-900 text-white text-xs rounded py-1 px-2 -top-8 right-0 w-48 text-center">
+                      Total number of times the ad was shown
                     </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Games Section */}
-              <div className="space-y-3">
-                <div className="flex items-center gap-2 text-sm font-medium text-green-600">
-                  <Gamepad2 className="h-4 w-4" />
-                  <span>Deployed Games</span>
-                </div>
-                <div className="pl-6 border-l-2 border-green-200">
-                  <div className="flex flex-wrap gap-2">
-                    {Array.from(new Set(ad.scheduleInfo.deployments.map((d: Deployment) => d.gameId)))
-                      .map((gameId: string) => {
-                        const deployment = ad.scheduleInfo.deployments.find((d: Deployment) => d.gameId === gameId);
-                        return (
-                          <Badge 
-                            key={gameId} 
-                            variant="secondary"
-                            className="bg-green-50 hover:bg-green-100 transition-colors py-1 px-3"
-                          >
-                            {deployment?.gameName || gameId}
-                          </Badge>
-                        );
-                      })}
+                  </div>
+                  <div className="flex justify-between items-center p-2 rounded hover:bg-secondary/5 group relative">
+                    <span className="text-sm font-medium text-gray-700">Total Engagements</span>
+                    <span className="font-semibold text-gray-900">{ad.engagements.toLocaleString()}</span>
+                    <div className="absolute invisible group-hover:visible bg-gray-900 text-white text-xs rounded py-1 px-2 -top-8 right-0 w-48 text-center">
+                      Number of times users interacted with the ad
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-center p-2 rounded hover:bg-accent/5 group relative">
+                    <span className="text-sm font-medium text-gray-700">Engagement Rate</span>
+                    <span className="font-semibold text-gray-900">{ad.engagementRate}%</span>
+                    <div className="absolute invisible group-hover:visible bg-gray-900 text-white text-xs rounded py-1 px-2 -top-8 right-0 w-48 text-center">
+                      Percentage of impressions that led to engagements
+                    </div>
                   </div>
                 </div>
-              </div>
+                <Link href={`/dashboard/game-ads/${ad.id}/performance`}>
+                  <Button 
+                    className="w-full bg-primary hover:bg-primary/90 text-white flex items-center justify-center gap-2 mt-2 transition-all duration-300 hover:scale-[1.02]"
+                  >
+                    View Details
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
 
-              <Link 
-                href={`/dashboard/game-ads/${ad.id}/performance`}
-                className="block w-full mt-4"
-              >
-                <Button 
-                  className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-primary-foreground"
-                >
-                  View Performance
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
-        ))}
+        {performanceData.length === 0 && (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground mb-4">No game ads found in playlists</p>
+            <Link href="/dashboard/game-ads">
+              <Button className="bg-primary hover:bg-primary/90 text-white">
+                Create Game Ad
+              </Button>
+            </Link>
+          </div>
+        )}
       </div>
     </div>
   );

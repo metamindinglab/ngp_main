@@ -1,5 +1,6 @@
 'use client'
 
+import React from 'react'
 import { useState, useEffect } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -14,6 +15,17 @@ import {
 import { Playlist } from '@/types/playlist'
 import { PlaylistDialog } from './playlist-dialog'
 import { formatDistanceToNow } from 'date-fns'
+import Link from 'next/link'
+import Image from 'next/image'
+
+// Add color constants
+const COLORS = {
+  primary: '#2563eb',    // Blue
+  secondary: '#16a34a',  // Green
+  accent: '#9333ea',     // Purple
+  destructive: '#dc2626', // Red
+  muted: '#64748b',      // Slate
+};
 
 export function PlaylistManager() {
   const [playlists, setPlaylists] = useState<Playlist[]>([])
@@ -49,11 +61,11 @@ export function PlaylistManager() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'active':
-        return 'text-green-600 bg-green-100'
+        return 'text-green-600 bg-green-100 border border-green-200'
       case 'inactive':
-        return 'text-gray-600 bg-gray-100'
+        return 'text-gray-600 bg-gray-100 border border-gray-200'
       default:
-        return 'text-gray-600 bg-gray-100'
+        return 'text-gray-600 bg-gray-100 border border-gray-200'
     }
   }
 
@@ -63,110 +75,145 @@ export function PlaylistManager() {
 
   return (
     <div className="container mx-auto p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Playlist Manager</h1>
-        <div className="flex gap-4">
-          <Input
-            placeholder="Search playlists..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-64"
+      <div className="flex flex-col space-y-6">
+        <Link href="/" className="self-start transform hover:scale-105 transition-transform">
+          <Image
+            src="/MML-logo.png"
+            alt="MML Logo"
+            width={126}
+            height={42}
+            className="object-contain"
+            priority
+            style={{ width: '126px', height: '42px' }}
           />
-          <Button
-            onClick={() => {
-              setSelectedPlaylist(null)
-              setIsDialogOpen(true)
-            }}
-          >
-            Create New Playlist
-          </Button>
+        </Link>
+
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold" style={{ color: COLORS.primary }}>Playlist Manager</h1>
+          <div className="flex gap-4">
+            <Input
+              placeholder="Search playlists..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-64 border-gray-200 focus:border-primary focus:ring-primary transition-colors"
+            />
+            <Button
+              onClick={() => {
+                setSelectedPlaylist(null)
+                setIsDialogOpen(true)
+              }}
+              className="bg-primary hover:bg-primary/90 text-white transition-all duration-300 hover:scale-[1.02]"
+            >
+              Create New Playlist
+            </Button>
+          </div>
         </div>
-      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredPlaylists.map(playlist => (
-          <Card key={playlist.id}>
-            <CardHeader>
-              <div className="flex justify-between items-start">
-                <div>
-                  <CardTitle>{playlist.name}</CardTitle>
-                  <CardDescription>{playlist.description}</CardDescription>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredPlaylists.map(playlist => (
+            <Card 
+              key={playlist.id}
+              className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border-l-4"
+              style={{ borderLeftColor: playlist.status === 'active' ? COLORS.secondary : COLORS.muted }}
+            >
+              <CardHeader>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <CardTitle className="text-lg font-semibold group-hover:text-primary transition-colors">
+                      {playlist.name}
+                    </CardTitle>
+                    <CardDescription>{playlist.description}</CardDescription>
+                  </div>
+                  <div className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(playlist.status)} transition-all duration-300 group-hover:scale-105`}>
+                    {playlist.status}
+                  </div>
                 </div>
-                <div className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(playlist.status)}`}>
-                  {playlist.status}
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-center justify-between p-2 rounded hover:bg-gray-50 transition-colors">
+                    <span className="text-gray-600 font-medium">Created:</span>
+                    <span className="text-gray-900">{formatDistanceToNow(new Date(playlist.createdAt))} ago</span>
+                  </div>
+                  <div className="flex items-center justify-between p-2 rounded hover:bg-gray-50 transition-colors">
+                    <span className="text-gray-600 font-medium">Last updated:</span>
+                    <span className="text-gray-900">{formatDistanceToNow(new Date(playlist.updatedAt))} ago</span>
+                  </div>
+                  <div className="flex items-center justify-between p-2 rounded hover:bg-gray-50 transition-colors">
+                    <span className="text-gray-600 font-medium">Scheduled ads:</span>
+                    <span className="text-gray-900">{playlist.schedules.length}</span>
+                  </div>
+                  <div className="flex items-center justify-between p-2 rounded hover:bg-gray-50 transition-colors">
+                    <span className="text-gray-600 font-medium">Game deployments:</span>
+                    <span className="text-gray-900">{playlist.deployments.length}</span>
+                  </div>
                 </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2 text-sm text-muted-foreground">
-                <div>Created {formatDistanceToNow(new Date(playlist.createdAt))} ago</div>
-                <div>Last updated {formatDistanceToNow(new Date(playlist.updatedAt))} ago</div>
-                <div>{playlist.schedules.length} scheduled ads</div>
-                <div>{playlist.deployments.length} game deployments</div>
-              </div>
-            </CardContent>
-            <CardFooter className="flex justify-end gap-2">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setSelectedPlaylist(playlist)
-                  setIsDialogOpen(true)
-                }}
-              >
-                Edit
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={() => handleDeletePlaylist(playlist.id)}
-              >
-                Delete
-              </Button>
-            </CardFooter>
-          </Card>
-        ))}
-      </div>
+              </CardContent>
+              <CardFooter className="flex justify-end gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setSelectedPlaylist(playlist)
+                    setIsDialogOpen(true)
+                  }}
+                  className="border-2 border-gray-300 hover:border-primary hover:bg-primary/5 hover:text-primary transition-all duration-300 hover:scale-105"
+                >
+                  Edit
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={() => handleDeletePlaylist(playlist.id)}
+                  className="border-2 border-destructive bg-white text-destructive hover:bg-destructive hover:text-white transition-all duration-300 hover:scale-105"
+                >
+                  Delete
+                </Button>
+              </CardFooter>
+            </Card>
+          ))}
+        </div>
 
-      <PlaylistDialog
-        open={isDialogOpen}
-        onClose={() => {
-          setIsDialogOpen(false)
-          setSelectedPlaylist(null)
-        }}
-        initialData={selectedPlaylist}
-        onSave={async (playlistData) => {
-          try {
-            const method = selectedPlaylist ? 'PUT' : 'POST'
-            const url = selectedPlaylist 
-              ? `/api/playlists/${selectedPlaylist.id}` 
-              : '/api/playlists'
-            
-            const response = await fetch(url, {
-              method,
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(playlistData)
-            })
-
-            if (!response.ok) {
-              throw new Error('Failed to save playlist')
-            }
-
-            const savedPlaylist = await response.json()
-            
-            if (selectedPlaylist) {
-              setPlaylists(playlists => 
-                playlists.map(p => p.id === selectedPlaylist.id ? savedPlaylist : p)
-              )
-            } else {
-              setPlaylists(playlists => [...playlists, savedPlaylist])
-            }
-            
+        <PlaylistDialog
+          open={isDialogOpen}
+          onClose={() => {
             setIsDialogOpen(false)
             setSelectedPlaylist(null)
-          } catch (error) {
-            console.error('Error saving playlist:', error)
-          }
-        }}
-      />
+          }}
+          initialData={selectedPlaylist}
+          onSave={async (playlistData) => {
+            try {
+              const method = selectedPlaylist ? 'PUT' : 'POST'
+              const url = selectedPlaylist 
+                ? `/api/playlists/${selectedPlaylist.id}` 
+                : '/api/playlists'
+              
+              const response = await fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(playlistData)
+              })
+
+              if (!response.ok) {
+                throw new Error('Failed to save playlist')
+              }
+
+              const savedPlaylist = await response.json()
+              
+              if (selectedPlaylist) {
+                setPlaylists(playlists => 
+                  playlists.map(p => p.id === selectedPlaylist.id ? savedPlaylist : p)
+                )
+              } else {
+                setPlaylists(playlists => [...playlists, savedPlaylist])
+              }
+              
+              setIsDialogOpen(false)
+              setSelectedPlaylist(null)
+            } catch (error) {
+              console.error('Error saving playlist:', error)
+            }
+          }}
+        />
+      </div>
     </div>
   )
 } 

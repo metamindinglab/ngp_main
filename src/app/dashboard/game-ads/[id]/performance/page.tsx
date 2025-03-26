@@ -13,6 +13,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import Image from 'next/image';
 
 const RechartsComponent = dynamic(() => import('@/components/charts/performance-chart'), {
   ssr: false,
@@ -25,10 +26,20 @@ const RechartsComponent = dynamic(() => import('@/components/charts/performance-
 
 const DemographicChart = dynamic(() => import('@/components/charts/performance-chart').then(mod => mod.DemographicChart), {
   ssr: false,
+  loading: () => (
+    <div className="flex items-center justify-center h-[300px]">
+      <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-gray-900"></div>
+    </div>
+  ),
 });
 
 const GameComparisonChart = dynamic(() => import('@/components/charts/performance-chart').then(mod => mod.GameComparisonChart), {
   ssr: false,
+  loading: () => (
+    <div className="flex items-center justify-center h-[400px]">
+      <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-gray-900"></div>
+    </div>
+  ),
 });
 
 interface GamePerformance {
@@ -71,9 +82,39 @@ interface PerformanceData {
   gamePerformance?: GamePerformance[];
 }
 
-function MetricCard({ title, value, description }: { title: string; value: string | number; description: string }) {
+// Add color constants
+const CHART_COLORS = {
+  primary: '#2563eb', // Blue
+  secondary: '#16a34a', // Green
+  accent: '#9333ea', // Purple
+  warning: '#f59e0b', // Amber
+  info: '#06b6d4', // Cyan
+  error: '#dc2626', // Red
+};
+
+const DEMOGRAPHIC_COLORS = [
+  '#2563eb', // Blue
+  '#16a34a', // Green
+  '#9333ea', // Purple
+  '#f59e0b', // Amber
+  '#06b6d4', // Cyan
+  '#dc2626', // Red
+  '#8b5cf6', // Violet
+  '#ec4899', // Pink
+];
+
+function MetricCard({ title, value, description, color = CHART_COLORS.primary }: { 
+  title: string; 
+  value: string | number; 
+  description: string;
+  color?: string;
+}) {
   return (
-    <Card>
+    <Card className="relative overflow-hidden">
+      <div 
+        className="absolute top-0 left-0 w-1 h-full" 
+        style={{ backgroundColor: color }}
+      />
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium">
           <div className="flex items-center gap-2">
@@ -81,7 +122,7 @@ function MetricCard({ title, value, description }: { title: string; value: strin
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger>
-                  <Info className="h-4 w-4" />
+                  <Info className="h-4 w-4" style={{ color }} />
                 </TooltipTrigger>
                 <TooltipContent>
                   <p className="max-w-xs">{description}</p>
@@ -92,7 +133,7 @@ function MetricCard({ title, value, description }: { title: string; value: strin
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="text-2xl font-bold">{value}</div>
+        <div className="text-2xl font-bold" style={{ color }}>{value}</div>
       </CardContent>
     </Card>
   );
@@ -116,7 +157,7 @@ export default function GameAdPerformancePage({
           throw new Error('Failed to fetch performance data');
         }
         const data = await response.json();
-        const adPerformance = data.performanceData.find(
+        const adPerformance = data.performanceData?.find(
           (p: PerformanceData) => p.gameAdId === params.id
         );
         
@@ -124,7 +165,31 @@ export default function GameAdPerformancePage({
           throw new Error('No performance data found for this game ad');
         }
         
-        setPerformance(adPerformance);
+        setPerformance({
+          id: adPerformance.id,
+          gameAdId: adPerformance.gameAdId,
+          gameId: adPerformance.gameId,
+          metrics: {
+            totalImpressions: adPerformance.metrics.totalImpressions,
+            uniqueImpressions: adPerformance.metrics.uniqueImpressions,
+            totalEngagements: adPerformance.metrics.totalEngagements,
+            uniqueEngagements: adPerformance.metrics.uniqueEngagements,
+            engagementRate: adPerformance.metrics.engagementRate,
+            completionRate: adPerformance.metrics.completionRate,
+            conversionRate: adPerformance.metrics.conversionRate
+          },
+          demographics: {
+            gender: adPerformance.demographics.gender,
+            ageGroup: adPerformance.demographics.ageGroup,
+            geographicRegion: adPerformance.demographics.geographicRegion,
+            language: adPerformance.demographics.language,
+            deviceType: adPerformance.demographics.deviceType,
+            platform: adPerformance.demographics.platform
+          },
+          performanceTrends: {
+            daily: adPerformance.performanceTrends.daily
+          }
+        });
 
         // Mock game performance data (replace with actual API call in production)
         setGamePerformance([
@@ -162,15 +227,76 @@ export default function GameAdPerformancePage({
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-[60vh]">
-        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-gray-900"></div>
+      <div className="container mx-auto p-6">
+        <Link href="/" className="self-start transform hover:scale-105 transition-transform block mb-6">
+          <Image
+            src="/MML-logo.png"
+            alt="MML Logo"
+            width={126}
+            height={42}
+            className="object-contain"
+            priority
+            style={{ width: '126px', height: '42px' }}
+          />
+        </Link>
+        <div className="flex items-center justify-center h-[60vh]">
+          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-gray-900"></div>
+        </div>
       </div>
     );
   }
 
   if (error || !performance) {
     return (
-      <div className="space-y-4">
+      <div className="container mx-auto p-6">
+        <Link href="/" className="self-start transform hover:scale-105 transition-transform block mb-6">
+          <Image
+            src="/MML-logo.png"
+            alt="MML Logo"
+            width={126}
+            height={42}
+            className="object-contain"
+            priority
+            style={{ width: '126px', height: '42px' }}
+          />
+        </Link>
+        <div className="space-y-4">
+          <div className="flex items-center gap-4">
+            <Link href="/dashboard/game-ads/performance">
+              <Button variant="outline" size="icon">
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+            </Link>
+            <h1 className="text-2xl font-bold">Game Ad Performance</h1>
+          </div>
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center h-[40vh] space-y-4">
+              <p className="text-muted-foreground">{error || 'No performance data available'}</p>
+              <Link href="/dashboard/game-ads">
+                <Button>Back to Game Ads</Button>
+              </Link>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="container mx-auto p-6">
+      <Link href="/" className="self-start transform hover:scale-105 transition-transform block mb-6">
+        <Image
+          src="/MML-logo.png"
+          alt="MML Logo"
+          width={126}
+          height={42}
+          className="object-contain"
+          priority
+          style={{ width: '126px', height: '42px' }}
+        />
+      </Link>
+
+      <div className="space-y-6">
         <div className="flex items-center gap-4">
           <Link href="/dashboard/game-ads/performance">
             <Button variant="outline" size="icon">
@@ -179,127 +305,121 @@ export default function GameAdPerformancePage({
           </Link>
           <h1 className="text-2xl font-bold">Game Ad Performance</h1>
         </div>
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center h-[40vh] space-y-4">
-            <p className="text-muted-foreground">{error || 'No performance data available'}</p>
-            <Link href="/dashboard/game-ads/performance">
-              <Button>Back to Overview</Button>
-            </Link>
-          </CardContent>
-        </Card>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <MetricCard
+            title="Total Impressions"
+            value={performance.metrics.totalImpressions.toLocaleString()}
+            description="Total number of times the ad was shown"
+            color={CHART_COLORS.primary}
+          />
+          <MetricCard
+            title="Engagement Rate"
+            value={`${performance.metrics.engagementRate}%`}
+            description="Percentage of viewers who interacted with the ad"
+            color={CHART_COLORS.secondary}
+          />
+          <MetricCard
+            title="Completion Rate"
+            value={`${performance.metrics.completionRate}%`}
+            description="Percentage of viewers who watched the entire ad"
+            color={CHART_COLORS.accent}
+          />
+          <MetricCard
+            title="Conversion Rate"
+            value={`${performance.metrics.conversionRate}%`}
+            description="Percentage of unique players who took specific actions after seeing the ad (e.g., clicked through to the game, made a purchase, or completed a desired action)"
+            color={CHART_COLORS.warning}
+          />
+        </div>
+
+        <Tabs defaultValue="overview" className="space-y-4">
+          <TabsList className="bg-background border-b">
+            <TabsTrigger 
+              value="overview"
+              className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-primary"
+            >
+              Overview
+            </TabsTrigger>
+            <TabsTrigger 
+              value="demographics"
+              className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-primary"
+            >
+              Demographics
+            </TabsTrigger>
+            <TabsTrigger 
+              value="comparison"
+              className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-primary"
+            >
+              Game Comparison
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="overview">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-primary">Performance Overview</CardTitle>
+                <CardDescription>Daily impressions and engagements</CardDescription>
+              </CardHeader>
+              <CardContent className="pt-4">
+                <div className="h-[400px]">
+                  <RechartsComponent 
+                    data={performance.performanceTrends.daily}
+                    colors={{
+                      impressions: CHART_COLORS.primary,
+                      engagements: CHART_COLORS.secondary,
+                      engagementRate: CHART_COLORS.accent
+                    }}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="demographics">
+            <div className="grid md:grid-cols-2 gap-4">
+              {Object.entries(performance.demographics).map(([key, data], index) => (
+                <Card key={key}>
+                  <CardHeader>
+                    <CardTitle className="text-primary capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="h-[300px]">
+                      <DemographicChart 
+                        data={data}
+                        title={key.replace(/([A-Z])/g, ' $1').trim()}
+                        colors={DEMOGRAPHIC_COLORS}
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="comparison">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-primary">Game Performance Comparison</CardTitle>
+                <CardDescription>Compare performance across different games</CardDescription>
+              </CardHeader>
+              <CardContent className="pt-4">
+                <div className="h-[400px]">
+                  <GameComparisonChart 
+                    data={gamePerformance}
+                    colors={{
+                      impressions: CHART_COLORS.primary,
+                      engagements: CHART_COLORS.secondary,
+                      engagementRate: CHART_COLORS.accent,
+                      completionRate: CHART_COLORS.warning
+                    }}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
-    );
-  }
-
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Link href="/dashboard/game-ads/performance">
-          <Button variant="outline" size="icon">
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-        </Link>
-        <h1 className="text-2xl font-bold">Game Ad Performance</h1>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <MetricCard
-          title="Total Impressions"
-          value={performance.metrics.totalImpressions.toLocaleString()}
-          description="Total number of times the game ad was viewed by players"
-        />
-        <MetricCard
-          title="Engagement Rate"
-          value={`${performance.metrics.engagementRate}%`}
-          description="Percentage of impressions that resulted in active engagement (Total Engagements / Total Impressions × 100)"
-        />
-        <MetricCard
-          title="Completion Rate"
-          value={`${performance.metrics.completionRate}%`}
-          description="Percentage of engaged players who completed the intended action (e.g., clicked through, watched full video)"
-        />
-        <MetricCard
-          title="Conversion Rate"
-          value={`${performance.metrics.conversionRate}%`}
-          description="Percentage of unique players who engaged with the ad (Unique Engagements / Unique Impressions × 100)"
-        />
-      </div>
-
-      <Tabs defaultValue="trends" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="trends">Performance Trends</TabsTrigger>
-          <TabsTrigger value="games">Game Performance</TabsTrigger>
-          <TabsTrigger value="demographics">Demographics</TabsTrigger>
-          <TabsTrigger value="technical">Technical Data</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="trends">
-          <Card>
-            <CardHeader>
-              <CardTitle>Daily Performance Trends</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[400px] w-full">
-                <RechartsComponent data={performance.performanceTrends.daily} />
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="games">
-          <Card>
-            <CardHeader>
-              <CardTitle>Performance Across Games</CardTitle>
-              <CardDescription>Compare how this ad performs in different games</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[400px] w-full">
-                <GameComparisonChart data={gamePerformance} />
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="demographics">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <Card>
-              <CardContent className="pt-6">
-                <DemographicChart data={performance.demographics.gender} title="Gender Distribution" />
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-6">
-                <DemographicChart data={performance.demographics.ageGroup} title="Age Group Distribution" />
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-6">
-                <DemographicChart data={performance.demographics.geographicRegion} title="Geographic Distribution" />
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-6">
-                <DemographicChart data={performance.demographics.language} title="Language Distribution" />
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="technical">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Card>
-              <CardContent className="pt-6">
-                <DemographicChart data={performance.demographics.deviceType} title="Device Types" />
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-6">
-                <DemographicChart data={performance.demographics.platform} title="Platforms" />
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-      </Tabs>
     </div>
   );
 } 

@@ -11,9 +11,12 @@ export interface RobloxAuthorization {
 export interface Game {
   id: string;
   name: string;
-  robloxLink: string;
-  genre: string;
   description: string;
+  genre: string;
+  robloxLink: string;
+  thumbnail: string;
+  createdAt?: string;
+  updatedAt?: string;
   
   // Basic metrics
   metrics: {
@@ -127,6 +130,4 @@ export interface Game {
       }[];
     };
   };
-
-  thumbnail: string;
 } 

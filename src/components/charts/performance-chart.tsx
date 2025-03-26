@@ -1,5 +1,6 @@
-'use client';
+"use client";
 
+import React from "react";
 import {
   LineChart,
   Line,
@@ -14,7 +15,7 @@ import {
   Cell
 } from 'recharts';
 
-const COLORS = [
+const DEFAULT_COLORS = [
   '#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', 
   '#82ca9d', '#ffc658', '#ff7300', '#666666', '#ff6b81'
 ];
@@ -26,14 +27,20 @@ interface PerformanceChartProps {
     engagements: number;
     engagementRate: number;
   }[];
+  colors?: {
+    impressions: string;
+    engagements: string;
+    engagementRate: string;
+  };
 }
 
 interface DemographicChartProps {
   data: Record<string, number>;
   title: string;
+  colors?: string[];
 }
 
-export function DemographicChart({ data, title }: DemographicChartProps) {
+export function DemographicChart({ data, title, colors = DEFAULT_COLORS }: DemographicChartProps) {
   const chartData = Object.entries(data).map(([name, value]) => ({
     name,
     value
@@ -54,7 +61,7 @@ export function DemographicChart({ data, title }: DemographicChartProps) {
             label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
           >
             {chartData.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+              <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
             ))}
           </Pie>
           <Tooltip />
@@ -65,15 +72,31 @@ export function DemographicChart({ data, title }: DemographicChartProps) {
   );
 }
 
-export function GameComparisonChart({ data }: { 
+interface GameComparisonChartProps {
   data: {
     gameName: string;
     impressions: number;
     engagements: number;
     engagementRate: number;
     completionRate: number;
-  }[] 
-}) {
+  }[];
+  colors?: {
+    impressions: string;
+    engagements: string;
+    engagementRate: string;
+    completionRate: string;
+  };
+}
+
+export function GameComparisonChart({ 
+  data, 
+  colors = {
+    impressions: '#0088FE',
+    engagements: '#00C49F',
+    engagementRate: '#FFBB28',
+    completionRate: '#FF8042'
+  }
+}: GameComparisonChartProps) {
   return (
     <ResponsiveContainer width="100%" height={400}>
       <LineChart
@@ -90,28 +113,28 @@ export function GameComparisonChart({ data }: {
           yAxisId="left"
           type="monotone"
           dataKey="impressions"
-          stroke="#0088FE"
+          stroke={colors.impressions}
           name="Impressions"
         />
         <Line
           yAxisId="left"
           type="monotone"
           dataKey="engagements"
-          stroke="#00C49F"
+          stroke={colors.engagements}
           name="Engagements"
         />
         <Line
           yAxisId="right"
           type="monotone"
           dataKey="engagementRate"
-          stroke="#FFBB28"
+          stroke={colors.engagementRate}
           name="Engagement Rate (%)"
         />
         <Line
           yAxisId="right"
           type="monotone"
           dataKey="completionRate"
-          stroke="#FF8042"
+          stroke={colors.completionRate}
           name="Completion Rate (%)"
         />
       </LineChart>
@@ -119,28 +142,49 @@ export function GameComparisonChart({ data }: {
   );
 }
 
-export default function PerformanceChart({ data }: PerformanceChartProps) {
+export default function PerformanceChart({ 
+  data,
+  colors = {
+    impressions: '#8884d8',
+    engagements: '#82ca9d',
+    engagementRate: '#ffc658'
+  }
+}: PerformanceChartProps) {
   return (
-    <ResponsiveContainer width="100%" height="100%">
-      <LineChart data={data}>
-        <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="date" />
-        <YAxis />
-        <Tooltip />
-        <Legend />
-        <Line
-          type="monotone"
-          dataKey="impressions"
-          stroke="#8884d8"
-          name="Impressions"
-        />
-        <Line
-          type="monotone"
-          dataKey="engagements"
-          stroke="#82ca9d"
-          name="Engagements"
-        />
-      </LineChart>
-    </ResponsiveContainer>
+    <div className="w-full h-[500px]">
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart
+          data={data}
+          margin={{
+            top: 5,
+            right: 30,
+            left: 20,
+            bottom: 5,
+          }}
+        >
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis dataKey="date" />
+          <YAxis />
+          <Tooltip />
+          <Legend />
+          <Line
+            type="monotone"
+            dataKey="impressions"
+            stroke={colors.impressions}
+            activeDot={{ r: 8 }}
+          />
+          <Line 
+            type="monotone" 
+            dataKey="engagements" 
+            stroke={colors.engagements} 
+          />
+          <Line 
+            type="monotone" 
+            dataKey="engagementRate" 
+            stroke={colors.engagementRate} 
+          />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
   );
 } 
