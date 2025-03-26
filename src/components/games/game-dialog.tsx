@@ -30,8 +30,8 @@ import { Upload, X } from 'lucide-react'
 interface GameDialogProps {
   open: boolean
   onClose: () => void
-  onSave: (game: Game) => Promise<Game>
-  initialData?: Game
+  onSave: (gameData: Game) => Promise<Game>
+  initialData?: Game | null
 }
 
 const defaultGame: Game = {
