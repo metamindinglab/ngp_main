@@ -5,10 +5,11 @@ import { join } from 'path';
 interface Asset {
   id: string;
   name: string;
-  type: string;
+  assetType: string;
   description: string;
   thumbnail: string;
   robloxAssetId: string;
+  tags: string[];
   createdAt: string;
   updatedAt: string;
 }
@@ -42,8 +43,8 @@ export async function GET() {
   try {
     await initDataFile();
     const content = await readFile(assetsPath, 'utf8');
-    const data: AssetsDatabase = JSON.parse(content);
-    return NextResponse.json({ assets: data.assets });
+    const data = JSON.parse(content);
+    return NextResponse.json(data);
   } catch (error) {
     console.error('Error reading assets:', error);
     return NextResponse.json(
@@ -68,10 +69,13 @@ export async function POST(request: NextRequest) {
     const newAsset: Asset = {
       id: assetId,
       name: asset.name,
-      type: asset.type,
+      assetType: asset.assetType || asset.type,
       description: asset.description,
-      thumbnail: asset.thumbnail,
+      thumbnail: asset.thumbnail || '',
       robloxAssetId: asset.robloxAssetId,
+      tags: Array.isArray(asset.tags) ? asset.tags : 
+            typeof asset.tags === 'string' ? asset.tags.split(',').map((tag: string): string => tag.trim()) : 
+            [],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
