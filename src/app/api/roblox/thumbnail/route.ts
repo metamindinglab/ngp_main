@@ -145,9 +145,23 @@ async function fetchWithExponentialBackoff(url: string, expectImage = false, ret
   throw lastError || new Error('Max retries exceeded');
 }
 
-async function getThumbnailUrl(assetId: string): Promise<string> {
+async function getThumbnailUrl(assetId: string, assetType?: string): Promise<string> {
   try {
-    // Try the v1 API first
+    if (assetType === 'Animation') {
+      // Try the animation-thumbnail API first
+      const response = await fetchWithExponentialBackoff(
+        `https://apis.roblox.com/animation-thumbnail/v1/assets/${assetId}`,
+        false
+      );
+      const data = await response.json();
+      console.log('Animation thumbnail API response:', data);
+      
+      if (data.imageUrl) {
+        return data.imageUrl;
+      }
+    }
+
+    // Try the v1 API for other asset types or as fallback
     const response = await fetchWithExponentialBackoff(
       `https://thumbnails.roblox.com/v1/assets?assetIds=${assetId}&size=420x420&format=Png`,
       false
@@ -169,12 +183,13 @@ async function getThumbnailUrl(assetId: string): Promise<string> {
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const assetId = searchParams.get('assetId');
+  const assetType = searchParams.get('assetType');
 
   if (!assetId) {
     return NextResponse.json({ error: 'Asset ID is required' }, { status: 400 });
   }
 
-  console.log(`Processing thumbnail request for asset ID: ${assetId}`);
+  console.log(`Processing thumbnail request for asset ID: ${assetId}, type: ${assetType}`);
 
   // Check cache first
   const cached = getCachedThumbnail(assetId);
@@ -204,7 +219,7 @@ export async function GET(request: Request) {
 
   try {
     // Get the thumbnail URL first
-    const thumbnailUrl = await getThumbnailUrl(assetId);
+    const thumbnailUrl = await getThumbnailUrl(assetId, assetType || undefined);
     console.log(`Got thumbnail URL: ${thumbnailUrl}`);
 
     // Fetch the actual image

@@ -17,6 +17,7 @@ import { PlaylistDialog } from './playlist-dialog'
 import { formatDistanceToNow } from 'date-fns'
 import Link from 'next/link'
 import Image from 'next/image'
+import { MMLLogo } from "@/components/ui/mml-logo"
 
 // Add color constants
 const COLORS = {
@@ -37,14 +38,39 @@ export function PlaylistManager() {
   useEffect(() => {
     const loadPlaylists = async () => {
       try {
+        // Check cache first
+        const cachedData = sessionStorage.getItem('playlistsData');
+        const cachedTimestamp = sessionStorage.getItem('playlistsDataTimestamp');
+        const now = Date.now();
+        
+        // Use cached data if it's less than 30 seconds old
+        if (cachedData && cachedTimestamp && (now - parseInt(cachedTimestamp)) < 30000) {
+          setPlaylists(JSON.parse(cachedData));
+          return;
+        }
+
         const response = await fetch('/api/playlists')
         const data = await response.json()
+        
+        // Cache the data
+        sessionStorage.setItem('playlistsData', JSON.stringify(data.playlists));
+        sessionStorage.setItem('playlistsDataTimestamp', now.toString());
+        
         setPlaylists(data.playlists)
       } catch (error) {
         console.error('Error loading playlists:', error)
       }
     }
+
+    // Initial load
     loadPlaylists()
+
+    // Set up polling with a 30-second interval
+    const intervalId = setInterval(loadPlaylists, 30000);
+
+    return () => {
+      clearInterval(intervalId);
+    };
   }, [])
 
   const handleDeletePlaylist = async (playlistId: string) => {
@@ -77,15 +103,7 @@ export function PlaylistManager() {
     <div className="container mx-auto p-6">
       <div className="flex flex-col space-y-6">
         <Link href="/" className="self-start transform hover:scale-105 transition-transform">
-          <Image
-            src="/MML-logo.png"
-            alt="MML Logo"
-            width={126}
-            height={42}
-            className="object-contain"
-            priority
-            style={{ width: '126px', height: '42px' }}
-          />
+          <MMLLogo />
         </Link>
 
         <div className="flex justify-between items-center mb-6">

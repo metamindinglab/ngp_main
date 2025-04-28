@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "lastUpdated": "2025-03-24T07:10:04.129Z",
+  "lastUpdated": "2025-03-31T14:58:15.324Z",
   "games": [
     {
       "id": "game_001",
@@ -298,6 +298,22 @@
           "price": null
         }
       }
+    },
+    {
+      "id": "game_006",
+      "name": "Metaminding Demo #2",
+      "description": "MML Demo game",
+      "genre": "DEMO",
+      "metrics": {
+        "dau": 0,
+        "mau": 0,
+        "day1Retention": 0
+      },
+      "owner": {
+        "name": "MetaMinding Lab",
+        "country": ""
+      },
+      "thumbnail": ""
     }
   ]
 }

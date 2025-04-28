@@ -19,18 +19,7 @@ import { Textarea } from "@/components/ui/textarea";
 import Link from 'next/link';
 import Image from 'next/image';
 import { GameDialog } from './game-dialog';
-
-const gameFormSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  description: z.string().min(1, "Description is required"),
-  genre: z.string().min(1, "Genre is required"),
-  robloxLink: z.string().min(1, "Roblox link is required"),
-  thumbnail: z.string().min(1, "Thumbnail is required"),
-});
-
-interface GamesClientProps {
-  initialGames?: Game[];
-}
+import { MMLLogo } from "@/components/ui/mml-logo";
 
 // Add color constants
 const COLORS = {
@@ -41,16 +30,57 @@ const COLORS = {
   muted: '#64748b',      // Slate
 };
 
+const gameFormSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  description: z.string().min(1, "Description is required"),
+  genre: z.string().min(1, "Genre is required"),
+  robloxLink: z.string().min(1, "Roblox link is required"),
+  thumbnail: z.string().min(1, "Thumbnail is required"),
+  metrics: z.object({
+    dau: z.number().default(0),
+    mau: z.number().default(0),
+    day1Retention: z.number().default(0),
+    topGeographicPlayers: z.array(z.object({
+      country: z.string(),
+      percentage: z.number()
+    })).default([])
+  }).default({}),
+  dates: z.object({
+    created: z.string().default(() => new Date().toISOString()),
+    lastUpdated: z.string().default(() => new Date().toISOString()),
+    mgnJoined: z.string().default(() => new Date().toISOString()),
+    lastRobloxSync: z.string().optional()
+  }).default({}),
+  owner: z.object({
+    name: z.string().default(''),
+    discordId: z.string().default(''),
+    email: z.string().default(''),
+    country: z.string().default('')
+  }).default({}),
+  authorization: z.object({
+    type: z.enum(['api_key', 'oauth']).default('api_key'),
+    apiKey: z.string().optional(),
+    clientId: z.string().optional(),
+    clientSecret: z.string().optional(),
+    lastVerified: z.string().optional(),
+    status: z.enum(['active', 'expired', 'invalid', 'unverified']).default('unverified')
+  }).default({})
+});
+
+interface GamesClientProps {
+  initialGames?: Game[];
+}
+
 export function GamesClient({ initialGames = [] }: GamesClientProps) {
   const [games, setGames] = React.useState<Game[]>(initialGames);
   const [loading, setLoading] = React.useState(true);
   const [searchQuery, setSearchQuery] = React.useState("");
   const [selectedGenre, setSelectedGenre] = React.useState<string | null>(null);
   const [showAddForm, setShowAddForm] = React.useState(false);
-  const { toast } = useToast();
   const router = useRouter();
   const [selectedGame, setSelectedGame] = useState<Game | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const { toast } = useToast();
 
   const form = useForm<z.infer<typeof gameFormSchema>>({
     resolver: zodResolver(gameFormSchema),
@@ -60,6 +90,27 @@ export function GamesClient({ initialGames = [] }: GamesClientProps) {
       genre: "",
       robloxLink: "",
       thumbnail: "",
+      metrics: {
+        dau: 0,
+        mau: 0,
+        day1Retention: 0,
+        topGeographicPlayers: []
+      },
+      dates: {
+        created: new Date().toISOString(),
+        lastUpdated: new Date().toISOString(),
+        mgnJoined: new Date().toISOString()
+      },
+      owner: {
+        name: '',
+        discordId: '',
+        email: '',
+        country: ''
+      },
+      authorization: {
+        type: 'api_key',
+        status: 'unverified'
+      }
     },
   });
 
@@ -76,8 +127,8 @@ export function GamesClient({ initialGames = [] }: GamesClientProps) {
       console.error('Error loading games:', error);
       toast({
         title: "Error",
-        content: "Failed to load games. Please try again.",
-        variant: "destructive",
+        description: "Failed to load games. Please try again.",
+        variant: "destructive"
       });
     } finally {
       setLoading(false);
@@ -103,14 +154,14 @@ export function GamesClient({ initialGames = [] }: GamesClientProps) {
       form.reset();
       toast({
         title: "Success",
-        content: "Game created successfully.",
+        description: "Game created successfully."
       });
     } catch (error) {
       console.error('Error creating game:', error);
       toast({
         title: "Error",
-        content: "Failed to create game. Please try again.",
-        variant: "destructive",
+        description: "Failed to create game. Please try again.",
+        variant: "destructive"
       });
     }
   }
@@ -129,14 +180,14 @@ export function GamesClient({ initialGames = [] }: GamesClientProps) {
         await fetchGames();
         toast({
           title: "Success",
-          content: "Game deleted successfully.",
+          description: "Game deleted successfully."
         });
       } catch (error) {
         console.error('Error deleting game:', error);
         toast({
           title: "Error",
-          content: "Failed to delete game. Please try again.",
-          variant: "destructive",
+          description: "Failed to delete game. Please try again.",
+          variant: "destructive"
         });
       }
     }
@@ -168,15 +219,7 @@ export function GamesClient({ initialGames = [] }: GamesClientProps) {
     <div className="container mx-auto p-6">
       <div className="flex flex-col space-y-6">
         <Link href="/" className="self-start transform hover:scale-105 transition-transform">
-          <Image
-            src="/MML-logo.png"
-            alt="MML Logo"
-            width={200}
-            height={67}
-            className="object-contain"
-            priority
-            style={{ width: '200px', height: '67px' }}
-          />
+          <MMLLogo />
         </Link>
 
         <div className="flex justify-between items-center">
@@ -255,13 +298,14 @@ export function GamesClient({ initialGames = [] }: GamesClientProps) {
                 </div>
                 <div className="flex items-center space-x-2">
                   <span className="text-sm font-medium text-gray-600">Roblox Link:</span>
-                  <Link 
-                    href={game.robloxLink} 
+                  <a 
+                    href={game.robloxLink || '#'} 
                     target="_blank"
+                    rel="noopener noreferrer"
                     className="text-primary hover:text-primary/80 transition-colors text-sm underline"
                   >
                     View on Roblox
-                  </Link>
+                  </a>
                 </div>
               </CardContent>
               <CardFooter className="flex justify-between gap-2 flex-none mt-auto">
@@ -312,7 +356,7 @@ export function GamesClient({ initialGames = [] }: GamesClientProps) {
             form.reset();
             toast({
               title: "Success",
-              content: "Game saved successfully.",
+              description: "Game saved successfully."
             });
             return savedGame;
           } catch (error) {

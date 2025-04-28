@@ -4,6 +4,10 @@ import path from 'path'
 import { GameAd } from '@/types/gameAd'
 
 const DATA_FILE = path.join(process.cwd(), 'data', 'game-ads.json')
+const CACHE_TTL = 60 * 1000 // 1 minute cache
+const PAGE_SIZE = 10 // Number of items per page
+
+let cachedGameAds: { data: GameAd[]; timestamp: number } | null = null
 
 // Initialize data file if it doesn't exist
 async function initDataFile() {
@@ -17,33 +21,79 @@ async function initDataFile() {
   }
 }
 
-// Load game ads from file
+// Load game ads from cache or file
 async function loadGameAds(): Promise<GameAd[]> {
+  // Check cache first
+  if (cachedGameAds && Date.now() - cachedGameAds.timestamp < CACHE_TTL) {
+    return cachedGameAds.data
+  }
+
   try {
     await initDataFile()
     const data = await fs.readFile(DATA_FILE, 'utf-8')
     const parsed = JSON.parse(data)
-    return parsed.gameAds || []
+    const gameAds = parsed.gameAds || []
+    
+    // Update cache
+    cachedGameAds = {
+      data: gameAds,
+      timestamp: Date.now()
+    }
+    
+    return gameAds
   } catch (error) {
     console.error('Error loading game ads:', error)
     return []
   }
 }
 
-// Save game ads to file
+// Save game ads to file and update cache
 async function saveGameAds(gameAds: GameAd[]) {
   try {
     await fs.writeFile(DATA_FILE, JSON.stringify({ gameAds }, null, 2))
+    // Update cache
+    cachedGameAds = {
+      data: gameAds,
+      timestamp: Date.now()
+    }
   } catch (error) {
     console.error('Error saving game ads:', error)
     throw new Error('Failed to save game ads')
   }
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url)
+    const page = parseInt(searchParams.get('page') || '1')
+    const search = searchParams.get('search') || ''
+    
     const gameAds = await loadGameAds()
-    return NextResponse.json({ gameAds })
+    
+    // Filter by search term if provided
+    const filteredAds = search
+      ? gameAds.filter(ad => 
+          ad.name.toLowerCase().includes(search.toLowerCase()) ||
+          ad.description?.toLowerCase().includes(search.toLowerCase())
+        )
+      : gameAds
+
+    // Calculate pagination
+    const start = (page - 1) * PAGE_SIZE
+    const end = start + PAGE_SIZE
+    const paginatedAds = filteredAds.slice(start, end)
+    
+    return NextResponse.json({
+      gameAds: paginatedAds,
+      total: filteredAds.length,
+      page,
+      totalPages: Math.ceil(filteredAds.length / PAGE_SIZE)
+    }, {
+      headers: {
+        'Cache-Control': 'public, max-age=60',
+        'X-Cache': cachedGameAds ? 'HIT' : 'MISS'
+      }
+    })
   } catch (error) {
     console.error('Error in GET /api/game-ads:', error)
     return NextResponse.json(

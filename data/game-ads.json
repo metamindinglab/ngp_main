@@ -5,12 +5,12 @@
       "name": "Adidas+Pepsi+DrMartenBoots",
       "templateType": "dancing_npc",
       "createdAt": "2025-03-24T12:50:45.987Z",
-      "updatedAt": "2025-03-24T16:22:06.347Z",
+      "updatedAt": "2025-04-06T13:07:09.338Z",
       "assets": [
         {
           "assetType": "kol_character",
-          "assetId": "k2",
-          "robloxAssetId": "12345681"
+          "assetId": "asset_004",
+          "robloxAssetId": "128800353489791"
         },
         {
           "assetType": "hat",
@@ -30,7 +30,7 @@
         {
           "assetType": "shoes",
           "assetId": "s1",
-          "robloxAssetId": "93915499"
+          "robloxAssetId": "93915499446569"
         },
         {
           "assetType": "animation",
@@ -55,6 +55,50 @@
           "assetType": "multi_display",
           "assetId": "s3",
           "robloxAssetId": "13158731202"
+        },
+        {
+          "assetType": "audio",
+          "assetId": "aud1",
+          "robloxAssetId": "12345677"
+        }
+      ]
+    },
+    {
+      "id": "ad_1744021614595",
+      "name": "Amnesty+MonsterDrink+NikeAirShoe+WhiteCap (Male hiphop KOL)",
+      "templateType": "dancing_npc",
+      "createdAt": "2025-04-07T10:26:55.134Z",
+      "updatedAt": "2025-04-07T10:26:55.134Z",
+      "assets": [
+        {
+          "assetType": "kol_character",
+          "assetId": "asset_004",
+          "robloxAssetId": "128800353489791"
+        },
+        {
+          "assetType": "hat",
+          "assetId": "h1",
+          "robloxAssetId": "17881926945"
+        },
+        {
+          "assetType": "clothing",
+          "assetId": "asset_006",
+          "robloxAssetId": "102652418299443"
+        },
+        {
+          "assetType": "item",
+          "assetId": "i4",
+          "robloxAssetId": "17166207664"
+        },
+        {
+          "assetType": "shoes",
+          "assetId": "s2",
+          "robloxAssetId": "18474543214"
+        },
+        {
+          "assetType": "animation",
+          "assetId": "a1",
+          "robloxAssetId": "10214406616"
         },
         {
           "assetType": "audio",

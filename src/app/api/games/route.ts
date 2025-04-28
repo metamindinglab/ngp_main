@@ -7,16 +7,37 @@ interface Game {
   name: string
   description: string
   genre: string
+  robloxLink: string
+  thumbnail: string
   metrics: {
     dau: number
     mau: number
     day1Retention: number
+    topGeographicPlayers: {
+      country: string
+      percentage: number
+    }[]
+  }
+  dates: {
+    created: string
+    lastUpdated: string
+    mgnJoined: string
+    lastRobloxSync?: string
   }
   owner: {
     name: string
+    discordId: string
+    email: string
     country: string
   }
-  thumbnail: string
+  authorization?: {
+    type: 'api_key' | 'oauth'
+    apiKey?: string
+    clientId?: string
+    clientSecret?: string
+    lastVerified?: string
+    status: 'active' | 'expired' | 'invalid' | 'unverified'
+  }
 }
 
 interface GamesDatabase {
@@ -62,7 +83,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     await initDataFile()
-    const game = await request.json()
+    const gameData = await request.json()
     const content = await readFile(gamesPath, 'utf8')
     const data: GamesDatabase = JSON.parse(content)
     
@@ -71,21 +92,35 @@ export async function POST(request: NextRequest) {
     const nextId = Math.max(...existingIds, 0) + 1
     const gameId = `game_${nextId.toString().padStart(3, '0')}`
     
+    // Create new game with all required fields
     const newGame: Game = {
       id: gameId,
-      name: game.name,
-      description: game.description,
-      genre: game.genre,
+      name: gameData.name,
+      description: gameData.description,
+      genre: gameData.genre,
+      robloxLink: gameData.robloxLink,
+      thumbnail: gameData.thumbnail,
       metrics: {
-        dau: game.metrics.dau,
-        mau: game.metrics.mau,
-        day1Retention: game.metrics.day1Retention
+        dau: gameData.metrics?.dau || 0,
+        mau: gameData.metrics?.mau || 0,
+        day1Retention: gameData.metrics?.day1Retention || 0,
+        topGeographicPlayers: gameData.metrics?.topGeographicPlayers || []
+      },
+      dates: {
+        created: new Date().toISOString(),
+        lastUpdated: new Date().toISOString(),
+        mgnJoined: new Date().toISOString()
       },
       owner: {
-        name: game.owner.name,
-        country: game.owner.country
+        name: gameData.owner?.name || '',
+        discordId: gameData.owner?.discordId || '',
+        email: gameData.owner?.email || '',
+        country: gameData.owner?.country || ''
       },
-      thumbnail: game.thumbnail
+      authorization: gameData.authorization || {
+        type: 'api_key',
+        status: 'unverified'
+      }
     }
 
     data.games.push(newGame)

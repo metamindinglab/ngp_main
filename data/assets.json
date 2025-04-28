@@ -98,11 +98,11 @@
     {
       "id": "mg1",
       "name": "Wheel Of Luck",
-      "description": "Embark on a journey of luck and excitement with our exclusive Wheel of Fortune Spinner, designed for the grand opening of The VIVVA UGC Game! This limited-edition accessory brings the thrill of spinning for prizes right to your avatar.\n\nGame link -> https://www.roblox.com/games/15686980350/THE-VIVVA-UGC-GAME\nJoin the group for more -> https://www.roblox.com/groups/33061982",
+      "description": "Embark on a journey of luck and excitement with our exclusive Wheel of Fortune Spinner with your brand logo! This eye catching game accessory brings the thrill of spinning for prizes right to your avatar, good branding exposure.",
       "assetType": "minigame",
-      "robloxAssetId": "15886603700",
+      "robloxAssetId": "112978636478580",
       "createdAt": "2024-03-01",
-      "updatedAt": "2025-03-21T15:46:29.541Z",
+      "updatedAt": "2025-03-29T04:49:39.129Z",
       "tags": [
         "game",
         "interactive",
@@ -254,36 +254,6 @@
         "UK8",
         "UK9",
         "UK10"
-      ]
-    },
-    {
-      "id": "mg2",
-      "name": "Branded Basketball hoop",
-      "description": "Basketball hoop",
-      "assetType": "minigame",
-      "robloxAssetId": "18129904742",
-      "createdAt": "2024-03-01",
-      "updatedAt": "2025-03-21T15:38:44.686Z",
-      "tags": [
-        "sports",
-        "basketball",
-        "interactive"
-      ],
-      "difficulty": "Medium",
-      "maxPlayers": 4,
-      "gameplayDuration": "2 minutes",
-      "customizableElements": [
-        {
-          "id": "court-floor",
-          "name": "Court Floor",
-          "type": "image",
-          "description": "Basketball court floor branding"
-        }
-      ],
-      "marketingCapabilities": [
-        "Brand Integration",
-        "Sports Marketing",
-        "Event Activation"
       ]
     },
     {
@@ -697,10 +667,10 @@
       "id": "a2",
       "name": "Hips Poppin' - Zara Larsson",
       "description": "Get your groove on!",
-      "assetType": "animation",
+      "assetType": "Animation",
       "robloxAssetId": "6797919579",
       "createdAt": "2024-03-01",
-      "updatedAt": "2025-03-21T15:55:08.961Z",
+      "updatedAt": "2025-04-27T23:55:56.153Z",
       "tags": [
         "dance",
         "hip-hop",
@@ -712,7 +682,9 @@
       "compatibility": [
         "Lifestyle",
         "Artist"
-      ]
+      ],
+      "type": "Animation",
+      "lastUpdated": "2025-04-27T23:55:54.632Z"
     },
     {
       "id": "a3",
@@ -753,79 +725,13 @@
       "previewUrl": "/customization/animations/Drinking.png"
     },
     {
-      "id": "mg3",
-      "name": "Brand Puzzle",
-      "description": "Interactive puzzle game featuring brand imagery",
-      "assetType": "minigame",
-      "robloxAssetId": "12345696",
-      "createdAt": "2024-03-01",
-      "updatedAt": "2024-03-20",
-      "tags": [
-        "puzzle",
-        "interactive",
-        "educational"
-      ],
-      "difficulty": "Medium",
-      "maxPlayers": 1,
-      "gameplayDuration": "5 minutes",
-      "customizableElements": [
-        {
-          "id": "puzzle-image",
-          "name": "Puzzle Image",
-          "type": "image",
-          "description": "Main puzzle image"
-        }
-      ],
-      "marketingCapabilities": [
-        "Product Education",
-        "Brand Storytelling",
-        "Visual Showcase"
-      ]
-    },
-    {
-      "id": "mg4",
-      "name": "Brand Racer",
-      "description": "Racing game with customizable tracks and billboards",
-      "assetType": "minigame",
-      "robloxAssetId": "12345697",
-      "createdAt": "2024-03-01",
-      "updatedAt": "2024-03-20",
-      "tags": [
-        "racing",
-        "sports",
-        "competitive"
-      ],
-      "difficulty": "Hard",
-      "maxPlayers": 8,
-      "gameplayDuration": "4 minutes",
-      "customizableElements": [
-        {
-          "id": "track-billboards",
-          "name": "Track Billboards",
-          "type": "image",
-          "description": "Trackside advertising billboards"
-        },
-        {
-          "id": "vehicle-wrap",
-          "name": "Vehicle Wrap",
-          "type": "3d-model",
-          "description": "Custom vehicle branding"
-        }
-      ],
-      "marketingCapabilities": [
-        "Brand Visibility",
-        "Product Placement",
-        "Competitive Gaming"
-      ]
-    },
-    {
       "id": "bb1",
       "name": "Premium Billboard - Landscape",
       "description": "Large format landscape billboard for premium game advertising",
-      "assetType": "billboard",
-      "robloxAssetId": "18001001",
+      "assetType": "multiMediaSignage",
+      "robloxAssetId": "132490376647395",
       "createdAt": "2024-03-01",
-      "updatedAt": "2024-03-24",
+      "updatedAt": "2025-03-29T03:34:56.184Z",
       "tags": [
         "billboard",
         "landscape",
@@ -844,10 +750,10 @@
       "id": "bb2",
       "name": "City Square Billboard",
       "description": "Central square billboard with high visibility",
-      "assetType": "billboard",
-      "robloxAssetId": "18001002",
+      "assetType": "multiMediaSignage",
+      "robloxAssetId": "102908986501799",
       "createdAt": "2024-03-01",
-      "updatedAt": "2024-03-24",
+      "updatedAt": "2025-03-29T03:20:54.561Z",
       "tags": [
         "billboard",
         "square",
@@ -866,10 +772,10 @@
       "id": "bb3",
       "name": "Digital Billboard - Portrait",
       "description": "Vertical digital billboard with animation support",
-      "assetType": "billboard",
-      "robloxAssetId": "18001003",
+      "assetType": "multiMediaSignage",
+      "robloxAssetId": "75331195844178",
       "createdAt": "2024-03-01",
-      "updatedAt": "2024-03-24",
+      "updatedAt": "2025-03-29T03:33:25.663Z",
       "tags": [
         "billboard",
         "portrait",
@@ -886,95 +792,110 @@
       "supportsAnimation": true
     },
     {
-      "id": "sg1",
-      "name": "Neon Shop Signage",
-      "description": "Bright neon signage for shop fronts",
-      "assetType": "signage",
-      "robloxAssetId": "18002001",
-      "createdAt": "2024-03-01",
-      "updatedAt": "2024-03-24",
+      "id": "asset_004",
+      "name": "Default KOL character (Male)",
+      "description": "Male teenager in-game KOL character with short hair, medium build body. ",
+      "robloxAssetId": "128800353489791",
+      "createdAt": "2025-03-29T03:59:38.739Z",
+      "updatedAt": "2025-03-29T04:00:13.148Z",
+      "assetType": "kol_character",
       "tags": [
-        "signage",
-        "neon",
-        "shop"
-      ],
-      "dimensions": {
-        "width": 800,
-        "height": 400
-      },
-      "style": "neon",
-      "location": "shop_front",
-      "illuminated": true,
-      "customizable": true
+        "male",
+        "teenager",
+        "short hair",
+        "medium build body"
+      ]
     },
     {
-      "id": "sg2",
-      "name": "LED Wall Display",
-      "description": "High-resolution LED wall display for dynamic content",
-      "assetType": "signage",
-      "robloxAssetId": "18002002",
-      "createdAt": "2024-03-01",
-      "updatedAt": "2024-03-24",
+      "id": "asset_005",
+      "name": "Basketball shooting machine with Ad display",
+      "description": "A fun arcade basketball shooting machine providing advertisement embedding.  Optional function to distribute rewards.  ",
+      "robloxAssetId": "118281644248656",
+      "createdAt": "2025-03-29T04:43:38.593Z",
+      "updatedAt": "2025-03-29T04:44:56.391Z",
+      "assetType": "minigame",
       "tags": [
-        "signage",
-        "LED",
-        "wall"
-      ],
-      "dimensions": {
-        "width": 3840,
-        "height": 2160
-      },
-      "style": "digital",
-      "location": "interior_wall",
-      "illuminated": true,
-      "supportsAnimation": true,
-      "resolution": "4K"
+        "basketball",
+        "shooting",
+        "arcade",
+        "ad",
+        "reward"
+      ]
     },
     {
-      "id": "sg3",
-      "name": "Holographic Display Sign",
-      "description": "Futuristic holographic display for special promotions",
-      "assetType": "signage",
-      "robloxAssetId": "18002003",
-      "createdAt": "2024-03-01",
-      "updatedAt": "2024-03-24",
+      "id": "asset_006",
+      "name": "Amnesty International Hoodie (Yellow)",
+      "description": "Amnesty International Hoodie (Yellow)",
+      "robloxAssetId": "102652418299443",
+      "createdAt": "2025-03-29T10:29:52.910Z",
+      "updatedAt": "2025-03-29T16:11:01.676Z",
+      "assetType": "clothing",
       "tags": [
-        "signage",
-        "holographic",
-        "special"
-      ],
-      "dimensions": {
-        "width": 1000,
-        "height": 1000
-      },
-      "style": "holographic",
-      "location": "floating",
-      "illuminated": true,
-      "interactable": true,
-      "special_effects": ["float", "rotate", "pulse"]
+        "Amnesty International",
+        "NGO",
+        "Hoodie"
+      ]
     },
     {
-      "id": "sg4",
-      "name": "Wayfinding Signage",
-      "description": "Interactive wayfinding signage for navigation",
-      "assetType": "signage",
-      "robloxAssetId": "18002004",
-      "createdAt": "2024-03-01",
-      "updatedAt": "2024-03-24",
+      "id": "asset_007",
+      "name": "Pepsi logo",
+      "description": "Pepsi logo (Blue Round)",
+      "robloxAssetId": "87526574011188",
+      "createdAt": "2025-04-01T16:55:02.067Z",
+      "updatedAt": "2025-04-01T16:55:02.067Z",
+      "assetType": "image",
       "tags": [
-        "signage",
-        "wayfinding",
-        "interactive"
+        "Pepsi",
+        "Blue",
+        "Round"
+      ]
+    },
+    {
+      "id": "asset_008",
+      "name": "APT_Dance_Song",
+      "description": "Popular APT Song by Rose and Bruno Mars",
+      "robloxAssetId": "110671947384464",
+      "createdAt": "2025-04-07T13:59:45.232Z",
+      "updatedAt": "2025-04-07T13:59:45.232Z",
+      "assetType": "audio",
+      "tags": [
+        "APT",
+        "Dance",
+        "Song"
+      ]
+    },
+    {
+      "id": "asset_009",
+      "name": "YAS Insurance logo (Updated)",
+      "type": "image",
+      "description": "The logo of the YAS insurance app",
+      "thumbnail": "",
+      "robloxAssetId": "136394278819679",
+      "tags": [
+        "YAS",
+        "insurance",
+        "logo"
       ],
-      "dimensions": {
-        "width": 600,
-        "height": 1200
-      },
-      "style": "modern",
-      "location": "corridor",
-      "illuminated": true,
-      "interactable": true,
-      "features": ["touch_screen", "map_view", "directions"]
+      "createdAt": "2025-04-08T05:39:11.585Z",
+      "updatedAt": "2025-04-08T15:36:39.375Z",
+      "lastUpdated": "2025-04-08T15:36:30.777Z",
+      "assetType": "Decal"
+    },
+    {
+      "id": "asset_010",
+      "name": "TikTok Popular Dance 1",
+      "type": "Animation",
+      "description": "TikTok Popular Dance 1",
+      "thumbnail": "",
+      "robloxAssetId": "116987473079382",
+      "assetType": "animation",
+      "tags": [
+        "TikTok Popular Dance",
+        "style"
+      ],
+      "createdAt": "2025-04-09T15:55:15.472Z",
+      "updatedAt": "2025-04-09T15:55:15.472Z"
     }
-  ]
+  ],
+  "lastUpdated": "2025-04-27T23:55:56.153Z"
 }

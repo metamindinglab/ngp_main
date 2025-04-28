@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/tooltip";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Image from 'next/image';
+import { MMLLogo } from "@/components/ui/mml-logo";
 
 const RechartsComponent = dynamic(() => import('@/components/charts/performance-chart'), {
   ssr: false,
@@ -152,6 +153,20 @@ export default function GameAdPerformancePage({
   useEffect(() => {
     async function loadPerformanceData() {
       try {
+        // Check cache first
+        const cacheKey = `gameAdPerformance_${params.id}`;
+        const cachedData = sessionStorage.getItem(cacheKey);
+        const cachedTimestamp = sessionStorage.getItem(`${cacheKey}_timestamp`);
+        const now = Date.now();
+        
+        // Use cached data if it's less than 30 seconds old
+        if (cachedData && cachedTimestamp && (now - parseInt(cachedTimestamp)) < 30000) {
+          const parsedData = JSON.parse(cachedData);
+          setPerformance(parsedData);
+          setLoading(false);
+          return;
+        }
+
         const response = await fetch('/api/game-ad-performance');
         if (!response.ok) {
           throw new Error('Failed to fetch performance data');
@@ -165,7 +180,7 @@ export default function GameAdPerformancePage({
           throw new Error('No performance data found for this game ad');
         }
         
-        setPerformance({
+        const performanceData = {
           id: adPerformance.id,
           gameAdId: adPerformance.gameAdId,
           gameId: adPerformance.gameId,
@@ -189,7 +204,13 @@ export default function GameAdPerformancePage({
           performanceTrends: {
             daily: adPerformance.performanceTrends.daily
           }
-        });
+        };
+
+        // Cache the data
+        sessionStorage.setItem(cacheKey, JSON.stringify(performanceData));
+        sessionStorage.setItem(`${cacheKey}_timestamp`, now.toString());
+        
+        setPerformance(performanceData);
 
         // Mock game performance data (replace with actual API call in production)
         setGamePerformance([
@@ -217,27 +238,26 @@ export default function GameAdPerformancePage({
         ]);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load performance data');
-      } finally {
-        setLoading(false);
       }
+      setLoading(false);
     }
 
+    // Initial load
     loadPerformanceData();
+
+    // Set up polling with a 30-second interval
+    const intervalId = setInterval(loadPerformanceData, 30000);
+
+    return () => {
+      clearInterval(intervalId);
+    };
   }, [params.id]);
 
   if (loading) {
     return (
       <div className="container mx-auto p-6">
-        <Link href="/" className="self-start transform hover:scale-105 transition-transform block mb-6">
-          <Image
-            src="/MML-logo.png"
-            alt="MML Logo"
-            width={126}
-            height={42}
-            className="object-contain"
-            priority
-            style={{ width: '126px', height: '42px' }}
-          />
+        <Link href="/" className="self-start transform hover:scale-105 transition-transform">
+          <MMLLogo />
         </Link>
         <div className="flex items-center justify-center h-[60vh]">
           <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-gray-900"></div>
@@ -249,16 +269,8 @@ export default function GameAdPerformancePage({
   if (error || !performance) {
     return (
       <div className="container mx-auto p-6">
-        <Link href="/" className="self-start transform hover:scale-105 transition-transform block mb-6">
-          <Image
-            src="/MML-logo.png"
-            alt="MML Logo"
-            width={126}
-            height={42}
-            className="object-contain"
-            priority
-            style={{ width: '126px', height: '42px' }}
-          />
+        <Link href="/" className="self-start transform hover:scale-105 transition-transform">
+          <MMLLogo />
         </Link>
         <div className="space-y-4">
           <div className="flex items-center gap-4">
@@ -284,16 +296,8 @@ export default function GameAdPerformancePage({
 
   return (
     <div className="container mx-auto p-6">
-      <Link href="/" className="self-start transform hover:scale-105 transition-transform block mb-6">
-        <Image
-          src="/MML-logo.png"
-          alt="MML Logo"
-          width={126}
-          height={42}
-          className="object-contain"
-          priority
-          style={{ width: '126px', height: '42px' }}
-        />
+      <Link href="/" className="self-start transform hover:scale-105 transition-transform">
+        <MMLLogo />
       </Link>
 
       <div className="space-y-6">

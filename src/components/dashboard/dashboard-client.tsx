@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import Link from "next/link";
-import Image from "next/image";
+import { MMLLogo } from "@/components/ui/mml-logo";
 import { Gamepad2, Upload, PlaySquare, ListVideo, BarChart3 } from "lucide-react";
 
 export function DashboardClient() {
@@ -12,14 +12,7 @@ export function DashboardClient() {
         {/* Header */}
         <div className="flex flex-col items-center space-y-6">
           <Link href="/" className="self-start transform hover:scale-105 transition-transform">
-            <Image
-              src="/MML-logo.png"
-              alt="MML Logo"
-              width={180}
-              height={60}
-              className="object-contain"
-              priority
-            />
+            <MMLLogo />
           </Link>
           <h1 className="text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 text-transparent bg-clip-text">
             Welcome to New Gen Pulse

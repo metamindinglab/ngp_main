@@ -20,6 +20,8 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import Link from 'next/link'
 import Image from 'next/image'
+import { v4 as uuidv4 } from 'uuid'
+import { MMLLogo } from "@/components/ui/mml-logo"
 
 // Add color constants
 const COLORS = {
@@ -39,6 +41,10 @@ export function GameAdsManager() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isCreating, setIsCreating] = useState(false)
+  const [page, setPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [isFetchingMore, setIsFetchingMore] = useState(false)
+  const [hasInitialLoad, setHasInitialLoad] = useState(false)
   const [newGameAd, setNewGameAd] = useState({
     name: "",
     description: "",
@@ -47,32 +53,146 @@ export function GameAdsManager() {
   })
   const { toast } = useToast()
 
-  // Load game ads
+  // Load game ads with pagination
   useEffect(() => {
+    let isMounted = true;
+    let debounceTimer: NodeJS.Timeout;
+
     const loadGameAds = async () => {
       try {
-        setIsLoading(true)
-        setError(null)
-        const response = await fetch('/api/game-ads')
-        if (!response.ok) {
-          throw new Error('Failed to load game ads')
+        // Set loading state only on initial load or search
+        if (!hasInitialLoad || searchTerm) {
+          setIsLoading(true);
         }
-        const data = await response.json()
-        setGameAds(data.gameAds || [])
+        
+        setError(null);
+        const queryParams = new URLSearchParams({
+          page: '1',
+          search: searchTerm
+        });
+        
+        const response = await fetch(`/api/game-ads?${queryParams}`);
+        
+        if (!response.ok) {
+          throw new Error(`Failed to load game ads: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (isMounted) {
+          if (Array.isArray(data.gameAds)) {
+            setGameAds(data.gameAds);
+            setTotalPages(data.totalPages || 1);
+            setHasInitialLoad(true);
+          } else {
+            throw new Error('Invalid response format from server');
+          }
+        }
       } catch (error) {
-        console.error('Error loading game ads:', error)
-        setError('Failed to load game ads. Please try again.')
-        toast({
-          title: "Error",
-          content: "Failed to load game ads. Please try again.",
-          variant: "destructive",
-        })
+        if (isMounted) {
+          console.error('Error loading game ads:', error);
+          setError('Failed to load game ads. Please try again.');
+          toast({
+            title: "Error",
+            description: "Failed to load game ads. Please try again.",
+            variant: "destructive"
+          });
+        }
       } finally {
-        setIsLoading(false)
+        if (isMounted) {
+          setIsLoading(false);
+          setIsFetchingMore(false);
+        }
       }
+    };
+
+    // Only load on initial mount or search term change
+    if (!hasInitialLoad || searchTerm) {
+      debounceTimer = setTimeout(loadGameAds, searchTerm ? 300 : 0);
     }
-    loadGameAds()
-  }, [toast])
+
+    return () => {
+      isMounted = false;
+      if (debounceTimer) {
+        clearTimeout(debounceTimer);
+      }
+    };
+  }, [searchTerm, toast, hasInitialLoad]);
+
+  // Load more game ads when scrolling
+  const loadMoreAds = async () => {
+    if (isFetchingMore || page >= totalPages) return;
+
+    try {
+      setIsFetchingMore(true);
+      const nextPage = page + 1;
+      const queryParams = new URLSearchParams({
+        page: nextPage.toString(),
+        search: searchTerm
+      });
+
+      const response = await fetch(`/api/game-ads?${queryParams}`);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to load more game ads: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      if (Array.isArray(data.gameAds)) {
+        setGameAds(prev => [...prev, ...data.gameAds]);
+        setPage(nextPage);
+      }
+    } catch (error) {
+      console.error('Error loading more game ads:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load more game ads. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsFetchingMore(false);
+    }
+  };
+
+  // Handle infinite scroll
+  useEffect(() => {
+    let scrollTimeout: NodeJS.Timeout;
+    
+    const handleScroll = () => {
+      if (scrollTimeout) {
+        clearTimeout(scrollTimeout);
+      }
+
+      scrollTimeout = setTimeout(() => {
+        const scrollPosition = window.innerHeight + window.scrollY;
+        const scrollThreshold = document.documentElement.scrollHeight - 1000;
+
+        if (
+          scrollPosition >= scrollThreshold &&
+          !isLoading &&
+          !isFetchingMore &&
+          page < totalPages
+        ) {
+          loadMoreAds();
+        }
+      }, 100);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      if (scrollTimeout) {
+        clearTimeout(scrollTimeout);
+      }
+    };
+  }, [isLoading, isFetchingMore, page, totalPages, searchTerm]);
+
+  // Reset state when search term changes
+  useEffect(() => {
+    setPage(1);
+    setHasInitialLoad(false);
+  }, [searchTerm]);
 
   const handleDeleteAd = async (adId: string) => {
     if (confirm('Are you sure you want to delete this game ad?')) {
@@ -84,14 +204,14 @@ export function GameAdsManager() {
         setGameAds(gameAds.filter(ad => ad.id !== adId))
         toast({
           title: "Success",
-          content: "Game ad deleted successfully.",
+          description: "Game ad deleted successfully."
         })
       } catch (error) {
         console.error('Error deleting game ad:', error)
         toast({
           title: "Error",
-          content: "Failed to delete game ad. Please try again.",
-          variant: "destructive",
+          description: "Failed to delete game ad. Please try again.",
+          variant: "destructive"
         })
       }
     }
@@ -128,14 +248,13 @@ export function GameAdsManager() {
       })
       toast({
         title: "Success",
-        content: "Game ad created successfully",
-        variant: "default",
+        description: "Game ad created successfully"
       })
     } catch (err) {
       toast({
         title: "Error",
-        content: "Failed to create game ad. Please try again.",
-        variant: "destructive",
+        description: "Failed to create game ad. Please try again.",
+        variant: "destructive"
       })
     } finally {
       setIsCreating(false)
@@ -166,15 +285,7 @@ export function GameAdsManager() {
     <div className="container mx-auto p-6">
       <div className="flex flex-col space-y-6">
         <Link href="/" className="self-start transform hover:scale-105 transition-transform">
-          <Image
-            src="/MML-logo.png"
-            alt="MML Logo"
-            width={126}
-            height={42}
-            className="object-contain"
-            priority
-            style={{ width: '126px', height: '42px' }}
-          />
+          <MMLLogo />
         </Link>
 
         <div className="flex justify-between items-center">
@@ -204,6 +315,7 @@ export function GameAdsManager() {
                     width={400}
                     height={300}
                     className="w-full h-48 object-cover transform group-hover:scale-105 transition-transform duration-300"
+                    style={{ width: '100%', height: '192px' }}
                   />
                 </CardContent>
                 <CardFooter>
@@ -276,6 +388,18 @@ export function GameAdsManager() {
             ))}
           </div>
         </div>
+
+        {isFetchingMore && (
+          <div className="flex justify-center py-4">
+            <div className="text-lg text-muted-foreground">Loading more...</div>
+          </div>
+        )}
+
+        {!isLoading && !isFetchingMore && gameAds.length === 0 && (
+          <div className="text-center py-8 text-muted-foreground">
+            No game ads found{searchTerm ? ` matching "${searchTerm}"` : ''}.
+          </div>
+        )}
       </div>
 
       <GameAdDialog
@@ -313,14 +437,14 @@ export function GameAdsManager() {
             setSelectedAd(null)
             toast({
               title: "Success",
-              content: "Game ad saved successfully.",
+              description: "Game ad saved successfully."
             })
           } catch (error) {
             console.error('Error saving game ad:', error)
             toast({
               title: "Error",
-              content: "Failed to save game ad. Please try again.",
-              variant: "destructive",
+              description: "Failed to save game ad. Please try again.",
+              variant: "destructive"
             })
           }
         }}

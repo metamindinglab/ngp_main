@@ -6,53 +6,96 @@
       "description": "",
       "schedules": [
         {
-          "id": "schedule_1742883863754_0",
+          "id": "schedule_1745770849170_0",
           "gameAdId": "ad_1742820645812",
           "startDate": "2025-03-24T16:56:22.419Z",
+          "duration": 7,
+          "status": "scheduled"
+        },
+        {
+          "id": "schedule_1745770849170_1",
+          "gameAdId": "ad_1742883681966",
+          "startDate": "2025-04-30T16:00:00.000Z",
           "duration": 7,
           "status": "scheduled"
         }
       ],
       "deployments": [
         {
-          "id": "deployment_1742883863754_0_0",
+          "id": "deployment_1745770849170_0_0",
           "gameId": "game_001",
-          "scheduleId": "schedule_1742883863754_0",
+          "scheduleId": "schedule_1745770849170_0",
           "deploymentStatus": "pending"
         },
         {
-          "id": "deployment_1742883863754_0_1",
+          "id": "deployment_1745770849170_0_1",
           "gameId": "game_001",
-          "scheduleId": "schedule_1742883863754_0",
+          "scheduleId": "schedule_1745770849170_0",
           "deploymentStatus": "pending"
         },
         {
-          "id": "deployment_1742883863754_0_2",
-          "gameId": "game_005",
-          "scheduleId": "schedule_1742883863754_0",
-          "deploymentStatus": "pending"
-        },
-        {
-          "id": "deployment_1742883863754_0_3",
-          "gameId": "game_005",
-          "scheduleId": "schedule_1742883863754_0",
-          "deploymentStatus": "pending"
-        },
-        {
-          "id": "deployment_1742883863754_0_4",
+          "id": "deployment_1745770849170_0_2",
           "gameId": "game_003",
-          "scheduleId": "schedule_1742883863754_0",
+          "scheduleId": "schedule_1745770849170_0",
           "deploymentStatus": "pending"
         },
         {
-          "id": "deployment_1742883863754_0_5",
+          "id": "deployment_1745770849170_0_3",
           "gameId": "game_003",
-          "scheduleId": "schedule_1742883863754_0",
+          "scheduleId": "schedule_1745770849170_0",
+          "deploymentStatus": "pending"
+        },
+        {
+          "id": "deployment_1745770849170_0_4",
+          "gameId": "game_005",
+          "scheduleId": "schedule_1745770849170_0",
+          "deploymentStatus": "pending"
+        },
+        {
+          "id": "deployment_1745770849170_0_5",
+          "gameId": "game_005",
+          "scheduleId": "schedule_1745770849170_0",
+          "deploymentStatus": "pending"
+        },
+        {
+          "id": "deployment_1745770849170_1_0",
+          "gameId": "game_004",
+          "scheduleId": "schedule_1745770849170_1",
+          "deploymentStatus": "pending"
+        },
+        {
+          "id": "deployment_1745770849170_1_1",
+          "gameId": "game_004",
+          "scheduleId": "schedule_1745770849170_1",
+          "deploymentStatus": "pending"
+        },
+        {
+          "id": "deployment_1745770849170_1_2",
+          "gameId": "game_006",
+          "scheduleId": "schedule_1745770849170_1",
+          "deploymentStatus": "pending"
+        },
+        {
+          "id": "deployment_1745770849170_1_3",
+          "gameId": "game_006",
+          "scheduleId": "schedule_1745770849170_1",
+          "deploymentStatus": "pending"
+        },
+        {
+          "id": "deployment_1745770849170_1_4",
+          "gameId": "game_002",
+          "scheduleId": "schedule_1745770849170_1",
+          "deploymentStatus": "pending"
+        },
+        {
+          "id": "deployment_1745770849170_1_5",
+          "gameId": "game_002",
+          "scheduleId": "schedule_1745770849170_1",
           "deploymentStatus": "pending"
         }
       ],
       "createdAt": "2025-03-24T16:57:54.241Z",
-      "updatedAt": "2025-03-25T06:24:23.754Z",
+      "updatedAt": "2025-04-27T16:20:49.170Z",
       "status": "active"
     }
   ]

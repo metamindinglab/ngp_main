@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowRight } from 'lucide-react';
+import { MMLLogo } from "@/components/ui/mml-logo";
 
 // Add color constants
 const COLORS = {
@@ -39,6 +40,19 @@ export default function PerformancePage() {
     const fetchData = async () => {
       try {
         setIsLoading(true);
+        // Use SWR or implement caching
+        const cachedData = sessionStorage.getItem('performanceData');
+        const cachedTimestamp = sessionStorage.getItem('performanceDataTimestamp');
+        const now = Date.now();
+        
+        // Use cached data if it's less than 30 seconds old
+        if (cachedData && cachedTimestamp && (now - parseInt(cachedTimestamp)) < 30000) {
+          const parsedData = JSON.parse(cachedData);
+          setPerformanceData(parsedData);
+          setIsLoading(false);
+          return;
+        }
+
         // Fetch playlists to get game ads
         const playlistsResponse = await fetch('/api/playlists');
         if (!playlistsResponse.ok) {
@@ -92,36 +106,40 @@ export default function PerformancePage() {
           };
         });
 
+        // Cache the data
+        sessionStorage.setItem('performanceData', JSON.stringify(overview));
+        sessionStorage.setItem('performanceDataTimestamp', now.toString());
+        
         setPerformanceData(overview);
       } catch (err) {
         console.error('Error fetching data:', err);
         setError(err instanceof Error ? err.message : 'Failed to load performance data');
         toast({
           title: 'Error',
-          content: 'Failed to load performance data. Please try again.',
-          variant: 'destructive',
+          description: 'Failed to load performance data. Please try again.',
+          variant: 'destructive'
         });
       } finally {
         setIsLoading(false);
       }
     };
 
+    // Initial fetch
     fetchData();
+
+    // Set up polling with a 30-second interval
+    const intervalId = setInterval(fetchData, 30000);
+
+    return () => {
+      clearInterval(intervalId);
+    };
   }, [toast]);
 
   if (isLoading) {
     return (
       <div className="container mx-auto p-6">
-        <Link href="/" className="self-start transform hover:scale-105 transition-transform block mb-6">
-          <Image
-            src="/MML-logo.png"
-            alt="MML Logo"
-            width={126}
-            height={42}
-            className="object-contain"
-            priority
-            style={{ width: '126px', height: '42px' }}
-          />
+        <Link href="/" className="self-start transform hover:scale-105 transition-transform">
+          <MMLLogo />
         </Link>
         <div className="flex items-center justify-center h-[60vh]">
           <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-gray-900"></div>
@@ -133,16 +151,8 @@ export default function PerformancePage() {
   if (error) {
     return (
       <div className="container mx-auto p-6">
-        <Link href="/" className="self-start transform hover:scale-105 transition-transform block mb-6">
-          <Image
-            src="/MML-logo.png"
-            alt="MML Logo"
-            width={126}
-            height={42}
-            className="object-contain"
-            priority
-            style={{ width: '126px', height: '42px' }}
-          />
+        <Link href="/" className="self-start transform hover:scale-105 transition-transform">
+          <MMLLogo />
         </Link>
         <div className="flex flex-col items-center justify-center h-[60vh]">
           <p className="text-red-500 mb-4">{error}</p>
@@ -154,16 +164,8 @@ export default function PerformancePage() {
 
   return (
     <div className="container mx-auto p-6">
-      <Link href="/" className="self-start transform hover:scale-105 transition-transform block mb-6">
-        <Image
-          src="/MML-logo.png"
-          alt="MML Logo"
-          width={126}
-          height={42}
-          className="object-contain"
-          priority
-          style={{ width: '126px', height: '42px' }}
-        />
+      <Link href="/" className="self-start transform hover:scale-105 transition-transform">
+        <MMLLogo />
       </Link>
 
       <div className="space-y-6">

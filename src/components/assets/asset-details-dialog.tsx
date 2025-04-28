@@ -16,7 +16,7 @@ interface AssetDetailsDialogProps {
   asset: Asset | null;
   open: boolean;
   onClose: () => void;
-  onEdit: () => void;
+  onEdit: (asset: Asset) => void;
   onDelete: () => void;
 }
 
@@ -83,7 +83,7 @@ export function AssetDetailsDialog({
         </div>
 
         <DialogFooter className="flex gap-2">
-          <Button variant="outline" onClick={onEdit}>
+          <Button variant="outline" onClick={() => onEdit(asset)}>
             <Edit className="h-4 w-4 mr-2" />
             Edit Asset
           </Button>
