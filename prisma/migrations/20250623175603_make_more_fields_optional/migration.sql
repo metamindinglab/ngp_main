@@ -1,0 +1,19 @@
+-- AlterTable
+ALTER TABLE "Asset" ALTER COLUMN "type" DROP NOT NULL,
+ALTER COLUMN "status" DROP NOT NULL;
+
+-- AlterTable
+ALTER TABLE "Game" ALTER COLUMN "description" DROP NOT NULL,
+ALTER COLUMN "genre" DROP NOT NULL;
+
+-- AlterTable
+ALTER TABLE "GameAd" ALTER COLUMN "type" DROP NOT NULL,
+ALTER COLUMN "status" DROP NOT NULL;
+
+-- AlterTable
+ALTER TABLE "Playlist" ALTER COLUMN "description" DROP NOT NULL,
+ALTER COLUMN "type" DROP NOT NULL,
+ALTER COLUMN "createdBy" DROP NOT NULL;
+
+-- AlterTable
+ALTER TABLE "RemovableAsset" ALTER COLUMN "reason" DROP NOT NULL;

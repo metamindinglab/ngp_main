@@ -1,0 +1,99 @@
+// Prisma schema for Roblox Asset Management System
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Game {
+  id          String    @id @default(cuid())
+  name        String
+  description String?
+  genre       String?
+  robloxLink  String?
+  thumbnail   String?
+  metrics     Json?
+  dates       Json?
+  owner       Json?
+  assets      Asset[]   @relation("GameAssets")
+  ads         GameAd[]
+  playlists   Playlist[] @relation("GamePlaylists")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Asset {
+  id          String    @id @default(cuid())
+  name        String
+  type        String?
+  status      String?
+  robloxId    String?
+  creator     Json?
+  metadata    Json?
+  versions    Json?
+  relationships Json?
+  games       Game[]    @relation("GameAssets")
+  playlists   Playlist[] @relation("AssetPlaylists")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Playlist {
+  id          String    @id @default(cuid())
+  name        String
+  description String?
+  type        String?
+  createdBy   String?
+  assets      Asset[]   @relation("AssetPlaylists")
+  games       Game[]    @relation("GamePlaylists")
+  metadata    Json?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model GameAd {
+  id          String    @id @default(cuid())
+  game        Game     @relation(fields: [gameId], references: [id])
+  gameId      String
+  name        String
+  type        String?
+  status      String?
+  schedule    Json?
+  targeting   Json?
+  metrics     Json?
+  performance GameAdPerformance[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model GameAdPerformance {
+  id              String    @id @default(cuid())
+  gameAd          GameAd    @relation(fields: [gameAdId], references: [id])
+  gameAdId        String
+  gameId          String
+  playlistId      String?
+  date            DateTime
+  metrics         Json?
+  demographics    Json?
+  engagements     Json?
+  playerDetails   Json?
+  timeDistribution Json?
+  performanceTrends Json?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model RemovableAsset {
+  id                  String    @id @default(cuid())
+  robloxAssetId       String
+  name                String
+  replacedBy          String?
+  reason              String?
+  dateMarkedRemovable DateTime
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+} 
