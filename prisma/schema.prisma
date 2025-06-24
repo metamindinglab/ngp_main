@@ -65,6 +65,7 @@ model GameAd {
   schedule    Json?
   targeting   Json?
   metrics     Json?
+  assets      Json?
   performance GameAdPerformance[]
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt

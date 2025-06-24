@@ -1,37 +1,28 @@
 import { NextResponse } from 'next/server'
-import { promises as fs } from 'fs'
-import path from 'path'
-import { GameAd } from '@/types/gameAd'
-
-const DATA_FILE = path.join(process.cwd(), 'data', 'game-ads.json')
-
-// Load game ads from file
-async function loadGameAds(): Promise<GameAd[]> {
-  const data = await fs.readFile(DATA_FILE, 'utf-8')
-  return JSON.parse(data).gameAds
-}
-
-// Save game ads to file
-async function saveGameAds(gameAds: GameAd[]) {
-  await fs.writeFile(DATA_FILE, JSON.stringify({ gameAds }, null, 2))
-}
+import { getGameAdById, updateGameAd, deleteGameAd } from '@/lib/db/gameAds'
+import { Prisma } from '@prisma/client'
 
 export async function GET(
   request: Request,
   { params }: { params: { id: string } }
 ) {
   try {
-    const gameAds = await loadGameAds()
-    const gameAd = gameAds.find(ad => ad.id === params.id)
-
-    if (!gameAd) {
+    const ad = await getGameAdById(params.id)
+    if (!ad) {
       return NextResponse.json(
         { error: 'Game ad not found' },
         { status: 404 }
       )
     }
-
-    return NextResponse.json(gameAd)
+    // Map DB fields to API response shape
+    return NextResponse.json({
+      id: ad.id,
+      name: ad.name,
+      templateType: ad.type,
+      createdAt: ad.createdAt.toISOString(),
+      updatedAt: ad.updatedAt.toISOString(),
+      assets: ad.assets || [],
+    })
   } catch (error) {
     console.error('Error loading game ad:', error)
     return NextResponse.json(
@@ -47,7 +38,6 @@ export async function PUT(
 ) {
   try {
     const gameAd = await request.json()
-    
     // Validate required fields
     if (!gameAd.name || !gameAd.templateType || !gameAd.assets?.length) {
       return NextResponse.json(
@@ -55,7 +45,6 @@ export async function PUT(
         { status: 400 }
       )
     }
-
     // Validate that all assets have required fields
     for (const asset of gameAd.assets) {
       if (!asset.assetType || !asset.assetId || !asset.robloxAssetId) {
@@ -65,29 +54,26 @@ export async function PUT(
         )
       }
     }
-
-    // Load existing game ads
-    const gameAds = await loadGameAds()
-    const index = gameAds.findIndex(ad => ad.id === params.id)
-
-    if (index === -1) {
-      return NextResponse.json(
-        { error: 'Game ad not found' },
-        { status: 404 }
-      )
+    // Prepare data for Prisma
+    const data: Prisma.GameAdUpdateInput = {
+      name: gameAd.name,
+      type: gameAd.templateType,
+      status: 'active',
+      schedule: gameAd.schedule || null,
+      targeting: gameAd.targeting || null,
+      metrics: gameAd.metrics || null,
+      assets: gameAd.assets,
+      updatedAt: new Date(),
     }
-
-    // Update timestamps
-    gameAd.updatedAt = new Date().toISOString()
-    gameAd.createdAt = gameAds[index].createdAt
-
-    // Update the game ad
-    gameAds[index] = gameAd
-
-    // Save to file
-    await saveGameAds(gameAds)
-
-    return NextResponse.json(gameAd)
+    const updated = await updateGameAd(params.id, data)
+    return NextResponse.json({
+      id: updated.id,
+      name: updated.name,
+      templateType: updated.type,
+      createdAt: updated.createdAt.toISOString(),
+      updatedAt: updated.updatedAt.toISOString(),
+      assets: updated.assets || [],
+    })
   } catch (error) {
     console.error('Error updating game ad:', error)
     return NextResponse.json(
@@ -102,22 +88,7 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const gameAds = await loadGameAds()
-    const index = gameAds.findIndex(ad => ad.id === params.id)
-
-    if (index === -1) {
-      return NextResponse.json(
-        { error: 'Game ad not found' },
-        { status: 404 }
-      )
-    }
-
-    // Remove the game ad
-    gameAds.splice(index, 1)
-
-    // Save to file
-    await saveGameAds(gameAds)
-
+    await deleteGameAd(params.id)
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Error deleting game ad:', error)

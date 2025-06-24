@@ -152,6 +152,7 @@ async function main() {
           schedule: ad.schedule || null,
           targeting: ad.targeting || null,
           metrics: ad.metrics || null,
+          assets: ad.assets || null,
           updatedAt: ad.updatedAt ? new Date(ad.updatedAt) : undefined,
         },
         create: {
@@ -163,6 +164,7 @@ async function main() {
           schedule: ad.schedule || null,
           targeting: ad.targeting || null,
           metrics: ad.metrics || null,
+          assets: ad.assets || null,
           createdAt: ad.createdAt ? new Date(ad.createdAt) : undefined,
           updatedAt: ad.updatedAt ? new Date(ad.updatedAt) : undefined,
         }
