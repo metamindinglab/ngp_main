@@ -10,6 +10,9 @@ export async function getAllAssets() {
       games: true,
       playlists: true,
     },
+    orderBy: {
+      updatedAt: 'desc'  // Sort by most recently updated first
+    }
   });
 }
 

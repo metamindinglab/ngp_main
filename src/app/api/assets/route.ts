@@ -1,50 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { readFile, writeFile, mkdir } from 'fs/promises';
-import { join } from 'path';
+import { getAllAssets, createAsset, updateAsset, deleteAsset } from '@/lib/db/assets';
+import { Asset } from '@prisma/client';
 
-interface Asset {
-  id: string;
-  name: string;
-  assetType: string;
-  description: string;
-  thumbnail: string;
-  robloxAssetId: string;
-  tags: string[];
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface AssetsDatabase {
-  version: string;
-  lastUpdated: string;
-  assets: Asset[];
-}
-
-const assetsPath = join(process.cwd(), 'data/assets.json');
-
-// Initialize data file if it doesn't exist
-async function initDataFile() {
-  try {
-    await readFile(assetsPath, 'utf8');
-  } catch {
-    // Create data directory if it doesn't exist
-    await mkdir(join(process.cwd(), 'data'), { recursive: true });
-    // Create initial data file
-    const initialData: AssetsDatabase = {
-      version: '1.0',
-      lastUpdated: new Date().toISOString(),
-      assets: []
-    };
-    await writeFile(assetsPath, JSON.stringify(initialData, null, 2));
-  }
+// Helper function to transform database asset to UI format
+function transformDatabaseAssetToUI(dbAsset: any) {
+  return {
+    id: dbAsset.id,
+    name: dbAsset.name,
+    description: dbAsset.metadata?.description || '',
+    type: dbAsset.type || '',
+    assetType: dbAsset.type || '',  // For backward compatibility
+    robloxAssetId: dbAsset.robloxId || '',
+    thumbnail: dbAsset.metadata?.thumbnail || '',
+    tags: dbAsset.metadata?.tags || [],
+    createdAt: dbAsset.createdAt?.toISOString() || '',
+    updatedAt: dbAsset.updatedAt?.toISOString() || '',
+    lastUpdated: dbAsset.updatedAt?.toISOString() || '',
+    // Additional metadata fields
+    ...dbAsset.metadata
+  };
 }
 
 export async function GET() {
   try {
-    await initDataFile();
-    const content = await readFile(assetsPath, 'utf8');
-    const data = JSON.parse(content);
-    return NextResponse.json(data);
+    const assets = await getAllAssets();
+    // Transform each asset to the UI format
+    const transformedAssets = assets.map(transformDatabaseAssetToUI);
+    return NextResponse.json({ assets: transformedAssets });
   } catch (error) {
     console.error('Error reading assets:', error);
     return NextResponse.json(
@@ -56,36 +38,53 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    await initDataFile();
-    const asset = await request.json();
-    const content = await readFile(assetsPath, 'utf8');
-    const data: AssetsDatabase = JSON.parse(content);
+    const assetData = await request.json();
     
-    // Generate next asset ID
-    const existingIds = data.assets.map((asset: Asset): number => parseInt(asset.id.replace('asset_', '')) || 0);
-    const nextId = Math.max(...existingIds, 0) + 1;
-    const assetId = `asset_${nextId.toString().padStart(3, '0')}`;
-    
-    const newAsset: Asset = {
-      id: assetId,
-      name: asset.name,
-      assetType: asset.assetType || asset.type,
-      description: asset.description,
-      thumbnail: asset.thumbnail || '',
-      robloxAssetId: asset.robloxAssetId,
-      tags: Array.isArray(asset.tags) ? asset.tags : 
-            typeof asset.tags === 'string' ? asset.tags.split(',').map((tag: string): string => tag.trim()) : 
-            [],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+    // Transform UI data to database format
+    const dbAssetData = {
+      name: assetData.name,
+      type: assetData.assetType || assetData.type,
+      status: 'active',
+      robloxId: assetData.robloxAssetId,
+      creator: assetData.creator || null,
+      metadata: {
+        description: assetData.description,
+        thumbnail: assetData.thumbnail || '',
+        tags: Array.isArray(assetData.tags) ? assetData.tags : 
+              typeof assetData.tags === 'string' ? assetData.tags.split(',').map((tag: string) => tag.trim()) : 
+              [],
+        // Include all other metadata fields
+        characterType: assetData.characterType,
+        appearance: assetData.appearance,
+        personality: assetData.personality,
+        defaultAnimations: assetData.defaultAnimations,
+        suitableFor: assetData.suitableFor,
+        marketingCapabilities: assetData.marketingCapabilities,
+        difficulty: assetData.difficulty,
+        maxPlayers: assetData.maxPlayers,
+        gameplayDuration: assetData.gameplayDuration,
+        customizableElements: assetData.customizableElements,
+        url: assetData.url,
+        duration: assetData.duration,
+        dimensions: assetData.dimensions,
+        fileFormat: assetData.fileFormat,
+        fileSize: assetData.fileSize,
+        category: assetData.category,
+        image: assetData.image,
+        previewImage: assetData.previewImage,
+        compatibility: assetData.compatibility,
+        brands: assetData.brands,
+        size: assetData.size
+      }
     };
-
-    data.assets.push(newAsset);
-    data.lastUpdated = new Date().toISOString();
     
-    await writeFile(assetsPath, JSON.stringify(data, null, 2));
+    const newAsset = await createAsset(dbAssetData);
     
-    return NextResponse.json({ success: true, asset: newAsset });
+    // Transform back to UI format for response
+    return NextResponse.json({ 
+      success: true, 
+      asset: transformDatabaseAssetToUI(newAsset) 
+    });
   } catch (error) {
     console.error('Error creating asset:', error);
     return NextResponse.json(
@@ -97,30 +96,59 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
-    await initDataFile();
     const { id, ...updates } = await request.json();
-    const content = await readFile(assetsPath, 'utf8');
-    const data: AssetsDatabase = JSON.parse(content);
     
-    const assetIndex = data.assets.findIndex((asset: Asset): boolean => asset.id === id);
-    if (assetIndex === -1) {
+    if (!id) {
       return NextResponse.json(
-        { error: 'Asset not found' },
-        { status: 404 }
+        { error: 'Asset ID is required' },
+        { status: 400 }
       );
     }
-    
-    data.assets[assetIndex] = {
-      ...data.assets[assetIndex],
-      ...updates,
-      id, // Preserve the original ID
-      updatedAt: new Date().toISOString()
+
+    // Transform UI data to database format
+    const dbUpdates = {
+      name: updates.name,
+      type: updates.assetType || updates.type,
+      robloxId: updates.robloxAssetId,
+      metadata: {
+        description: updates.description,
+        thumbnail: updates.thumbnail || '',
+        tags: Array.isArray(updates.tags) ? updates.tags : 
+              typeof updates.tags === 'string' ? updates.tags.split(',').map((tag: string) => tag.trim()) : 
+              [],
+        // Include all other metadata fields
+        characterType: updates.characterType,
+        appearance: updates.appearance,
+        personality: updates.personality,
+        defaultAnimations: updates.defaultAnimations,
+        suitableFor: updates.suitableFor,
+        marketingCapabilities: updates.marketingCapabilities,
+        difficulty: updates.difficulty,
+        maxPlayers: updates.maxPlayers,
+        gameplayDuration: updates.gameplayDuration,
+        customizableElements: updates.customizableElements,
+        url: updates.url,
+        duration: updates.duration,
+        dimensions: updates.dimensions,
+        fileFormat: updates.fileFormat,
+        fileSize: updates.fileSize,
+        category: updates.category,
+        image: updates.image,
+        previewImage: updates.previewImage,
+        compatibility: updates.compatibility,
+        brands: updates.brands,
+        size: updates.size
+      },
+      updatedAt: new Date()
     };
-    data.lastUpdated = new Date().toISOString();
+
+    const updatedAsset = await updateAsset(id, dbUpdates);
     
-    await writeFile(assetsPath, JSON.stringify(data, null, 2));
-    
-    return NextResponse.json({ success: true, asset: data.assets[assetIndex] });
+    // Transform back to UI format for response
+    return NextResponse.json({ 
+      success: true, 
+      asset: transformDatabaseAssetToUI(updatedAsset) 
+    });
   } catch (error) {
     console.error('Error updating asset:', error);
     return NextResponse.json(
@@ -132,7 +160,6 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    await initDataFile();
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
     
@@ -143,21 +170,7 @@ export async function DELETE(request: NextRequest) {
       );
     }
     
-    const content = await readFile(assetsPath, 'utf8');
-    const data: AssetsDatabase = JSON.parse(content);
-    
-    const assetIndex = data.assets.findIndex((asset: Asset): boolean => asset.id === id);
-    if (assetIndex === -1) {
-      return NextResponse.json(
-        { error: 'Asset not found' },
-        { status: 404 }
-      );
-    }
-    
-    data.assets.splice(assetIndex, 1);
-    data.lastUpdated = new Date().toISOString();
-    
-    await writeFile(assetsPath, JSON.stringify(data, null, 2));
+    await deleteAsset(id);
     
     return NextResponse.json({ success: true });
   } catch (error) {

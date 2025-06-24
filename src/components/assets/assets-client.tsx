@@ -296,18 +296,25 @@ export function AssetsClient({ initialAssets = [] }: AssetsClientProps) {
     return 'bg-gray-100 text-gray-800';
   };
 
-  const filteredAssets = assets.filter(asset => {
-    if (!asset) return false;
-    
-    const searchLower = searchQuery.toLowerCase();
-    const matchesSearch = 
-      (asset.name || '').toLowerCase().includes(searchLower) ||
-      (asset.description || '').toLowerCase().includes(searchLower) ||
-      (Array.isArray(asset.tags) && asset.tags.some(tag => (tag || '').toLowerCase().includes(searchLower)));
-    
-    const matchesType = selectedType === "all" || asset.assetType === selectedType;
-    return matchesSearch && matchesType;
-  });
+  const filteredAssets = assets
+    .filter(asset => {
+      if (!asset) return false;
+      
+      const searchLower = searchQuery.toLowerCase();
+      const matchesSearch = 
+        (asset.name || '').toLowerCase().includes(searchLower) ||
+        (asset.description || '').toLowerCase().includes(searchLower) ||
+        (Array.isArray(asset.tags) && asset.tags.some(tag => (tag || '').toLowerCase().includes(searchLower)));
+      
+      const matchesType = selectedType === "all" || asset.assetType === selectedType;
+      return matchesSearch && matchesType;
+    })
+    .sort((a, b) => {
+      // Sort by updatedAt in descending order (most recent first)
+      const dateA = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
+      const dateB = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
+      return dateB - dateA;
+    });
 
   const handleEditFromDetails = (asset: Asset) => {
     console.log('Editing asset:', asset); // Debug log

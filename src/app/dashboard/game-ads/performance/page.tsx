@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Loader2 } from 'lucide-react';
 import { MMLLogo } from "@/components/ui/mml-logo";
 
 // Add color constants
@@ -35,6 +35,7 @@ export default function PerformancePage() {
   const [performanceData, setPerformanceData] = React.useState<GameAdPerformanceOverview[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
+  const [loadingDetails, setLoadingDetails] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     const fetchData = async () => {
@@ -221,14 +222,26 @@ export default function PerformancePage() {
                     </div>
                   </div>
                 </div>
-                <Link href={`/dashboard/game-ads/${ad.id}/performance`}>
-                  <Button 
-                    className="w-full bg-primary hover:bg-primary/90 text-white flex items-center justify-center gap-2 mt-2 transition-all duration-300 hover:scale-[1.02]"
-                  >
-                    View Details
-                    <ArrowRight className="h-4 w-4" />
-                  </Button>
-                </Link>
+                <Button 
+                  className="w-full bg-primary hover:bg-primary/90 text-white flex items-center justify-center gap-2 mt-2 transition-all duration-300 hover:scale-[1.02]"
+                  onClick={() => {
+                    setLoadingDetails(ad.id);
+                    router.push(`/dashboard/game-ads/${ad.id}/performance`);
+                  }}
+                  disabled={loadingDetails === ad.id}
+                >
+                  {loadingDetails === ad.id ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Loading...
+                    </>
+                  ) : (
+                    <>
+                      View Details
+                      <ArrowRight className="h-4 w-4" />
+                    </>
+                  )}
+                </Button>
               </CardContent>
             </Card>
           ))}

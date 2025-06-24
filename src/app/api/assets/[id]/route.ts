@@ -1,26 +1,70 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { readFile, writeFile } from 'fs/promises';
-import { join } from 'path';
 import { Asset } from '@/types/asset';
 import { addRemovableAsset } from '@/lib/removable-assets';
+import { getAssetById, updateAsset, deleteAsset } from '@/lib/db/assets';
 
-interface AssetsDatabase {
-  version: string;
-  lastUpdated: string;
-  assets: Asset[];
+// Helper function to transform UI data to database format
+function transformUIToDatabaseFormat(uiData: any) {
+  return {
+    name: uiData.name,
+    type: uiData.type || uiData.assetType,
+    robloxId: uiData.robloxAssetId,
+    metadata: {
+      description: uiData.description,
+      tags: Array.isArray(uiData.tags) ? uiData.tags : 
+            typeof uiData.tags === 'string' ? uiData.tags.split(',').map((tag: string) => tag.trim()) : 
+            [],
+      // Include all other metadata fields
+      characterType: uiData.characterType,
+      appearance: uiData.appearance,
+      personality: uiData.personality,
+      defaultAnimations: uiData.defaultAnimations,
+      suitableFor: uiData.suitableFor,
+      marketingCapabilities: uiData.marketingCapabilities,
+      difficulty: uiData.difficulty,
+      maxPlayers: uiData.maxPlayers,
+      gameplayDuration: uiData.gameplayDuration,
+      customizableElements: uiData.customizableElements,
+      url: uiData.url,
+      duration: uiData.duration,
+      dimensions: uiData.dimensions,
+      fileFormat: uiData.fileFormat,
+      fileSize: uiData.fileSize,
+      category: uiData.category,
+      image: uiData.image,
+      previewImage: uiData.previewImage,
+      compatibility: uiData.compatibility,
+      brands: uiData.brands,
+      size: uiData.size,
+      lastUpdated: uiData.lastUpdated
+    }
+  };
 }
 
-const assetsPath = join(process.cwd(), 'data', 'assets.json');
+// Helper function to transform database data to UI format
+function transformDatabaseToUIFormat(dbAsset: any) {
+  return {
+    id: dbAsset.id,
+    name: dbAsset.name,
+    description: dbAsset.metadata?.description || '',
+    type: dbAsset.type || '',
+    assetType: dbAsset.type || '',  // For backward compatibility
+    robloxAssetId: dbAsset.robloxId || '',
+    tags: dbAsset.metadata?.tags || [],
+    createdAt: dbAsset.createdAt?.toISOString() || '',
+    updatedAt: dbAsset.updatedAt?.toISOString() || '',
+    lastUpdated: dbAsset.metadata?.lastUpdated || dbAsset.updatedAt?.toISOString() || '',
+    // Include all other metadata fields
+    ...dbAsset.metadata
+  };
+}
 
 export async function GET(
   request: Request,
   { params }: { params: { id: string } }
 ) {
   try {
-    const content = await readFile(assetsPath, 'utf8');
-    const data: AssetsDatabase = JSON.parse(content);
-    
-    const asset = data.assets.find(a => a.id === params.id);
+    const asset = await getAssetById(params.id);
     
     if (!asset) {
       return NextResponse.json(
@@ -29,7 +73,7 @@ export async function GET(
       );
     }
     
-    return NextResponse.json(asset);
+    return NextResponse.json(transformDatabaseToUIFormat(asset));
   } catch (error) {
     console.error('Error reading asset:', error);
     return NextResponse.json(
@@ -45,38 +89,28 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     const updatedAsset = await request.json();
     console.log('Updating asset:', { assetId, updatedAsset });
 
-    // Read the current assets database
-    const content = await readFile(assetsPath, 'utf8');
-    const data: AssetsDatabase = JSON.parse(content);
-
-    // Find and update the asset in the assets array
-    const assetIndex = data.assets.findIndex(asset => asset.id === assetId);
-    
-    if (assetIndex === -1) {
+    // Check if asset exists
+    const existingAsset = await getAssetById(assetId);
+    if (!existingAsset) {
       return NextResponse.json(
         { error: 'Asset not found' },
         { status: 404 }
       );
     }
 
-    // Update the asset while preserving the ID and timestamps
-    const updatedRecord = {
-      ...data.assets[assetIndex],
-      ...updatedAsset,
-      id: assetId,
-      updatedAt: new Date().toISOString(),
-      createdAt: data.assets[assetIndex].createdAt // Preserve the original creation date
-    };
-    
-    data.assets[assetIndex] = updatedRecord;
-    data.lastUpdated = new Date().toISOString();
+    // Transform the data to match Prisma schema
+    const dbFormat = transformUIToDatabaseFormat(updatedAsset);
 
-    // Write the updated data back to the file
-    await writeFile(assetsPath, JSON.stringify(data, null, 2));
+    // Update the asset using Prisma
+    const updatedRecord = await updateAsset(assetId, {
+      ...dbFormat,
+      updatedAt: new Date()
+    });
 
+    // Transform the response back to UI format
     return NextResponse.json({ 
       success: true,
-      asset: updatedRecord 
+      asset: transformDatabaseToUIFormat(updatedRecord)
     });
   } catch (error) {
     console.error('Error updating asset:', error);
@@ -91,27 +125,20 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
   try {
     const { id } = params;
 
-    // Read and parse the current database
-    const content = await readFile(assetsPath, 'utf-8');
-    const db = JSON.parse(content);
-
-    // Find the asset
-    const assetIndex = db.assets.findIndex((asset: any) => asset.id === id);
-    if (assetIndex === -1) {
+    // Check if asset exists and get its data
+    const asset = await getAssetById(id);
+    if (!asset) {
       return NextResponse.json(
         { error: 'Asset not found' },
         { status: 404 }
       );
     }
 
-    // Get the asset before removing it
-    const asset = db.assets[assetIndex];
-
     // Add to removable assets database before deletion
     try {
       await addRemovableAsset({
         id: asset.id,
-        robloxAssetId: asset.robloxAssetId || '',
+        robloxAssetId: asset.robloxId || '',
         name: asset.name,
         replacedBy: '', // Empty string since it's being deleted, not replaced
         reason: 'Manually deleted by user'
@@ -122,12 +149,8 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
       // Continue with deletion even if adding to removable database fails
     }
 
-    // Remove the asset from the array
-    db.assets.splice(assetIndex, 1);
-    db.lastUpdated = new Date().toISOString();
-
-    // Write the updated database back to the file
-    await writeFile(assetsPath, JSON.stringify(db, null, 2));
+    // Delete the asset using Prisma
+    await deleteAsset(id);
 
     return NextResponse.json({ success: true });
   } catch (error) {

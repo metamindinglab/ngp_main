@@ -10,4 +10,52 @@ export interface Asset {
   createdAt?: string;
   updatedAt?: string;
   lastUpdated?: string;
+
+  // Character specific fields
+  characterType?: string;
+  appearance?: {
+    gender: string;
+    style: string[];
+    hairStyle: string;
+    hairColor: string;
+    height: string;
+    features: string[];
+  };
+  personality?: string[];
+  defaultAnimations?: string[];
+  suitableFor?: {
+    brands: string[];
+    products: string[];
+    gameTypes: string[];
+  };
+  marketingCapabilities?: string[];
+
+  // Clothing specific fields
+  image?: string;
+  previewImage?: string;
+  compatibility?: string[];
+  brands?: string[];
+  size?: string[];
+
+  // Minigame specific fields
+  difficulty?: string;
+  maxPlayers?: number;
+  gameplayDuration?: string;
+  customizableElements?: Array<{
+    id: string;
+    name: string;
+    type: string;
+    description: string;
+  }>;
+
+  // Media specific fields
+  url?: string;
+  duration?: string;
+  dimensions?: {
+    width: number;
+    height: number;
+  };
+  fileFormat?: string;
+  fileSize?: number;
+  category?: string;
 } 

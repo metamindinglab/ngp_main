@@ -21,9 +21,9 @@ async function main() {
           genre: game.genre,
           robloxLink: game.robloxLink,
           thumbnail: game.thumbnail,
-          metrics: game.metrics,
-          dates: game.dates,
-          owner: game.owner,
+          metrics: typeof game.metrics === 'object' ? game.metrics : null,
+          dates: typeof game.dates === 'object' ? game.dates : null,
+          owner: typeof game.owner === 'object' ? game.owner : null,
           updatedAt: game.dates?.lastUpdated ? new Date(game.dates.lastUpdated) : undefined,
         },
         create: {
@@ -33,9 +33,9 @@ async function main() {
           genre: game.genre,
           robloxLink: game.robloxLink,
           thumbnail: game.thumbnail,
-          metrics: game.metrics,
-          dates: game.dates,
-          owner: game.owner,
+          metrics: typeof game.metrics === 'object' ? game.metrics : null,
+          dates: typeof game.dates === 'object' ? game.dates : null,
+          owner: typeof game.owner === 'object' ? game.owner : null,
           createdAt: game.dates?.created ? new Date(game.dates.created) : undefined,
           updatedAt: game.dates?.lastUpdated ? new Date(game.dates.lastUpdated) : undefined,
         }
@@ -48,31 +48,61 @@ async function main() {
     const assetsPath = path.join(__dirname, '../data/assets.json');
     const assetsData = JSON.parse(await fs.readFile(assetsPath, 'utf-8'));
     for (const asset of assetsData.assets) {
+      // Prepare metadata object to store additional fields
+      const metadata: any = {
+        description: asset.description,
+        tags: asset.tags,
+        assetType: asset.assetType,
+        image: asset.image,
+        previewImage: asset.previewImage,
+        compatibility: asset.compatibility,
+        brands: asset.brands,
+        size: asset.size,
+        characterType: asset.characterType,
+        appearance: asset.appearance,
+        personality: asset.personality,
+        defaultAnimations: asset.defaultAnimations,
+        suitableFor: asset.suitableFor,
+        marketingCapabilities: asset.marketingCapabilities,
+        difficulty: asset.difficulty,
+        maxPlayers: asset.maxPlayers,
+        gameplayDuration: asset.gameplayDuration,
+        customizableElements: asset.customizableElements,
+        duration: asset.duration,
+        category: asset.category,
+        previewUrl: asset.previewUrl,
+        url: asset.url,
+        dimensions: asset.dimensions,
+        fileFormat: asset.fileFormat,
+        fileSize: asset.fileSize
+      };
+
+      // Clean up metadata by removing undefined values
+      Object.keys(metadata).forEach(key => {
+        if (metadata[key] === undefined) {
+          delete metadata[key];
+        }
+      });
+
       await prisma.asset.upsert({
         where: { id: asset.id },
         update: {
           name: asset.name,
-          type: asset.type,
-          status: asset.status,
-          robloxId: asset.robloxId,
-          creator: asset.creator,
-          metadata: asset.metadata,
-          versions: asset.versions,
-          relationships: asset.relationships,
-          updatedAt: asset.updatedAt ? new Date(asset.updatedAt) : undefined,
+          type: asset.type || asset.assetType,
+          status: 'active',
+          robloxId: asset.robloxAssetId,
+          metadata: metadata,
+          updatedAt: asset.updatedAt ? new Date(asset.updatedAt) : new Date(),
         },
         create: {
           id: asset.id,
           name: asset.name,
-          type: asset.type,
-          status: asset.status,
-          robloxId: asset.robloxId,
-          creator: asset.creator,
-          metadata: asset.metadata,
-          versions: asset.versions,
-          relationships: asset.relationships,
-          createdAt: asset.createdAt ? new Date(asset.createdAt) : undefined,
-          updatedAt: asset.updatedAt ? new Date(asset.updatedAt) : undefined,
+          type: asset.type || asset.assetType,
+          status: 'active',
+          robloxId: asset.robloxAssetId,
+          metadata: metadata,
+          createdAt: asset.createdAt ? new Date(asset.createdAt) : new Date(),
+          updatedAt: asset.updatedAt ? new Date(asset.updatedAt) : new Date(),
         }
       });
     }
@@ -119,9 +149,9 @@ async function main() {
           name: ad.name,
           type: ad.templateType,
           status: 'active', // Default status
-          schedule: {},
-          targeting: {},
-          metrics: {},
+          schedule: ad.schedule || null,
+          targeting: ad.targeting || null,
+          metrics: ad.metrics || null,
           updatedAt: ad.updatedAt ? new Date(ad.updatedAt) : undefined,
         },
         create: {
@@ -130,9 +160,9 @@ async function main() {
           name: ad.name,
           type: ad.templateType,
           status: 'active', // Default status
-          schedule: {},
-          targeting: {},
-          metrics: {},
+          schedule: ad.schedule || null,
+          targeting: ad.targeting || null,
+          metrics: ad.metrics || null,
           createdAt: ad.createdAt ? new Date(ad.createdAt) : undefined,
           updatedAt: ad.updatedAt ? new Date(ad.updatedAt) : undefined,
         }
@@ -152,12 +182,12 @@ async function main() {
           gameId: perf.gameId,
           playlistId: perf.playlistId,
           date: new Date(perf.date),
-          metrics: perf.metrics,
-          demographics: perf.demographics,
-          engagements: perf.engagements,
-          playerDetails: perf.playerDetails,
-          timeDistribution: perf.timeDistribution,
-          performanceTrends: perf.performanceTrends,
+          metrics: typeof perf.metrics === 'object' ? perf.metrics : null,
+          demographics: typeof perf.demographics === 'object' ? perf.demographics : null,
+          engagements: typeof perf.engagements === 'object' ? perf.engagements : null,
+          playerDetails: typeof perf.playerDetails === 'object' ? perf.playerDetails : null,
+          timeDistribution: typeof perf.timeDistribution === 'object' ? perf.timeDistribution : null,
+          performanceTrends: typeof perf.performanceTrends === 'object' ? perf.performanceTrends : null,
           updatedAt: new Date(),
         },
         create: {
@@ -166,12 +196,12 @@ async function main() {
           gameId: perf.gameId,
           playlistId: perf.playlistId,
           date: new Date(perf.date),
-          metrics: perf.metrics,
-          demographics: perf.demographics,
-          engagements: perf.engagements,
-          playerDetails: perf.playerDetails,
-          timeDistribution: perf.timeDistribution,
-          performanceTrends: perf.performanceTrends,
+          metrics: typeof perf.metrics === 'object' ? perf.metrics : null,
+          demographics: typeof perf.demographics === 'object' ? perf.demographics : null,
+          engagements: typeof perf.engagements === 'object' ? perf.engagements : null,
+          playerDetails: typeof perf.playerDetails === 'object' ? perf.playerDetails : null,
+          timeDistribution: typeof perf.timeDistribution === 'object' ? perf.timeDistribution : null,
+          performanceTrends: typeof perf.performanceTrends === 'object' ? perf.performanceTrends : null,
           createdAt: new Date(),
           updatedAt: new Date(),
         }
@@ -184,7 +214,7 @@ async function main() {
     const removablePath = path.join(__dirname, '../data/removable-assets.json');
     const removableData = JSON.parse(await fs.readFile(removablePath, 'utf-8'));
     for (const asset of removableData.removableAssets) {
-      await prisma.removableAssets.upsert({
+      await prisma.removableAsset.upsert({
         where: { id: asset.id },
         update: {
           robloxAssetId: asset.robloxAssetId,
