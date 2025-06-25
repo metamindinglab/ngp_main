@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { PrismaClient } from '@prisma/client'
+import { addCorsHeaders, handleOptions } from '../middleware'
 
 const prisma = new PrismaClient()
 
@@ -47,6 +48,11 @@ interface GamesDatabase {
   games: Game[]
 }
 
+// Handle OPTIONS requests for CORS preflight
+export async function OPTIONS() {
+  return handleOptions()
+}
+
 // Helper function to generate next game ID
 async function generateGameId(): Promise<string> {
   const games = await prisma.game.findMany({
@@ -68,13 +74,17 @@ export async function GET() {
       orderBy: { createdAt: 'desc' }
     })
     
-    return NextResponse.json({ games })
+    const response = NextResponse.json({ games })
+    return addCorsHeaders(response)
   } catch (error) {
     console.error('Error reading games:', error)
-    return NextResponse.json(
+    const response = NextResponse.json(
       { error: 'Failed to read games' },
       { status: 500 }
     )
+    return addCorsHeaders(response)
+  } finally {
+    await prisma.$disconnect()
   }
 }
 
@@ -114,13 +124,15 @@ export async function POST(request: NextRequest) {
       }
     })
     
-    return NextResponse.json({ success: true, game: newGame })
+    const response = NextResponse.json({ success: true, game: newGame })
+    return addCorsHeaders(response)
   } catch (error) {
     console.error('Error creating game:', error)
-    return NextResponse.json(
+    const response = NextResponse.json(
       { error: 'Failed to create game' },
       { status: 500 }
     )
+    return addCorsHeaders(response)
   }
 }
 
@@ -149,13 +161,15 @@ export async function PUT(request: NextRequest) {
       }
     })
     
-    return NextResponse.json({ success: true, game: updatedGame })
+    const response = NextResponse.json({ success: true, game: updatedGame })
+    return addCorsHeaders(response)
   } catch (error) {
     console.error('Error updating game:', error)
-    return NextResponse.json(
+    const response = NextResponse.json(
       { error: 'Failed to update game' },
       { status: 500 }
     )
+    return addCorsHeaders(response)
   }
 }
 
@@ -188,13 +202,15 @@ export async function DELETE(request: NextRequest) {
       where: { id }
     })
     
-    return NextResponse.json({ success: true })
+    const response = NextResponse.json({ success: true })
+    return addCorsHeaders(response)
   } catch (error) {
     console.error('Error deleting game:', error)
-    return NextResponse.json(
+    const response = NextResponse.json(
       { error: 'Failed to delete game' },
       { status: 500 }
     )
+    return addCorsHeaders(response)
   } finally {
     await prisma.$disconnect()
   }

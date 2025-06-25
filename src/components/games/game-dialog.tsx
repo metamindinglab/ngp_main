@@ -57,7 +57,7 @@ const defaultGame: Game = {
     email: '',
     country: ''
   },
-  authorization: {
+  robloxAuthorization: {
     type: 'api_key',
     status: 'unverified'
   },
@@ -121,11 +121,11 @@ export function GameDialog({ open, onClose, onSave, initialData }: GameDialogPro
     }))
   }
 
-  const handleAuthChange = (field: keyof NonNullable<Game['authorization']>, value: string) => {
+  const handleAuthChange = (field: keyof NonNullable<Game['robloxAuthorization']>, value: string) => {
     setFormData(prev => ({
       ...prev,
-      authorization: {
-        ...prev.authorization!,
+      robloxAuthorization: {
+        ...prev.robloxAuthorization!,
         [field]: value,
         status: 'unverified'
       }
@@ -138,7 +138,7 @@ export function GameDialog({ open, onClose, onSave, initialData }: GameDialogPro
       return
     }
 
-    if (!formData.authorization?.apiKey && !formData.authorization?.clientId) {
+    if (!formData.robloxAuthorization?.apiKey && !formData.robloxAuthorization?.clientId) {
       setFetchStatus('Please provide authorization credentials first')
       return
     }
@@ -406,7 +406,7 @@ export function GameDialog({ open, onClose, onSave, initialData }: GameDialogPro
                 <div className="grid gap-2">
                   <Label htmlFor="authorizationType">Authorization Type</Label>
                   <Select
-                    value={formData.authorization?.type || 'api_key'}
+                    value={formData.robloxAuthorization?.type || 'api_key'}
                     onValueChange={(value) => handleAuthChange('type', value)}
                   >
                     <SelectTrigger>
@@ -419,12 +419,12 @@ export function GameDialog({ open, onClose, onSave, initialData }: GameDialogPro
                   </Select>
                 </div>
 
-                {formData.authorization?.type === 'api_key' ? (
+                {formData.robloxAuthorization?.type === 'api_key' ? (
                   <div className="grid gap-2">
                     <Label htmlFor="apiKey">API Key</Label>
                     <Textarea
                       id="apiKey"
-                      value={formData.authorization?.apiKey || ''}
+                      value={formData.robloxAuthorization?.apiKey || ''}
                       onChange={(e) => handleAuthChange('apiKey', e.target.value)}
                       placeholder="Enter your Roblox API key"
                       className="min-h-[100px] font-mono"
@@ -437,7 +437,7 @@ export function GameDialog({ open, onClose, onSave, initialData }: GameDialogPro
                       <Input
                         id="clientId"
                         type="password"
-                        value={formData.authorization?.clientId || ''}
+                        value={formData.robloxAuthorization?.clientId || ''}
                         onChange={(e) => handleAuthChange('clientId', e.target.value)}
                       />
                     </div>
@@ -446,7 +446,7 @@ export function GameDialog({ open, onClose, onSave, initialData }: GameDialogPro
                       <Input
                         id="clientSecret"
                         type="password"
-                        value={formData.authorization?.clientSecret || ''}
+                        value={formData.robloxAuthorization?.clientSecret || ''}
                         onChange={(e) => handleAuthChange('clientSecret', e.target.value)}
                       />
                     </div>
@@ -461,14 +461,14 @@ export function GameDialog({ open, onClose, onSave, initialData }: GameDialogPro
                   {isLoading ? 'Fetching...' : 'Fetch Game Information'}
                 </Button>
 
-                {formData.authorization?.status && (
+                {formData.robloxAuthorization?.status && (
                   <div className={`text-sm ${
-                    formData.authorization.status === 'active' ? 'text-green-600' :
-                    formData.authorization.status === 'invalid' ? 'text-red-600' :
+                    formData.robloxAuthorization.status === 'active' ? 'text-green-600' :
+                    formData.robloxAuthorization.status === 'invalid' ? 'text-red-600' :
                     'text-yellow-600'
                   }`}>
-                    Status: {formData.authorization.status}
-                    {formData.authorization.lastVerified && ` (Last verified: ${new Date(formData.authorization.lastVerified).toLocaleString()})`}
+                    Status: {formData.robloxAuthorization.status}
+                    {formData.robloxAuthorization.lastVerified && ` (Last verified: ${new Date(formData.robloxAuthorization.lastVerified).toLocaleString()})`}
                   </div>
                 )}
               </div>

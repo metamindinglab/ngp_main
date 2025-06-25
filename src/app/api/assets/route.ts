@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAllAssets, createAsset, updateAsset, deleteAsset } from '@/lib/db/assets';
 import { Asset } from '@prisma/client';
+import { addCorsHeaders, handleAuth, applyRateLimit, addRateLimitHeaders, handleOptions } from '../middleware';
 
 // Helper function to transform database asset to UI format
 function transformDatabaseAssetToUI(dbAsset: any) {
@@ -21,18 +22,60 @@ function transformDatabaseAssetToUI(dbAsset: any) {
   };
 }
 
-export async function GET() {
+// Handle OPTIONS requests for CORS preflight
+export async function OPTIONS() {
+  return handleOptions()
+}
+
+export async function GET(request: NextRequest) {
   try {
+    // Check if this is an authenticated request from a Roblox game
+    const apiKey = request.headers.get('X-API-Key') || request.headers.get('Authorization')?.replace('Bearer ', '')
+    
+    if (apiKey) {
+      // Handle authentication for external Roblox games
+      const auth = await handleAuth(request)
+      if (!auth.isValid) {
+        const response = NextResponse.json({ error: auth.error }, { status: 401 })
+        return addCorsHeaders(response)
+      }
+
+      // Apply rate limiting for authenticated requests
+      const rateLimit = applyRateLimit(apiKey)
+      
+      if (!rateLimit.allowed) {
+        const response = NextResponse.json(
+          { error: 'Rate limit exceeded', resetTime: rateLimit.resetTime },
+          { status: 429 }
+        )
+        addRateLimitHeaders(response, rateLimit)
+        return addCorsHeaders(response)
+      }
+    }
+
     const assets = await getAllAssets();
     // Transform each asset to the UI format
     const transformedAssets = assets.map(transformDatabaseAssetToUI);
-    return NextResponse.json({ assets: transformedAssets });
+    
+    const response = NextResponse.json({ 
+      success: true,
+      assets: transformedAssets 
+    });
+
+    // Add rate limit headers if this was an authenticated request
+    if (apiKey) {
+      const rateLimit = applyRateLimit(apiKey)
+      addRateLimitHeaders(response, rateLimit)
+    }
+
+    return addCorsHeaders(response)
   } catch (error) {
     console.error('Error reading assets:', error);
-    return NextResponse.json(
+    const response = NextResponse.json(
       { error: 'Failed to read assets' },
       { status: 500 }
     );
+    return addCorsHeaders(response)
   }
 }
 

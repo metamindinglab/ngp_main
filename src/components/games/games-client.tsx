@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,7 +13,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Game } from "@/types/game";
 import { useToast } from "@/components/ui/use-toast";
-import { Loader2, Eye, EyeOff, Copy, Key, RefreshCw } from "lucide-react";
+import { Loader2, Eye, EyeOff, Copy, Key, RefreshCw, Cloud, Server } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Textarea } from "@/components/ui/textarea";
 import Link from 'next/link';
@@ -70,9 +70,7 @@ const gameFormSchema = z.object({
 
 // Enhanced Game interface with API key fields
 interface EnhancedGame extends Game {
-  apiKey?: string
-  apiKeyCreatedAt?: string
-  apiKeyStatus?: string
+  // Note: Using the new serverApiKey fields from updated schema
 }
 
 interface GamesClientProps {
@@ -193,7 +191,8 @@ export function GamesClient({ initialGames = [] }: GamesClientProps) {
   };
 
   const handleViewDetails = (game: EnhancedGame) => {
-    router.push(`/dashboard/games/${game.id}/edit`);
+    setSelectedGame(game);
+    setIsDialogOpen(true);
   };
 
   const handleGenerateApiKey = async (gameId: string) => {
@@ -372,18 +371,18 @@ export function GamesClient({ initialGames = [] }: GamesClientProps) {
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
                         <Key className="w-4 h-4" />
-                        <span className="text-sm font-medium">API Access</span>
+                        <span className="text-sm font-medium">API Access for MML Game Network</span>
                       </div>
-                      {getApiKeyStatusBadge(game.apiKeyStatus)}
+                      {getApiKeyStatusBadge(game.serverApiKeyStatus)}
                     </div>
                     
-                    {game.apiKey ? (
+                    {game.serverApiKey ? (
                       <div className="space-y-2">
                         <div className="flex items-center gap-2">
                           <div className="flex-1 relative">
                             <Input
                               type={showApiKeys[game.id] ? "text" : "password"}
-                              value={game.apiKey}
+                              value={game.serverApiKey}
                               readOnly
                               className="text-xs font-mono pr-16"
                             />
@@ -400,7 +399,7 @@ export function GamesClient({ initialGames = [] }: GamesClientProps) {
                                 size="sm"
                                 variant="ghost"
                                 className="h-6 w-6 p-0"
-                                onClick={() => copyToClipboard(game.apiKey!)}
+                                onClick={() => copyToClipboard(game.serverApiKey!)}
                               >
                                 <Copy className="w-3 h-3" />
                               </Button>
@@ -408,9 +407,9 @@ export function GamesClient({ initialGames = [] }: GamesClientProps) {
                           </div>
                         </div>
                         
-                        {game.apiKeyCreatedAt && (
+                        {game.serverApiKeyCreatedAt && (
                           <div className="text-xs text-muted-foreground">
-                            Created: {new Date(game.apiKeyCreatedAt).toLocaleDateString()}
+                            Created: {new Date(game.serverApiKeyCreatedAt).toLocaleDateString()}
                           </div>
                         )}
                         

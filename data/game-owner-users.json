@@ -1,0 +1,17 @@
+{
+  "users": [
+    {
+      "id": "aebc960f-ab0f-4209-a445-e0d179382d2a",
+      "email": "info@metamindinglab.com",
+      "passwordHash": "$2b$10$40q4MFcQgl5RtvywSfyIAeMcjp6O5s51jMMJRB83x0.YbPZR2Gkje",
+      "name": "Ardy Lee",
+      "country": "Hong Kong",
+      "discordId": "Chefboy_MML",
+      "isActive": true,
+      "emailVerified": false,
+      "createdAt": "2025-06-25T16:31:54.663Z",
+      "updatedAt": "2025-06-25T16:37:21.198Z",
+      "lastLogin": "2025-06-25T16:37:21.198Z"
+    }
+  ]
+}

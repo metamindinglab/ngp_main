@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import Link from "next/link";
 import { MMLLogo } from "@/components/ui/mml-logo";
-import { Gamepad2, Upload, PlaySquare, ListVideo, BarChart3 } from "lucide-react";
+import { Gamepad2, Upload, PlaySquare, ListVideo, BarChart3, Users } from "lucide-react";
 
 export function DashboardClient() {
   return (
@@ -116,6 +116,26 @@ export function DashboardClient() {
               <CardContent>
                 <CardDescription className="text-sm text-slate-600 dark:text-slate-400 group-hover:text-rose-500 transition-colors">
                   View performance metrics for game ads
+                </CardDescription>
+              </CardContent>
+            </Card>
+          </Link>
+
+          {/* Game Owner Portal */}
+          <Link href="/game-owner" className="group perspective">
+            <Card className="border-2 border-transparent bg-white dark:bg-slate-900 transform transition-all duration-300 group-hover:scale-105 group-hover:shadow-xl group-hover:shadow-amber-500/20 group-hover:-rotate-2 hover:border-amber-500/20">
+              <CardHeader className="pb-3 relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-r from-amber-500/10 to-orange-500/10 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div>
+                <div className="flex items-center gap-3 relative">
+                  <div className="p-3 rounded-xl bg-amber-100 dark:bg-amber-900/50 transform group-hover:-rotate-12 transition-transform">
+                    <Users className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+                  </div>
+                  <CardTitle className="text-xl group-hover:text-amber-600 transition-colors">Game Owner Portal</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <CardDescription className="text-sm text-slate-600 dark:text-slate-400 group-hover:text-amber-500 transition-colors">
+                  Access the game owner management dashboard
                 </CardDescription>
               </CardContent>
             </Card>

@@ -45,8 +45,8 @@ export interface Game {
     country: string;
   };
 
-  // Authorization for Roblox API
-  authorization?: {
+  // Authorization for Roblox Cloud API (for fetching game info FROM Roblox)
+  robloxAuthorization?: {
     type: 'api_key' | 'oauth';
     apiKey?: string;
     clientId?: string;
@@ -54,6 +54,11 @@ export interface Game {
     lastVerified?: string;
     status: 'active' | 'expired' | 'invalid' | 'unverified';
   };
+
+  // Server API key (for games to connect TO our server)
+  serverApiKey?: string;
+  serverApiKeyCreatedAt?: string;
+  serverApiKeyStatus?: string;
 
   // Additional Roblox information
   robloxInfo?: {

@@ -54,10 +54,12 @@ async function migrateGames() {
             metrics: game.metrics || null,
             dates: game.dates || null,
             owner: game.owner || null,
+            // Handle authorization data
+            robloxAuthorization: game.authorization || null,
             // Handle API key from authorization field if it exists
-            apiKey: game.authorization?.apiKey || null,
-            apiKeyStatus: game.authorization?.status || null,
-            apiKeyCreatedAt: game.authorization?.apiKey ? new Date() : null,
+            serverApiKey: game.authorization?.apiKey || null,
+            serverApiKeyStatus: game.authorization?.status || null,
+            serverApiKeyCreatedAt: game.authorization?.apiKey ? new Date() : null,
           }
         })
         console.log(`✅ Migrated: ${game.name} (${game.id})`)

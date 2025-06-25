@@ -1,21 +1,67 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { PrismaClient } from '@prisma/client'
+import { addCorsHeaders, handleAuth, applyRateLimit, addRateLimitHeaders, handleOptions } from '../middleware'
 
 const prisma = new PrismaClient()
 
-export async function GET() {
+// Handle OPTIONS requests for CORS preflight
+export async function OPTIONS() {
+  return handleOptions()
+}
+
+export async function GET(request: NextRequest) {
   try {
+    // Check if this is an authenticated request from a Roblox game
+    const apiKey = request.headers.get('X-API-Key') || request.headers.get('Authorization')?.replace('Bearer ', '')
+    
+    if (apiKey) {
+      // Handle authentication for external Roblox games
+      const auth = await handleAuth(request)
+      if (!auth.isValid) {
+        const response = NextResponse.json({ error: auth.error }, { status: 401 })
+        return addCorsHeaders(response)
+      }
+
+      // Apply rate limiting for authenticated requests
+      const rateLimit = applyRateLimit(apiKey)
+      
+      if (!rateLimit.allowed) {
+        const response = NextResponse.json(
+          { error: 'Rate limit exceeded', resetTime: rateLimit.resetTime },
+          { status: 429 }
+        )
+        addRateLimitHeaders(response, rateLimit)
+        return addCorsHeaders(response)
+      }
+    }
+
     const playlists = await prisma.playlist.findMany({
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: 'desc' },
+      include: {
+        assets: true, // Include associated assets for Roblox games
+        games: true   // Include associated games
+      }
     })
     
-    return NextResponse.json({ playlists })
+    const response = NextResponse.json({ 
+      success: true,
+      playlists 
+    })
+
+    // Add rate limit headers if this was an authenticated request
+    if (apiKey) {
+      const rateLimit = applyRateLimit(apiKey)
+      addRateLimitHeaders(response, rateLimit)
+    }
+
+    return addCorsHeaders(response)
   } catch (error) {
     console.error('Error reading playlists:', error)
-    return NextResponse.json(
+    const response = NextResponse.json(
       { error: 'Failed to read playlists' },
       { status: 500 }
     )
+    return addCorsHeaders(response)
   }
 }
 

@@ -4,430 +4,315 @@
 
 ## Getting Started
 
-1. **Register Your Game:** Ensure your game is added to the system by an admin or through the dashboard. Each game entry will have an owner and related information in the Game table.
-2. **Generate API Key:** Use the API to generate a unique API key for your game (see below).
-3. **Authenticate:** Use your API key to obtain a Bearer token for secure access to all endpoints.
-4. **Make Authenticated Requests:** Include the Bearer token in the Authorization header for all API calls.
+### Step 1: Register Your Game
+Ensure your game is added to the system by an admin through the Game Manager dashboard. Each game entry will include owner information and be stored in the Game table.
 
-## API Key Generation
+### Step 2: Generate API Key
+1. Log into the Game Manager UI at `/dashboard/games`
+2. Find your game in the list
+3. Click the "Generate API Key" button in the API Access section
+4. Copy the generated API key (format: `RBXG-{random-hash}`)
+5. Store this key securely - it will be needed for all API calls
 
-To generate (or rotate) an API key for your game, use the following endpoint. Only the game owner (or admin) should be allowed to call this endpoint.
+### Step 3: Authenticate Your Requests
+**For Roblox Games:** Use your API key directly in the `X-API-Key` header - no Bearer token needed!
 
+### Step 4: Make API Calls
+Include your API key in the `X-API-Key` header for all API calls from Roblox games.
+
+## API Key Management
+
+### Generate API Key for Game
+**Endpoint:** `POST /api/games/{gameId}`  
+**Description:** Generates a new API key for the specified game. This will replace any existing API key.
+
+**Request:**
+```bash
+curl -X POST "http://23.96.197.67:3000/api/games/game_001" \
+  -H "Content-Type: application/json"
 ```
-POST /games/{game_id}
-```
 
-**Description:** Generates a new API key for the specified game. The new key will replace any existing key for that game.
-
-**Response (200 OK):**
-```
+**Response:**
+```json
 {
-  "apiKey": "RBXG-..."
+  "apiKey": "RBXG-425076abd22784d8a68292c568b3d844303833a12fe48f4f",
+  "apiKeyCreatedAt": "2024-01-15T10:30:00.000Z",
+  "apiKeyStatus": "active"
 }
 ```
 
-**Security Note:**
-- Treat your API key like a password. Do not share it publicly or commit it to source control.
-- If your key is compromised, generate a new one immediately.
+**Security Note:** 
+- API keys should be kept secure and not shared
+- Regenerate keys if compromised
+- Only game owners (or admins) can generate keys for their games
+- Keys are unique and linked to specific games
 
-## Authentication
+## Authentication Flow
 
-### Authenticate Game
-```
-POST /authenticate
-Content-Type: application/json
+### Direct API Key Authentication (Recommended for Roblox Games)
+**Description:** Use your API key directly in requests - no separate authentication step needed!
 
-Request Body:
-{
-    "api_key": string  // Format: "RBXG-..." 
-}
+**Roblox Example:**
+```lua
+local HttpService = game:GetService("HttpService")
 
-Response (200 OK):
-{
-    "token": string    // Bearer token for subsequent requests
-}
-
-Response (401 Unauthorized):
-{
-    "error": "Invalid API key"
-}
-```
-
-**Instructions:**
-- Use the API key generated for your game to authenticate.
-- The returned token must be included in the Authorization header for all subsequent requests:
-  `Authorization: Bearer {token}`
-
-## Display Objects API
-
-### Create Display Object
-```
-POST /game/{game_id}/display
-Authorization: Bearer {token}
-Content-Type: application/json
-
-Request Body:
-{
-    "asset_id": string,          // Required: UGC asset ID
-    "asset_type": string,        // Required: "image" or "video"
-    "position": {                // Optional, defaults to {x:0, y:0, z:0}
-        "x": number,
-        "y": number,
-        "z": number
+local response = HttpService:RequestAsync({
+    Url = "http://23.96.197.67:3000/api/game-ads",
+    Method = "GET",
+    Headers = {
+        ["X-API-Key"] = "RBXG-your-api-key-here",
+        ["Content-Type"] = "application/json"
     }
-}
-
-Response (200 OK):
-{
-    "status": "success",
-    "display_id": string
-}
-
-Response (400 Bad Request):
-{
-    "error": "Missing required parameters: asset_id and asset_type"
-}
+})
 ```
 
-### List Display Objects
-```
-GET /game/{game_id}/display
-Authorization: Bearer {token}
+## API Endpoints
 
-Response (200 OK):
+### Games API
+
+#### List Games
+**GET** `/api/games`
+- **Authentication:** Optional (public access) or Required (for game-specific data)
+- **Headers:** `X-API-Key: RBXG-your-api-key` (optional)
+
+**Response:**
+```json
 {
-    "displays": [
-        {
-            "display_id": string,
-            "asset_id": string,
-            "asset_type": string,    // "image" or "video"
-            "position": {
-                "x": number,
-                "y": number,
-                "z": number
-            }
-        }
-    ]
-}
-```
-
-### Get Single Display Object
-```
-GET /game/{game_id}/display/{display_id}
-Authorization: Bearer {token}
-
-Response (200 OK):
-{
-    "display_id": string,
-    "asset_id": string,
-    "asset_type": string,    // "image" or "video"
-    "position": {
-        "x": number,
-        "y": number,
-        "z": number
+  "success": true,
+  "games": [
+    {
+      "id": "game_001",
+      "name": "Adopt Me!",
+      "description": "Play with friends and adopt pets!",
+      "genre": "Social",
+      "thumbnail": "https://example.com/thumb.jpg",
+      "serverApiKeyStatus": "active",
+      "serverApiKeyCreatedAt": "2024-01-15T10:30:00.000Z",
+      "owner": {
+        "name": "John Doe",
+        "email": "john@example.com",
+        "country": "USA"
+      },
+      "metrics": {
+        "dau": 1000000,
+        "mau": 5000000,
+        "day1Retention": 85
+      }
     }
-}
-
-Response (404 Not Found):
-{
-    "error": "Display object not found"
+  ]
 }
 ```
 
-### Update Display Object
-```
-PUT /game/{game_id}/display/{display_id}
-Authorization: Bearer {token}
-Content-Type: application/json
+#### Get Single Game
+**GET** `/api/games/{gameId}`
+- **Authentication:** Required (Bearer token or API key)
 
-Request Body:
+**Response:** Returns detailed game information including API key status (but not the actual key for security).
+
+#### Update Game
+**PUT** `/api/games/{gameId}`
+- **Authentication:** Required
+- **Authorization:** Only game owner or admin
+
+**Request Body:**
+```json
 {
-    "asset_id": string,      // Optional
-    "asset_type": string,    // Optional: "image" or "video"
-    "position": {            // Optional
-        "x": number,
-        "y": number,
-        "z": number
+  "name": "Updated Game Name",
+  "description": "Updated description",
+  "genre": "Adventure"
+}
+```
+
+---
+
+### Game Ads API
+
+#### List Game Ads
+**GET** `/api/game-ads`
+- **Authentication:** Required (Roblox games)
+- **Headers:** `X-API-Key: RBXG-your-api-key`
+- **Query Parameters:**
+  - `page`, `search`, `status` (gameId determined from API key)
+- **Rate Limit:** 100 requests/minute
+
+**Response:**
+```json
+{
+  "success": true,
+  "gameId": "game_001",
+  "gameAds": [
+    {
+      "id": "ad_001",
+      "name": "Summer Campaign",
+      "status": "active",
+      "assets": [
+        {
+          "assetType": "image",
+          "robloxAssetId": "12345"
+        }
+      ]
     }
-}
-
-Response (200 OK):
-{
-    "status": "success"
-}
-
-Response (404 Not Found):
-{
-    "error": "Display object not found"
+  ]
 }
 ```
 
-### Delete Display Object
-```
-DELETE /game/{game_id}/display/{display_id}
-Authorization: Bearer {token}
+#### Create Game Ad
+**POST** `/api/game-ads`
+- **Authentication:** Required
 
-Response (200 OK):
+**Request:**
+```json
 {
-    "status": "success"
-}
-
-Response (404 Not Found):
-{
-    "error": "Display object not found"
-}
-```
-
-## Game Ads API
-
-### List Game Ads
-```
-GET /api/game-ads
-Content-Type: application/json
-
-Query Parameters:
-{
-    "page": number,      // Optional: Page number for pagination (default: 1)
-    "search": string,    // Optional: Search term to filter by name
-    "status": string,    // Optional: Filter by status
-    "gameId": string     // Optional: Filter by game ID
-}
-
-Response (200 OK):
-{
-    "gameAds": [
-        {
-            "id": string,
-            "name": string,
-            "templateType": string,
-            "gameId": string,
-            "status": string,
-            "schedule": object | null,
-            "targeting": object | null,
-            "metrics": object | null,
-            "assets": [
-                {
-                    "assetType": string,
-                    "assetId": string,
-                    "robloxAssetId": string
-                }
-            ],
-            "createdAt": string,
-            "updatedAt": string,
-            "game": {
-                "id": string,
-                "name": string,
-                "thumbnail": string | null
-            } | null,
-            "performance": {
-                "impressions": number,
-                "clicks": number,
-                "conversions": number
-            } | null
-        }
-    ],
-    "total": number,
-    "page": number,
-    "totalPages": number
-}
-
-Response (500 Internal Server Error):
-{
-    "error": "Failed to load game ads"
+  "name": "Summer Campaign",
+  "templateType": "multimedia_display",
+  "gameId": "game_001",
+  "assets": [
+    {
+      "assetType": "image",
+      "assetId": "asset_001",
+      "robloxAssetId": "rbx_12345"
+    }
+  ]
 }
 ```
 
-### Create Game Ad
-```
-POST /api/game-ads
-Content-Type: application/json
+---
 
-Request Body:
-{
-    "name": string,              // Required: Name of the game ad
-    "templateType": string,      // Required: Type of template to use
-    "gameId": string,           // Optional: ID of the game (default: "game_001")
-    "status": string,           // Optional: Status of the ad (default: "active")
-    "schedule": object | null,  // Optional: Scheduling information
-    "targeting": object | null, // Optional: Targeting criteria
-    "metrics": object | null,   // Optional: Custom metrics
-    "assets": [                 // Required: At least one asset
-        {
-            "assetType": string,    // Required: Type of asset
-            "assetId": string,      // Required: Asset ID
-            "robloxAssetId": string // Required: Roblox Asset ID
-        }
-    ]
-}
+### Assets API
 
-Response (200 OK):
-{
-    "id": string,
-    "name": string,
-    "templateType": string,
-    "gameId": string,
-    "status": string,
-    "schedule": object | null,
-    "targeting": object | null,
-    "metrics": object | null,
-    "assets": array,
-    "createdAt": string,
-    "updatedAt": string,
-    "game": {
-        "id": string,
-        "name": string,
-        "thumbnail": string | null
-    } | null
-}
+#### List Assets
+**GET** `/api/assets`
+- **Authentication:** Required
+- **Query Parameters:** `page`, `search`, `type`
 
-Response (400 Bad Request):
-{
-    "error": "Validation failed",
-    "details": array // Validation error details
-}
+#### Upload Asset
+**POST** `/api/assets`
+- **Authentication:** Required
+- **Content-Type:** `multipart/form-data`
 
-Response (409 Conflict):
-{
-    "error": "A game ad with this name already exists"
-}
+---
 
-Response (500 Internal Server Error):
+### Playlists API
+
+#### List Playlists
+**GET** `/api/playlists`
+- **Authentication:** Required
+
+#### Create Playlist
+**POST** `/api/playlists`
+- **Authentication:** Required
+
+**Request:**
+```json
 {
-    "error": "Failed to create game ad"
+  "name": "Weekly Campaign",
+  "description": "Campaign for this week",
+  "type": "standard"
 }
 ```
 
-### Get Game Ad
-```
-GET /api/game-ads/{id}
-Content-Type: application/json
+---
 
-Response (200 OK):
-{
-    "id": string,
-    "name": string,
-    "templateType": string,
-    "gameId": string,
-    "status": string,
-    "schedule": object | null,
-    "targeting": object | null,
-    "metrics": object | null,
-    "assets": array,
-    "createdAt": string,
-    "updatedAt": string,
-    "game": {
-        "id": string,
-        "name": string,
-        "thumbnail": string | null
-    } | null,
-    "performance": {
-        "impressions": number,
-        "clicks": number,
-        "conversions": number
-    } | null
-}
+## Error Handling
 
-Response (404 Not Found):
-{
-    "error": "Game ad not found"
-}
+The API uses conventional HTTP response codes:
 
-Response (500 Internal Server Error):
+- **200** - Success
+- **201** - Created
+- **400** - Bad Request (validation errors)
+- **401** - Unauthorized (missing or invalid authentication)
+- **403** - Forbidden (insufficient permissions)
+- **404** - Not Found
+- **500** - Internal Server Error
+
+**Error Response Format:**
+```json
 {
-    "error": "Failed to load game ad"
+  "error": "Error message description",
+  "details": "Additional error details (optional)",
+  "code": "ERROR_CODE (optional)"
 }
 ```
 
-### Update Game Ad
-```
-PUT /api/game-ads/{id}
-Content-Type: application/json
+## Rate Limiting
 
-Request Body:
-{
-    "name": string,              // Required: Name of the game ad
-    "templateType": string,      // Required: Type of template to use
-    "status": string,           // Optional: Status of the ad
-    "schedule": object | null,  // Optional: Scheduling information
-    "targeting": object | null, // Optional: Targeting criteria
-    "metrics": object | null,   // Optional: Custom metrics
-    "assets": [                 // Required: At least one asset
-        {
-            "assetType": string,    // Required: Type of asset
-            "assetId": string,      // Required: Asset ID
-            "robloxAssetId": string // Required: Roblox Asset ID
-        }
-    ]
+- **Rate Limit:** 100 requests per minute per API key
+- **Headers:** `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`
+
+## Best Practices
+
+1. **API Key Security:**
+   - Store API keys securely (environment variables, secure config)
+   - Never expose API keys in client-side code
+   - Rotate keys regularly
+   - Use HTTPS for all API calls
+
+2. **Error Handling:**
+   - Always check response status codes
+   - Implement proper retry logic for 5xx errors
+   - Handle rate limiting gracefully
+
+3. **Data Validation:**
+   - Validate all input data before sending
+   - Follow the specified data formats
+   - Use proper content types
+
+4. **Performance:**
+   - Use pagination for large datasets
+   - Cache responses when appropriate
+   - Use efficient search/filter parameters
+
+## SDK and Code Examples
+
+### JavaScript/Node.js
+```javascript
+const apiKey = 'RBXG-your-api-key-here';
+const baseUrl = 'http://23.96.197.67:3000/api';
+
+// Get games list
+async function getGames() {
+  const response = await fetch(`${baseUrl}/games`, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    }
+  });
+  return response.json();
 }
 
-Response (200 OK):
-{
-    "id": string,
-    "name": string,
-    "templateType": string,
-    "gameId": string,
-    "status": string,
-    "schedule": object | null,
-    "targeting": object | null,
-    "metrics": object | null,
-    "assets": array,
-    "createdAt": string,
-    "updatedAt": string,
-    "game": {
-        "id": string,
-        "name": string,
-        "thumbnail": string | null
-    } | null,
-    "performance": {
-        "impressions": number,
-        "clicks": number,
-        "conversions": number
-    } | null
-}
-
-Response (400 Bad Request):
-{
-    "error": "Validation failed",
-    "details": array // Validation error details
-}
-
-Response (404 Not Found):
-{
-    "error": "Game ad not found"
-}
-
-Response (409 Conflict):
-{
-    "error": "A game ad with this name already exists"
-}
-
-Response (500 Internal Server Error):
-{
-    "error": "Failed to update game ad"
+// Generate API key (admin/owner only)
+async function generateApiKey(gameId) {
+  const response = await fetch(`${baseUrl}/games/${gameId}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  });
+  return response.json();
 }
 ```
 
-### Delete Game Ad
+### Python
+```python
+import requests
+
+api_key = 'RBXG-your-api-key-here'
+base_url = 'http://23.96.197.67:3000/api'
+
+# Authenticate and get token
+def authenticate():
+    response = requests.post(f'{base_url}/authenticate', 
+                           json={'api_key': api_key})
+    return response.json()['token']
+
+# Get games list
+def get_games():
+    token = authenticate()
+    headers = {'Authorization': f'Bearer {token}'}
+    response = requests.get(f'{base_url}/games', headers=headers)
+    return response.json()
 ```
-DELETE /api/game-ads/{id}
-Content-Type: application/json
 
-Response (200 OK):
-{
-    "success": true
-}
+## Support
 
-Response (404 Not Found):
-{
-    "error": "Game ad not found"
-}
-
-Response (500 Internal Server Error):
-{
-    "error": "Failed to delete game ad"
-}
-```
-
-## Example Roblox Implementation
-
-```
+For API support, please contact the development team or refer to the Game Manager UI documentation.

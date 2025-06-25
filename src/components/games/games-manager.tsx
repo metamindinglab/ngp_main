@@ -21,7 +21,7 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { GameDialog } from './game-dialog'
 import { useToast } from '@/components/ui/use-toast'
-import { Eye, EyeOff, Copy, Key, RefreshCw } from 'lucide-react'
+import { Eye, EyeOff, Copy, Key, RefreshCw, Cloud, Server } from 'lucide-react'
 
 interface Game {
   id: string
@@ -50,10 +50,19 @@ interface Game {
     email: string
     country: string
   }
-  // Database fields for API key management
-  apiKey?: string
-  apiKeyCreatedAt?: string
-  apiKeyStatus?: string
+  // Roblox Cloud API authorization (stored in JSON field)
+  robloxAuthorization?: {
+    type: 'api_key' | 'oauth'
+    apiKey?: string
+    clientId?: string
+    clientSecret?: string
+    lastVerified?: string
+    status: 'active' | 'expired' | 'invalid' | 'unverified'
+  }
+  // Server API key fields
+  serverApiKey?: string
+  serverApiKeyCreatedAt?: string
+  serverApiKeyStatus?: string
 }
 
 export function GamesManager() {
@@ -139,53 +148,20 @@ export function GamesManager() {
     }
   }
 
-  const handleGenerateApiKey = async (gameId: string) => {
-    setGeneratingApiKey(gameId)
-    try {
-      const response = await fetch(`/api/games/${gameId}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-      })
-      
-      if (!response.ok) {
-        throw new Error('Failed to generate API key')
-      }
-      
-      const updatedGame = await response.json()
-      
-      // Update the games list with the new API key
-      setGames(games.map(game => 
-        game.id === gameId ? { ...game, ...updatedGame } : game
-      ))
-      
-      toast({
-        title: "Success",
-        description: "API key generated successfully",
-      })
-    } catch (error) {
-      console.error('Error generating API key:', error)
-      toast({
-        title: "Error",
-        description: "Failed to generate API key",
-        variant: "destructive"
-      })
-    } finally {
-      setGeneratingApiKey(null)
-    }
-  }
+  // Removed old handleGenerateApiKey - now using generateServerApiKey
 
-  const copyToClipboard = async (text: string) => {
+  const copyToClipboard = async (text: string, type?: string) => {
     try {
       await navigator.clipboard.writeText(text)
       toast({
-        title: "Success",
-        description: "API key copied to clipboard"
+        title: "Copied to Clipboard",
+        description: `${type || 'Text'} has been copied to your clipboard.`,
       })
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to copy to clipboard",
-        variant: "destructive"
+        description: "Failed to copy to clipboard.",
+        variant: "destructive",
       })
     }
   }
@@ -197,21 +173,90 @@ export function GamesManager() {
     }))
   }
 
-  const getApiKeyStatusBadge = (status?: string) => {
-    switch (status) {
-      case 'active':
-        return <Badge className="bg-green-500">Active</Badge>
-      case 'expired':
-        return <Badge variant="destructive">Expired</Badge>
-      case 'revoked':
-        return <Badge variant="destructive">Revoked</Badge>
-      default:
-        return <Badge variant="secondary">Not Generated</Badge>
-    }
-  }
+  // Removed old getApiKeyStatusBadge - now using getServerApiKeyStatus
 
   const formatNumber = (num: number) => {
     return new Intl.NumberFormat().format(num)
+  }
+
+  const generateServerApiKey = async (gameId: string) => {
+    try {
+      setGeneratingApiKey(gameId)
+      
+      const response = await fetch(`/api/games/${gameId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+      
+      if (!response.ok) {
+        throw new Error('Failed to generate server API key')
+      }
+      
+      const data = await response.json()
+      
+      // Update the game in our local state
+      setGames(prevGames => 
+        prevGames.map(game => 
+          game.id === gameId 
+            ? { 
+                ...game, 
+                serverApiKey: data.serverApiKey,
+                serverApiKeyCreatedAt: data.serverApiKeyCreatedAt,
+                serverApiKeyStatus: data.serverApiKeyStatus
+              }
+            : game
+        )
+      )
+      
+      toast({
+        title: "Server API Key Generated",
+        description: "New server API key has been generated successfully.",
+      })
+      
+    } catch (error) {
+      console.error('Error generating server API key:', error)
+      toast({
+        title: "Error",
+        description: "Failed to generate server API key. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setGeneratingApiKey(null)
+    }
+  }
+
+  const getServerApiKeyStatus = (status?: string) => {
+    switch (status) {
+      case 'active':
+        return <Badge variant="default" className="bg-green-100 text-green-800">Active</Badge>
+      case 'expired':
+        return <Badge variant="destructive">Expired</Badge>
+      case 'revoked':
+        return <Badge variant="secondary">Revoked</Badge>
+      default:
+        return <Badge variant="outline">Not Generated</Badge>
+    }
+  }
+
+  const getRobloxAuthStatus = (auth?: Game['robloxAuthorization']) => {
+    if (!auth || !auth.apiKey) {
+      return <Badge variant="outline">Not Configured</Badge>
+    }
+    
+    switch (auth.status) {
+      case 'active':
+        return <Badge variant="default" className="bg-blue-100 text-blue-800">Active</Badge>
+      case 'expired':
+        return <Badge variant="destructive">Expired</Badge>
+      case 'invalid':
+        return <Badge variant="destructive">Invalid</Badge>
+      case 'unverified':
+        return <Badge variant="secondary">Unverified</Badge>
+      default:
+        return <Badge variant="outline">Unknown</Badge>
+    }
   }
 
   return (
@@ -255,108 +300,140 @@ export function GamesManager() {
               <CardTitle>{game.name}</CardTitle>
               <CardDescription>{game.description}</CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <Badge>{game.genre}</Badge>
-                
-                <div className="text-sm">
-                  <div>DAU: {formatNumber(game.metrics.dau)}</div>
-                  <div>MAU: {formatNumber(game.metrics.mau)}</div>
-                  <div>Day 1 Retention: {game.metrics.day1Retention}%</div>
-                </div>
-                
-                <div className="text-sm">
-                  <div>Owner: {game.owner.name}</div>
-                  <div>Country: {game.owner.country}</div>
-                </div>
+            <CardContent className="space-y-6">
+              {/* Game Information */}
+              <div className="space-y-2">
+                <p className="text-sm text-gray-600">
+                  <strong>Genre:</strong> {game.genre}
+                </p>
+                <p className="text-sm text-gray-600">
+                  <strong>Description:</strong> {game.description}
+                </p>
+                <p className="text-sm text-gray-600">
+                  <strong>Owner:</strong> {game.owner.name} ({game.owner.email})
+                </p>
+                <p className="text-sm text-gray-600">
+                  <strong>Link:</strong>{' '}
+                  <a
+                    href={game.robloxLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-500 hover:underline"
+                  >
+                    View on Roblox
+                  </a>
+                </p>
+              </div>
 
-                {/* API Key Management Section */}
-                <div className="border-t pt-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <Key className="w-4 h-4" />
-                      <span className="text-sm font-medium">API Access</span>
-                    </div>
-                    {getApiKeyStatusBadge(game.apiKeyStatus)}
+              {/* Roblox Cloud API Authorization */}
+              <div className="border-t pt-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <Cloud className="h-4 w-4 text-blue-500" />
+                  <h4 className="font-semibold text-sm">Roblox Cloud API Authorization</h4>
+                </div>
+                <p className="text-xs text-gray-500 mb-3">
+                  API key for fetching game information FROM Roblox Cloud API
+                </p>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium">Status:</span>
+                    {getRobloxAuthStatus(game.robloxAuthorization)}
                   </div>
-                  
-                  {game.apiKey ? (
+                  {game.robloxAuthorization?.apiKey && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-gray-500">
+                        Last verified: {game.robloxAuthorization.lastVerified ? new Date(game.robloxAuthorization.lastVerified).toLocaleDateString() : 'Never'}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Server API Access */}
+              <div className="border-t pt-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <Server className="h-4 w-4 text-green-500" />
+                  <h4 className="font-semibold text-sm">Server API Access for MML Game Network</h4>
+                </div>
+                <p className="text-xs text-gray-500 mb-3">
+                  API key for your game to connect TO our server
+                </p>
+                
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium">Status:</span>
+                      {getServerApiKeyStatus(game.serverApiKeyStatus)}
+                    </div>
+                    {game.serverApiKeyCreatedAt && (
+                      <span className="text-xs text-gray-500">
+                        Created: {new Date(game.serverApiKeyCreatedAt).toLocaleDateString()}
+                      </span>
+                    )}
+                  </div>
+
+                  {game.serverApiKey && (
                     <div className="space-y-2">
                       <div className="flex items-center gap-2">
-                        <div className="flex-1 relative">
-                          <Input
-                            type={showApiKeys[game.id] ? "text" : "password"}
-                            value={game.apiKey}
-                            readOnly
-                            className="text-xs font-mono pr-16"
-                          />
-                          <div className="absolute right-1 top-1 flex gap-1">
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="h-6 w-6 p-0"
-                              onClick={() => toggleApiKeyVisibility(game.id)}
-                            >
-                              {showApiKeys[game.id] ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="h-6 w-6 p-0"
-                              onClick={() => copyToClipboard(game.apiKey!)}
-                            >
-                              <Copy className="w-3 h-3" />
-                            </Button>
-                          </div>
-                        </div>
+                        <Input
+                          type={showApiKeys[game.id] ? 'text' : 'password'}
+                          value={game.serverApiKey}
+                          readOnly
+                          className="font-mono text-sm"
+                        />
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => toggleApiKeyVisibility(game.id)}
+                        >
+                          {showApiKeys[game.id] ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => copyToClipboard(game.serverApiKey!, 'Server API key')}
+                        >
+                          <Copy className="h-4 w-4" />
+                        </Button>
                       </div>
-                      
-                      {game.apiKeyCreatedAt && (
-                        <div className="text-xs text-muted-foreground">
-                          Created: {new Date(game.apiKeyCreatedAt).toLocaleDateString()}
-                        </div>
-                      )}
-                      
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="w-full"
-                        onClick={() => handleGenerateApiKey(game.id)}
-                        disabled={generatingApiKey === game.id}
-                      >
-                        {generatingApiKey === game.id ? (
-                          <>
-                            <RefreshCw className="w-3 h-3 mr-1 animate-spin" />
-                            Regenerating...
-                          </>
-                        ) : (
-                          <>
-                            <RefreshCw className="w-3 h-3 mr-1" />
-                            Regenerate Key
-                          </>
-                        )}
-                      </Button>
                     </div>
-                  ) : (
+                  )}
+
+                  <div className="flex gap-2">
                     <Button
+                      variant="outline"
                       size="sm"
-                      className="w-full"
-                      onClick={() => handleGenerateApiKey(game.id)}
+                      onClick={() => generateServerApiKey(game.id)}
                       disabled={generatingApiKey === game.id}
+                      className="flex items-center gap-2"
                     >
                       {generatingApiKey === game.id ? (
-                        <>
-                          <RefreshCw className="w-3 h-3 mr-1 animate-spin" />
-                          Generating...
-                        </>
+                        <RefreshCw className="h-4 w-4 animate-spin" />
                       ) : (
-                        <>
-                          <Key className="w-3 h-3 mr-1" />
-                          Generate API Key
-                        </>
+                        <Key className="h-4 w-4" />
                       )}
+                      {game.serverApiKey ? 'Regenerate' : 'Generate'} Server API Key
                     </Button>
-                  )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Metrics */}
+              <div className="border-t pt-4">
+                <h4 className="font-semibold text-sm mb-3">Metrics</h4>
+                <div className="grid grid-cols-3 gap-4 text-sm">
+                  <div>
+                    <p className="text-gray-600">DAU</p>
+                    <p className="font-semibold">{game.metrics.dau.toLocaleString()}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-600">MAU</p>
+                    <p className="font-semibold">{game.metrics.mau.toLocaleString()}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-600">Day 1 Retention</p>
+                    <p className="font-semibold">{game.metrics.day1Retention}%</p>
+                  </div>
                 </div>
               </div>
             </CardContent>

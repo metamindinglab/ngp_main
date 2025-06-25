@@ -1,9 +1,10 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { getAllGameAds, createGameAd } from '@/lib/db/gameAds'
 import { Prisma } from '@prisma/client'
 import { z } from 'zod'
 import type { GameAd, Asset as GameAdAsset } from '@/types/gameAd'
 import type { GameAdPerformanceMetrics } from '@/types/gameAdPerformance'
+import { addCorsHeaders, handleAuth, applyRateLimit, addRateLimitHeaders, handleOptions } from '../middleware'
 
 const PAGE_SIZE = 10 // Number of items per page
 
@@ -45,13 +46,47 @@ function isGameAdPerformanceMetrics(obj: unknown): obj is GameAdPerformanceMetri
   )
 }
 
-export async function GET(request: Request) {
+// Handle OPTIONS requests for CORS preflight
+export async function OPTIONS() {
+  return handleOptions()
+}
+
+export async function GET(request: NextRequest) {
   try {
+    // Check if this is an external API request (has API key) or internal admin request
+    const apiKey = request.headers.get('X-API-Key') || request.headers.get('Authorization')?.replace('Bearer ', '')
+    const isExternalRequest = !!apiKey
+    
+    // Handle authentication for external Roblox games only
+    let auth: { isValid: boolean; gameId?: string; error?: string } = { isValid: true, gameId: undefined }
+    let rateLimit: { allowed: boolean; remainingRequests: number; resetTime: number } | null = null
+    
+    if (isExternalRequest) {
+      auth = await handleAuth(request)
+      if (!auth.isValid) {
+        const response = NextResponse.json({ error: auth.error }, { status: 401 })
+        return addCorsHeaders(response)
+      }
+
+      // Apply rate limiting for external requests only
+      rateLimit = applyRateLimit(apiKey!)
+      
+      if (!rateLimit.allowed) {
+        const response = NextResponse.json(
+          { error: 'Rate limit exceeded', resetTime: rateLimit.resetTime },
+          { status: 429 }
+        )
+        addRateLimitHeaders(response, rateLimit)
+        return addCorsHeaders(response)
+      }
+    }
+
     const { searchParams } = new URL(request.url)
     const page = parseInt(searchParams.get('page') || '1')
     const search = searchParams.get('search') || ''
     const status = searchParams.get('status')
-    const gameId = searchParams.get('gameId')
+    // Use authenticated game ID instead of query param for security
+    const gameId = auth.gameId
 
     // Fetch all game ads from the database
     let gameAds = await getAllGameAds()
@@ -109,7 +144,9 @@ export async function GET(request: Request) {
       }
     })
 
-    return NextResponse.json({
+    const response = NextResponse.json({
+      success: true,
+      gameId: auth.gameId,
       gameAds: mappedAds,
       total: filteredAds.length,
       page,
@@ -119,12 +156,18 @@ export async function GET(request: Request) {
         'Cache-Control': 'public, max-age=60',
       }
     })
+
+    if (rateLimit) {
+      addRateLimitHeaders(response, rateLimit)
+    }
+    return addCorsHeaders(response)
   } catch (error) {
     console.error('Error in GET /api/game-ads:', error)
-    return NextResponse.json(
+    const response = NextResponse.json(
       { error: 'Failed to load game ads' },
       { status: 500 }
     )
+    return addCorsHeaders(response)
   }
 }
 

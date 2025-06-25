@@ -96,7 +96,7 @@ export function PlaylistManager() {
   }
 
   const filteredPlaylists = playlists.filter(playlist => 
-    playlist.name.toLowerCase().includes(searchTerm.toLowerCase())
+    (playlist.name || '').toLowerCase().includes(searchTerm.toLowerCase())
   )
 
   return (
@@ -132,18 +132,18 @@ export function PlaylistManager() {
             <Card 
               key={playlist.id}
               className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border-l-4"
-              style={{ borderLeftColor: playlist.status === 'active' ? COLORS.secondary : COLORS.muted }}
+              style={{ borderLeftColor: (playlist.status || 'inactive') === 'active' ? COLORS.secondary : COLORS.muted }}
             >
               <CardHeader>
                 <div className="flex justify-between items-start">
                   <div>
                     <CardTitle className="text-lg font-semibold group-hover:text-primary transition-colors">
-                      {playlist.name}
+                      {playlist.name || 'Unnamed Playlist'}
                     </CardTitle>
-                    <CardDescription>{playlist.description}</CardDescription>
+                    <CardDescription>{playlist.description || 'No description'}</CardDescription>
                   </div>
-                  <div className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(playlist.status)} transition-all duration-300 group-hover:scale-105`}>
-                    {playlist.status}
+                  <div className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(playlist.status || 'inactive')} transition-all duration-300 group-hover:scale-105`}>
+                    {playlist.status || 'inactive'}
                   </div>
                 </div>
               </CardHeader>
@@ -151,19 +151,23 @@ export function PlaylistManager() {
                 <div className="space-y-2 text-sm">
                   <div className="flex items-center justify-between p-2 rounded hover:bg-gray-50 transition-colors">
                     <span className="text-gray-600 font-medium">Created:</span>
-                    <span className="text-gray-900">{formatDistanceToNow(new Date(playlist.createdAt))} ago</span>
+                    <span className="text-gray-900">
+                      {playlist.createdAt ? `${formatDistanceToNow(new Date(playlist.createdAt))} ago` : 'Unknown'}
+                    </span>
                   </div>
                   <div className="flex items-center justify-between p-2 rounded hover:bg-gray-50 transition-colors">
                     <span className="text-gray-600 font-medium">Last updated:</span>
-                    <span className="text-gray-900">{formatDistanceToNow(new Date(playlist.updatedAt))} ago</span>
+                    <span className="text-gray-900">
+                      {playlist.updatedAt ? `${formatDistanceToNow(new Date(playlist.updatedAt))} ago` : 'Unknown'}
+                    </span>
                   </div>
                   <div className="flex items-center justify-between p-2 rounded hover:bg-gray-50 transition-colors">
                     <span className="text-gray-600 font-medium">Scheduled ads:</span>
-                    <span className="text-gray-900">{playlist.schedules.length}</span>
+                    <span className="text-gray-900">{(playlist.schedules || []).length}</span>
                   </div>
                   <div className="flex items-center justify-between p-2 rounded hover:bg-gray-50 transition-colors">
                     <span className="text-gray-600 font-medium">Game deployments:</span>
-                    <span className="text-gray-900">{playlist.deployments.length}</span>
+                    <span className="text-gray-900">{(playlist.deployments || []).length}</span>
                   </div>
                 </div>
               </CardContent>

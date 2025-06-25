@@ -24,10 +24,14 @@ model Game {
   playlists   Playlist[] @relation("GamePlaylists")
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
-  // API key management fields
-  apiKey         String?   @unique
-  apiKeyCreatedAt DateTime?
-  apiKeyStatus   String?
+  
+  // Roblox Cloud API authorization (for fetching game info FROM Roblox)
+  robloxAuthorization Json?  // Contains: { type, apiKey, clientId, clientSecret, lastVerified, status }
+  
+  // Server API key management (for games to connect TO our server)
+  serverApiKey         String?   @unique
+  serverApiKeyCreatedAt DateTime?
+  serverApiKeyStatus   String?
 }
 
 model Asset {

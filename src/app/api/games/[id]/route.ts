@@ -102,23 +102,27 @@ export async function POST(
     }
     
     // Generate a secure random API key
-    const apiKey = 'RBXG-' + crypto.randomBytes(24).toString('hex')
+    const serverApiKey = 'RBXG-' + crypto.randomBytes(24).toString('hex')
     
-    // Update the game with the new API key
+    // Update the game with the new server API key
     const updatedGame = await prisma.game.update({
       where: { id: params.id },
       data: {
-        apiKey,
-        apiKeyCreatedAt: new Date(),
-        apiKeyStatus: 'active',
+        serverApiKey,
+        serverApiKeyCreatedAt: new Date(),
+        serverApiKeyStatus: 'active',
         updatedAt: new Date()
       }
     })
     
-    return NextResponse.json({ apiKey })
+    return NextResponse.json({ 
+      serverApiKey,
+      serverApiKeyCreatedAt: updatedGame.serverApiKeyCreatedAt,
+      serverApiKeyStatus: updatedGame.serverApiKeyStatus
+    })
   } catch (error) {
-    console.error('Error generating API key:', error)
-    return NextResponse.json({ error: 'Failed to generate API key' }, { status: 500 })
+    console.error('Error generating server API key:', error)
+    return NextResponse.json({ error: 'Failed to generate server API key' }, { status: 500 })
   } finally {
     await prisma.$disconnect()
   }

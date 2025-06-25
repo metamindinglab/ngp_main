@@ -91,19 +91,19 @@ export function PlaylistDialog({ open, onClose, initialData, onSave }: PlaylistD
   // Initialize form data when editing
   useEffect(() => {
     if (initialData) {
-      const schedules = initialData.schedules.map(schedule => {
-        const deployments = initialData.deployments.filter(d => d.scheduleId === schedule.id)
+      const schedules = (initialData.schedules || []).map(schedule => {
+        const deployments = (initialData.deployments || []).filter(d => d.scheduleId === schedule.id)
         return {
-          gameAdId: schedule.gameAdId,
-          startDate: schedule.startDate,
-          duration: schedule.duration,
+          gameAdId: schedule.gameAdId || '',
+          startDate: schedule.startDate || new Date().toISOString(),
+          duration: schedule.duration || 7,
           selectedGames: deployments.map(d => d.gameId)
         }
       })
 
       setFormData({
-        name: initialData.name,
-        description: initialData.description,
+        name: initialData.name || '',
+        description: initialData.description || '',
         schedules
       })
     } else {
@@ -204,7 +204,7 @@ export function PlaylistDialog({ open, onClose, initialData, onSave }: PlaylistD
 
   // Add this function to calculate game statistics
   const calculateGameStats = (selectedGameIds: string[]) => {
-    const selectedGames = games.filter(game => selectedGameIds.includes(game.id))
+    const selectedGames = (games || []).filter(game => selectedGameIds.includes(game.id))
     
     if (selectedGames.length === 0) return null
 
@@ -343,9 +343,9 @@ export function PlaylistDialog({ open, onClose, initialData, onSave }: PlaylistD
                               <SelectValue placeholder="Select a game ad" />
                             </SelectTrigger>
                             <SelectContent>
-                              {gameAds.map(ad => (
+                              {(gameAds || []).map(ad => (
                                 <SelectItem key={ad.id} value={ad.id}>
-                                  {ad.name}
+                                  {ad.name || 'Unnamed Ad'}
                                 </SelectItem>
                               ))}
                             </SelectContent>
@@ -403,7 +403,7 @@ export function PlaylistDialog({ open, onClose, initialData, onSave }: PlaylistD
                           <Label className="text-right pt-2">Games</Label>
                           <div className="col-span-3 space-y-4">
                             <div className="grid grid-cols-2 gap-2">
-                              {games.map(game => (
+                              {(games || []).map(game => (
                                 <div key={game.id} className="flex items-start space-x-2">
                                   <Checkbox
                                     id={`game-${index}-${game.id}`}
@@ -414,7 +414,7 @@ export function PlaylistDialog({ open, onClose, initialData, onSave }: PlaylistD
                                     htmlFor={`game-${index}-${game.id}`}
                                     className="text-sm leading-none pt-0.5"
                                   >
-                                    {game.name}
+                                    {game.name || 'Unnamed Game'}
                                   </Label>
                                 </div>
                               ))}
@@ -458,14 +458,14 @@ export function PlaylistDialog({ open, onClose, initialData, onSave }: PlaylistD
                             </div>
                             <div className="flex flex-wrap gap-2">
                               {Array.from(new Set(schedule.selectedGames)).map(gameId => {
-                                const game = games.find(g => g.id === gameId)
+                                const game = (games || []).find(g => g.id === gameId)
                                 return game ? (
                                   <Badge
                                     key={`${index}-${game.id}`}
                                     variant="outline"
                                     className="flex items-center gap-1 bg-gradient-to-r from-blue-500/10 to-purple-500/10 hover:from-blue-500/20 hover:to-purple-500/20 transition-colors"
                                   >
-                                    {game.name}
+                                    {game.name || 'Unnamed Game'}
                                     <X
                                       className="w-3 h-3 cursor-pointer hover:text-red-500 transition-colors"
                                       onClick={() => handleGameSelection(index, game.id, false)}

@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { addCorsHeaders, handleAuth, applyRateLimit, addRateLimitHeaders, handleOptions } from '../middleware';
+
+// Handle OPTIONS requests for CORS preflight
+export async function OPTIONS() {
+  return handleOptions()
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -41,12 +47,32 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    // Handle authentication for external Roblox games
+    const auth = await handleAuth(request)
+    if (!auth.isValid) {
+      const response = NextResponse.json({ error: auth.error }, { status: 401 })
+      return addCorsHeaders(response)
+    }
+
+    // Apply rate limiting
+    const apiKey = request.headers.get('X-API-Key') || request.headers.get('Authorization')?.replace('Bearer ', '')!
+    const rateLimit = applyRateLimit(apiKey)
+    
+    if (!rateLimit.allowed) {
+      const response = NextResponse.json(
+        { error: 'Rate limit exceeded', resetTime: rateLimit.resetTime },
+        { status: 429 }
+      )
+      addRateLimitHeaders(response, rateLimit)
+      return addCorsHeaders(response)
+    }
+
     const performance = await request.json();
     
     const newPerformance = await prisma.gameAdPerformance.create({
       data: {
         gameAdId: performance.gameAdId,
-        gameId: performance.gameId,
+        gameId: auth.gameId!, // Use authenticated game ID for security
         playlistId: performance.playlistId,
         date: new Date(performance.date || Date.now()),
         metrics: performance.metrics || {},
@@ -61,13 +87,21 @@ export async function POST(request: NextRequest) {
       }
     });
     
-    return NextResponse.json({ success: true, performance: newPerformance });
+    const response = NextResponse.json({ 
+      success: true, 
+      performance: newPerformance,
+      gameId: auth.gameId
+    })
+
+    addRateLimitHeaders(response, rateLimit)
+    return addCorsHeaders(response)
   } catch (error) {
     console.error('Error creating game ad performance:', error);
-    return NextResponse.json(
+    const response = NextResponse.json(
       { error: 'Failed to create game ad performance' },
       { status: 500 }
     );
+    return addCorsHeaders(response)
   }
 }
 

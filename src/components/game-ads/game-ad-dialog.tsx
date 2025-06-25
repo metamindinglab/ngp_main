@@ -173,7 +173,6 @@ export function GameAdDialog({ open, onClose, initialData, onSave }: GameAdDialo
         <CardContent className="p-4">
           <RobloxAssetPreview
             assetId={asset.robloxAssetId}
-            className="w-full h-[200px]"
             height="200px"
           />
           <div className="mt-2 text-sm">
