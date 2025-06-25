@@ -4,43 +4,88 @@ import path from 'path';
 
 const prisma = new PrismaClient();
 
+interface GameData {
+  id: string;
+  name: string;
+  description?: string;
+  genre?: string;
+  robloxLink?: string;
+  thumbnail?: string;
+  metrics?: any;
+  dates?: any;
+  owner?: any;
+  authorization?: any;
+  robloxInfo?: any;
+}
+
+interface GamesDatabase {
+  version: string;
+  lastUpdated: string;
+  games: GameData[];
+}
+
+async function migrateGamesToDatabase() {
+  try {
+    console.log('Starting migration from JSON to database...');
+    
+    // Read the JSON file
+    const gamesPath = path.join(process.cwd(), 'data/games.json');
+    const content = await fs.readFile(gamesPath, 'utf8');
+    const data: GamesDatabase = JSON.parse(content);
+    
+    console.log(`Found ${data.games.length} games to migrate`);
+    
+    // Clear existing games (optional - remove if you want to keep existing data)
+    await prisma.game.deleteMany();
+    console.log('Cleared existing games from database');
+    
+    // Insert each game
+    for (const game of data.games) {
+      try {
+        const newGame = await prisma.game.create({
+          data: {
+            id: game.id,
+            name: game.name,
+            description: game.description || null,
+            genre: game.genre || null,
+            robloxLink: game.robloxLink || null,
+            thumbnail: game.thumbnail || null,
+            metrics: game.metrics || null,
+            dates: game.dates || null,
+            owner: game.owner || null,
+            // Handle API key from authorization field if it exists
+            apiKey: game.authorization?.apiKey || null,
+            apiKeyStatus: game.authorization?.status || null,
+            apiKeyCreatedAt: game.authorization?.apiKey ? new Date() : null,
+          }
+        });
+        console.log(`✓ Migrated game: ${game.name} (${game.id})`);
+      } catch (error) {
+        console.error(`✗ Failed to migrate game ${game.id}:`, error);
+      }
+    }
+    
+    // Verify migration
+    const count = await prisma.game.count();
+    console.log(`\nMigration complete! ${count} games now in database.`);
+    
+  } catch (error) {
+    console.error('Migration failed:', error);
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
+// Run the migration
+migrateGamesToDatabase();
+
 async function main() {
   try {
     console.log('Starting migration...');
 
     // 1. Migrate Games
     console.log('Migrating games...');
-    const gamesPath = path.join(__dirname, '../data/games.json');
-    const gamesData = JSON.parse(await fs.readFile(gamesPath, 'utf-8'));
-    for (const game of gamesData.games) {
-      await prisma.game.upsert({
-        where: { id: game.id },
-        update: {
-          name: game.name,
-          description: game.description,
-          genre: game.genre,
-          robloxLink: game.robloxLink,
-          thumbnail: game.thumbnail,
-          metrics: typeof game.metrics === 'object' ? game.metrics : null,
-          dates: typeof game.dates === 'object' ? game.dates : null,
-          owner: typeof game.owner === 'object' ? game.owner : null,
-          updatedAt: game.dates?.lastUpdated ? new Date(game.dates.lastUpdated) : undefined,
-        },
-        create: {
-          id: game.id,
-          name: game.name,
-          description: game.description,
-          genre: game.genre,
-          robloxLink: game.robloxLink,
-          thumbnail: game.thumbnail,
-          metrics: typeof game.metrics === 'object' ? game.metrics : null,
-          dates: typeof game.dates === 'object' ? game.dates : null,
-          owner: typeof game.owner === 'object' ? game.owner : null,
-          createdAt: game.dates?.created ? new Date(game.dates.created) : undefined,
-          updatedAt: game.dates?.lastUpdated ? new Date(game.dates.lastUpdated) : undefined,
-        }
-      });
-    }
+    await migrateGamesToDatabase();
     console.log('Games migration complete!');
 
     // 2. Migrate Assets

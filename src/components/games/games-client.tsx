@@ -13,13 +13,14 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Game } from "@/types/game";
 import { useToast } from "@/components/ui/use-toast";
-import { Loader2 } from "lucide-react";
+import { Loader2, Eye, EyeOff, Copy, Key, RefreshCw } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Textarea } from "@/components/ui/textarea";
 import Link from 'next/link';
 import Image from 'next/image';
 import { GameDialog } from './game-dialog';
 import { MMLLogo } from "@/components/ui/mml-logo";
+import { Badge } from "@/components/ui/badge";
 
 // Add color constants
 const COLORS = {
@@ -67,21 +68,31 @@ const gameFormSchema = z.object({
   }).default({})
 });
 
+// Enhanced Game interface with API key fields
+interface EnhancedGame extends Game {
+  apiKey?: string
+  apiKeyCreatedAt?: string
+  apiKeyStatus?: string
+}
+
 interface GamesClientProps {
-  initialGames?: Game[];
+  initialGames?: EnhancedGame[];
 }
 
 export function GamesClient({ initialGames = [] }: GamesClientProps) {
-  const [games, setGames] = React.useState<Game[]>(initialGames);
-  const [loading, setLoading] = React.useState(true);
-  const [searchQuery, setSearchQuery] = React.useState("");
-  const [selectedGenre, setSelectedGenre] = React.useState<string | null>(null);
+  const [games, setGames] = React.useState<EnhancedGame[]>(initialGames);
+  const [filteredGames, setFilteredGames] = React.useState<EnhancedGame[]>(initialGames);
+  const [searchTerm, setSearchTerm] = React.useState('');
+  const [selectedGenre, setSelectedGenre] = React.useState<string>('_all');
+  const [loading, setLoading] = React.useState(false);
   const [showAddForm, setShowAddForm] = React.useState(false);
-  const router = useRouter();
-  const [selectedGame, setSelectedGame] = useState<Game | null>(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingGame, setEditingGame] = React.useState<EnhancedGame | null>(null);
+  const [selectedGame, setSelectedGame] = React.useState<EnhancedGame | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = React.useState(false);
+  const [showApiKeys, setShowApiKeys] = useState<{[key: string]: boolean}>({});
+  const [generatingApiKey, setGeneratingApiKey] = useState<string | null>(null);
   const { toast } = useToast();
-
+  const router = useRouter();
   const form = useForm<z.infer<typeof gameFormSchema>>({
     resolver: zodResolver(gameFormSchema),
     defaultValues: {
@@ -111,99 +122,150 @@ export function GamesClient({ initialGames = [] }: GamesClientProps) {
         type: 'api_key',
         status: 'unverified'
       }
-    },
+    }
   });
 
   React.useEffect(() => {
     fetchGames();
   }, []);
 
-  async function fetchGames() {
+  React.useEffect(() => {
+    let filtered = games;
+    
+    if (searchTerm) {
+      filtered = filtered.filter(game => 
+        game.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        game.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        game.owner?.name?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+    
+    if (selectedGenre && selectedGenre !== '_all') {
+      filtered = filtered.filter(game => game.genre === selectedGenre);
+    }
+    
+    setFilteredGames(filtered);
+  }, [searchTerm, selectedGenre, games]);
+
+  const fetchGames = async () => {
+    setLoading(true);
     try {
       const response = await fetch('/api/games');
+      if (!response.ok) throw new Error('Failed to fetch games');
       const data = await response.json();
       setGames(data.games);
+      setFilteredGames(data.games);
     } catch (error) {
-      console.error('Error loading games:', error);
+      console.error('Error fetching games:', error);
       toast({
         title: "Error",
-        description: "Failed to load games. Please try again.",
+        description: "Failed to fetch games.",
         variant: "destructive"
       });
     } finally {
       setLoading(false);
     }
-  }
+  };
 
-  async function onSubmit(values: z.infer<typeof gameFormSchema>) {
+  const handleDelete = async (gameId: string) => {
+    if (!confirm('Are you sure you want to delete this game?')) return;
+    
     try {
-      const response = await fetch('/api/games', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(values),
+      const response = await fetch(`/api/games/${gameId}`, {
+        method: 'DELETE'
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to create game');
-      }
-
+      
+      if (!response.ok) throw new Error('Failed to delete game');
+      
       await fetchGames();
-      setShowAddForm(false);
-      form.reset();
       toast({
         title: "Success",
-        description: "Game created successfully."
+        description: "Game deleted successfully."
       });
     } catch (error) {
-      console.error('Error creating game:', error);
+      console.error('Error deleting game:', error);
       toast({
         title: "Error",
-        description: "Failed to create game. Please try again.",
+        description: "Failed to delete game.",
         variant: "destructive"
       });
     }
-  }
-
-  async function handleDelete(gameId: string) {
-    if (confirm('Are you sure you want to delete this game?')) {
-      try {
-        const response = await fetch(`/api/games/${gameId}`, {
-          method: 'DELETE',
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to delete game');
-        }
-
-        await fetchGames();
-        toast({
-          title: "Success",
-          description: "Game deleted successfully."
-        });
-      } catch (error) {
-        console.error('Error deleting game:', error);
-        toast({
-          title: "Error",
-          description: "Failed to delete game. Please try again.",
-          variant: "destructive"
-        });
-      }
-    }
-  }
-
-  const handleViewDetails = (game: Game) => {
-    setSelectedGame(game);
-    setIsDialogOpen(true);
   };
 
-  const filteredGames = games.filter(game => {
-    const matchesSearch = game.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      game.description.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesGenre = !selectedGenre || selectedGenre === "all" || game.genre === selectedGenre;
-    return matchesSearch && matchesGenre;
-  });
+  const handleViewDetails = (game: EnhancedGame) => {
+    router.push(`/dashboard/games/${game.id}/edit`);
+  };
+
+  const handleGenerateApiKey = async (gameId: string) => {
+    setGeneratingApiKey(gameId);
+    try {
+      const response = await fetch(`/api/games/${gameId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to generate API key');
+      }
+      
+      const updatedGame = await response.json();
+      
+      // Update the games list with the new API key
+      setGames(games.map(game => 
+        game.id === gameId ? { ...game, ...updatedGame } : game
+      ));
+      
+      toast({
+        title: "Success",
+        description: "API key generated successfully",
+      });
+    } catch (error) {
+      console.error('Error generating API key:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate API key",
+        variant: "destructive"
+      });
+    } finally {
+      setGeneratingApiKey(null);
+    }
+  };
+
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast({
+        title: "Success",
+        description: "API key copied to clipboard"
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to copy to clipboard",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const toggleApiKeyVisibility = (gameId: string) => {
+    setShowApiKeys(prev => ({
+      ...prev,
+      [gameId]: !prev[gameId]
+    }));
+  };
+
+  const getApiKeyStatusBadge = (status?: string) => {
+    switch (status) {
+      case 'active':
+        return <Badge className="bg-green-500">Active</Badge>;
+      case 'expired':
+        return <Badge variant="destructive">Expired</Badge>;
+      case 'revoked':
+        return <Badge variant="destructive">Revoked</Badge>;
+      default:
+        return <Badge variant="secondary">Not Generated</Badge>;
+    }
+  };
 
   const genres = Array.from(new Set(games.map(game => game.genre)));
 
@@ -235,79 +297,167 @@ export function GamesClient({ initialGames = [] }: GamesClientProps) {
           </Button>
         </div>
 
-        <div className="flex flex-col md:flex-row justify-between gap-4">
-          <div className="flex-1">
-            <h2 className="text-sm font-medium mb-2 text-gray-600">Search</h2>
-            <Input
-              placeholder="Search by name or description..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="border-gray-200 focus:border-primary focus:ring-primary transition-colors"
-            />
-          </div>
-          <div className="w-full md:w-64">
-            <h2 className="text-sm font-medium mb-2 text-gray-600">Filter by Genre</h2>
-            <Select value={selectedGenre || "all"} onValueChange={setSelectedGenre}>
-              <SelectTrigger className="border-gray-200 focus:border-primary focus:ring-primary transition-colors">
-                <SelectValue>{selectedGenre || "All Genres"}</SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Genres</SelectItem>
-                {genres.map(genre => (
-                  <SelectItem key={genre} value={genre}>{genre}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+        <div className="flex gap-4">
+          <Input
+            placeholder="Search games..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="max-w-sm border-2 border-gray-300 focus:border-primary transition-colors"
+          />
+          <Select value={selectedGenre} onValueChange={setSelectedGenre}>
+            <SelectTrigger className="w-[200px] border-2 border-gray-300">
+              <SelectValue placeholder="Filter by genre" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="_all">All Genres</SelectItem>
+              {genres.map(genre => (
+                <SelectItem key={genre} value={genre}>{genre}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredGames.map(game => (
-            <Card 
-              key={game.id}
-              className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border-l-4 overflow-hidden flex flex-col h-[500px]"
-              style={{ borderLeftColor: COLORS.primary }}
-            >
+            <Card key={game.id} className="hover:shadow-lg transition-shadow duration-300 border-2 border-gray-200 hover:border-primary/30 flex flex-col">
               <CardHeader className="flex-none">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <CardTitle className="text-lg font-semibold group-hover:text-primary transition-colors line-clamp-1">
-                      {game.name}
-                    </CardTitle>
-                    <CardDescription className="text-gray-600 mt-1 line-clamp-2">
-                      {game.description}
-                    </CardDescription>
+                <div className="aspect-video relative mb-4 overflow-hidden rounded-lg">
+                  {game.thumbnail ? (
+                    <Image
+                      src={game.thumbnail}
+                      alt={game.name}
+                      fill
+                      className="object-cover hover:scale-105 transition-transform duration-300"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                      <span className="text-gray-500">No thumbnail</span>
+                    </div>
+                  )}
+                </div>
+                <CardTitle className="text-lg" style={{ color: COLORS.primary }}>{game.name}</CardTitle>
+                <CardDescription className="line-clamp-2">{game.description}</CardDescription>
+              </CardHeader>
+              
+              <CardContent className="flex-grow">
+                <div className="space-y-3">
+                  <div className="flex flex-wrap gap-2">
+                    <Badge variant="outline" style={{ borderColor: COLORS.accent, color: COLORS.accent }}>
+                      {game.genre}
+                    </Badge>
+                  </div>
+                  
+                  <div className="text-sm space-y-1">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">DAU:</span>
+                      <span className="font-medium">{game.metrics?.dau?.toLocaleString() || 'N/A'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">MAU:</span>
+                      <span className="font-medium">{game.metrics?.mau?.toLocaleString() || 'N/A'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Retention:</span>
+                      <span className="font-medium">{game.metrics?.day1Retention || 0}%</span>
+                    </div>
+                  </div>
+
+                  <div className="text-sm">
+                    <div className="text-muted-foreground">Owner: {game.owner?.name || 'Unknown'}</div>
+                    <div className="text-muted-foreground">Country: {game.owner?.country || 'Unknown'}</div>
+                  </div>
+
+                  {/* API Key Management Section */}
+                  <div className="border-t pt-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <Key className="w-4 h-4" />
+                        <span className="text-sm font-medium">API Access</span>
+                      </div>
+                      {getApiKeyStatusBadge(game.apiKeyStatus)}
+                    </div>
+                    
+                    {game.apiKey ? (
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1 relative">
+                            <Input
+                              type={showApiKeys[game.id] ? "text" : "password"}
+                              value={game.apiKey}
+                              readOnly
+                              className="text-xs font-mono pr-16"
+                            />
+                            <div className="absolute right-1 top-1 flex gap-1">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-6 w-6 p-0"
+                                onClick={() => toggleApiKeyVisibility(game.id)}
+                              >
+                                {showApiKeys[game.id] ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-6 w-6 p-0"
+                                onClick={() => copyToClipboard(game.apiKey!)}
+                              >
+                                <Copy className="w-3 h-3" />
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {game.apiKeyCreatedAt && (
+                          <div className="text-xs text-muted-foreground">
+                            Created: {new Date(game.apiKeyCreatedAt).toLocaleDateString()}
+                          </div>
+                        )}
+                        
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="w-full"
+                          onClick={() => handleGenerateApiKey(game.id)}
+                          disabled={generatingApiKey === game.id}
+                        >
+                          {generatingApiKey === game.id ? (
+                            <>
+                              <RefreshCw className="w-3 h-3 mr-1 animate-spin" />
+                              Regenerating...
+                            </>
+                          ) : (
+                            <>
+                              <RefreshCw className="w-3 h-3 mr-1" />
+                              Regenerate Key
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button
+                        size="sm"
+                        className="w-full"
+                        onClick={() => handleGenerateApiKey(game.id)}
+                        disabled={generatingApiKey === game.id}
+                      >
+                        {generatingApiKey === game.id ? (
+                          <>
+                            <RefreshCw className="w-3 h-3 mr-1 animate-spin" />
+                            Generating...
+                          </>
+                        ) : (
+                          <>
+                            <Key className="w-3 h-3 mr-1" />
+                            Generate API Key
+                          </>
+                        )}
+                      </Button>
+                    )}
                   </div>
                 </div>
-              </CardHeader>
-              <CardContent className="space-y-4 flex-1">
-                <div className="flex items-center space-x-2">
-                  <span className="text-sm font-medium text-gray-600">Genre:</span>
-                  <span className="text-sm px-2 py-1 bg-gray-100 rounded-full text-gray-700">
-                    {game.genre}
-                  </span>
-                </div>
-                <div className="relative aspect-video rounded-md overflow-hidden">
-                  <Image
-                    src={game.thumbnail}
-                    alt={game.name}
-                    width={400}
-                    height={300}
-                    className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-300"
-                  />
-                </div>
-                <div className="flex items-center space-x-2">
-                  <span className="text-sm font-medium text-gray-600">Roblox Link:</span>
-                  <a 
-                    href={game.robloxLink || '#'} 
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-primary hover:text-primary/80 transition-colors text-sm underline"
-                  >
-                    View on Roblox
-                  </a>
-                </div>
               </CardContent>
+
               <CardFooter className="flex justify-between gap-2 flex-none mt-auto">
                 <Button
                   variant="outline"
@@ -352,8 +502,6 @@ export function GamesClient({ initialGames = [] }: GamesClientProps) {
 
             const savedGame = await response.json();
             await fetchGames();
-            setShowAddForm(false);
-            form.reset();
             toast({
               title: "Success",
               description: "Game saved successfully."

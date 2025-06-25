@@ -24,6 +24,10 @@ model Game {
   playlists   Playlist[] @relation("GamePlaylists")
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+  // API key management fields
+  apiKey         String?   @unique
+  apiKeyCreatedAt DateTime?
+  apiKeyStatus   String?
 }
 
 model Asset {

@@ -1,17 +1,17 @@
 import { NextResponse } from 'next/server'
-import { promises as fs } from 'fs'
-import path from 'path'
+import { PrismaClient } from '@prisma/client'
+import crypto from 'crypto'
 
-const gamesPath = path.join(process.cwd(), 'data/games.json')
+const prisma = new PrismaClient()
 
 export async function GET(
   request: Request,
   { params }: { params: { id: string } }
 ) {
   try {
-    const fileContents = await fs.readFile(gamesPath, 'utf8')
-    const data = JSON.parse(fileContents)
-    const game = data.games.find((g: any) => g.id === params.id)
+    const game = await prisma.game.findUnique({
+      where: { id: params.id }
+    })
     
     if (!game) {
       return NextResponse.json({ error: 'Game not found' }, { status: 404 })
@@ -30,47 +30,29 @@ export async function PUT(
 ) {
   try {
     const updatedGame = await request.json()
-    const fileContents = await fs.readFile(gamesPath, 'utf8')
-    const data = JSON.parse(fileContents)
     
-    const index = data.games.findIndex((g: any) => g.id === params.id)
-    if (index === -1) {
+    // Check if game exists
+    const existingGame = await prisma.game.findUnique({
+      where: { id: params.id }
+    })
+    
+    if (!existingGame) {
       return NextResponse.json({ error: 'Game not found' }, { status: 404 })
     }
 
     // Ensure we preserve the game ID
     updatedGame.id = params.id
 
-    // Ensure media structure exists
-    if (!updatedGame.robloxInfo) {
-      updatedGame.robloxInfo = {}
-    }
-    if (!updatedGame.robloxInfo.media) {
-      updatedGame.robloxInfo.media = {
-        images: [],
-        videos: []
-      }
-    }
-
-    // Preserve existing media if not provided in update
-    if (!updatedGame.robloxInfo.media.images) {
-      updatedGame.robloxInfo.media.images = data.games[index].robloxInfo?.media?.images || []
-    }
-    if (!updatedGame.robloxInfo.media.videos) {
-      updatedGame.robloxInfo.media.videos = data.games[index].robloxInfo?.media?.videos || []
-    }
-    
     // Update the game and timestamps
-    updatedGame.dates = {
-      ...updatedGame.dates,
-      lastUpdated: new Date().toISOString()
-    }
+    const game = await prisma.game.update({
+      where: { id: params.id },
+      data: {
+        ...updatedGame,
+        updatedAt: new Date()
+      }
+    })
     
-    data.games[index] = updatedGame
-    data.lastUpdated = new Date().toISOString()
-    
-    await fs.writeFile(gamesPath, JSON.stringify(data, null, 2))
-    return NextResponse.json(updatedGame)
+    return NextResponse.json(game)
   } catch (error) {
     console.error('Error updating game:', error)
     return NextResponse.json({ error: 'Failed to update game' }, { status: 500 })
@@ -82,21 +64,62 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const fileContents = await fs.readFile(gamesPath, 'utf8')
-    const data = JSON.parse(fileContents)
+    // Check if game exists
+    const existingGame = await prisma.game.findUnique({
+      where: { id: params.id }
+    })
     
-    const index = data.games.findIndex((g: any) => g.id === params.id)
-    if (index === -1) {
+    if (!existingGame) {
       return NextResponse.json({ error: 'Game not found' }, { status: 404 })
     }
     
-    data.games.splice(index, 1)
-    data.lastUpdated = new Date().toISOString()
+    // Delete the game
+    await prisma.game.delete({
+      where: { id: params.id }
+    })
     
-    await fs.writeFile(gamesPath, JSON.stringify(data, null, 2))
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Error deleting game:', error)
     return NextResponse.json({ error: 'Failed to delete game' }, { status: 500 })
+  }
+}
+
+export async function POST(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    // TODO: Add authentication/authorization check to ensure only the game owner or admin can generate a key
+    
+    // Check if game exists
+    const existingGame = await prisma.game.findUnique({
+      where: { id: params.id }
+    })
+    
+    if (!existingGame) {
+      return NextResponse.json({ error: 'Game not found' }, { status: 404 })
+    }
+    
+    // Generate a secure random API key
+    const apiKey = 'RBXG-' + crypto.randomBytes(24).toString('hex')
+    
+    // Update the game with the new API key
+    const updatedGame = await prisma.game.update({
+      where: { id: params.id },
+      data: {
+        apiKey,
+        apiKeyCreatedAt: new Date(),
+        apiKeyStatus: 'active',
+        updatedAt: new Date()
+      }
+    })
+    
+    return NextResponse.json({ apiKey })
+  } catch (error) {
+    console.error('Error generating API key:', error)
+    return NextResponse.json({ error: 'Failed to generate API key' }, { status: 500 })
+  } finally {
+    await prisma.$disconnect()
   }
 } 

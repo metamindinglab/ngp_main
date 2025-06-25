@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { readFile, writeFile, mkdir } from 'fs/promises'
-import { join } from 'path'
+import { PrismaClient } from '@prisma/client'
+
+const prisma = new PrismaClient()
 
 interface Game {
   id: string
@@ -46,31 +47,28 @@ interface GamesDatabase {
   games: Game[]
 }
 
-const gamesPath = join(process.cwd(), 'data/games.json')
-
-// Initialize data file if it doesn't exist
-async function initDataFile() {
-  try {
-    await readFile(gamesPath, 'utf8')
-  } catch {
-    // Create data directory if it doesn't exist
-    await mkdir(join(process.cwd(), 'data'), { recursive: true })
-    // Create initial data file
-    const initialData: GamesDatabase = {
-      version: '1.0',
-      lastUpdated: new Date().toISOString(),
-      games: []
-    }
-    await writeFile(gamesPath, JSON.stringify(initialData, null, 2))
-  }
+// Helper function to generate next game ID
+async function generateGameId(): Promise<string> {
+  const games = await prisma.game.findMany({
+    select: { id: true },
+    orderBy: { createdAt: 'desc' }
+  })
+  
+  const existingIds = games
+    .map(game => parseInt(game.id.replace('game_', '')) || 0)
+    .filter(id => !isNaN(id))
+  
+  const nextId = Math.max(...existingIds, 0) + 1
+  return `game_${nextId.toString().padStart(3, '0')}`
 }
 
 export async function GET() {
   try {
-    await initDataFile()
-    const content = await readFile(gamesPath, 'utf8')
-    const data: GamesDatabase = JSON.parse(content)
-    return NextResponse.json({ games: data.games })
+    const games = await prisma.game.findMany({
+      orderBy: { createdAt: 'desc' }
+    })
+    
+    return NextResponse.json({ games })
   } catch (error) {
     console.error('Error reading games:', error)
     return NextResponse.json(
@@ -82,51 +80,39 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    await initDataFile()
     const gameData = await request.json()
-    const content = await readFile(gamesPath, 'utf8')
-    const data: GamesDatabase = JSON.parse(content)
     
     // Generate next game ID
-    const existingIds = data.games.map((game: Game): number => parseInt(game.id.replace('game_', '')) || 0)
-    const nextId = Math.max(...existingIds, 0) + 1
-    const gameId = `game_${nextId.toString().padStart(3, '0')}`
+    const gameId = await generateGameId()
     
-    // Create new game with all required fields
-    const newGame: Game = {
-      id: gameId,
-      name: gameData.name,
-      description: gameData.description,
-      genre: gameData.genre,
-      robloxLink: gameData.robloxLink,
-      thumbnail: gameData.thumbnail,
-      metrics: {
-        dau: gameData.metrics?.dau || 0,
-        mau: gameData.metrics?.mau || 0,
-        day1Retention: gameData.metrics?.day1Retention || 0,
-        topGeographicPlayers: gameData.metrics?.topGeographicPlayers || []
-      },
-      dates: {
-        created: new Date().toISOString(),
-        lastUpdated: new Date().toISOString(),
-        mgnJoined: new Date().toISOString()
-      },
-      owner: {
-        name: gameData.owner?.name || '',
-        discordId: gameData.owner?.discordId || '',
-        email: gameData.owner?.email || '',
-        country: gameData.owner?.country || ''
-      },
-      authorization: gameData.authorization || {
-        type: 'api_key',
-        status: 'unverified'
+    // Create new game in database
+    const newGame = await prisma.game.create({
+      data: {
+        id: gameId,
+        name: gameData.name,
+        description: gameData.description,
+        genre: gameData.genre,
+        robloxLink: gameData.robloxLink,
+        thumbnail: gameData.thumbnail,
+        metrics: gameData.metrics || {
+          dau: 0,
+          mau: 0,
+          day1Retention: 0,
+          topGeographicPlayers: []
+        },
+        dates: {
+          created: new Date().toISOString(),
+          lastUpdated: new Date().toISOString(),
+          mgnJoined: new Date().toISOString()
+        },
+        owner: {
+          name: gameData.owner?.name || '',
+          discordId: gameData.owner?.discordId || '',
+          email: gameData.owner?.email || '',
+          country: gameData.owner?.country || ''
+        }
       }
-    }
-
-    data.games.push(newGame)
-    data.lastUpdated = new Date().toISOString()
-    
-    await writeFile(gamesPath, JSON.stringify(data, null, 2))
+    })
     
     return NextResponse.json({ success: true, game: newGame })
   } catch (error) {
@@ -140,29 +126,30 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
-    await initDataFile()
     const { id, ...updates } = await request.json()
-    const content = await readFile(gamesPath, 'utf8')
-    const data: GamesDatabase = JSON.parse(content)
     
-    const gameIndex = data.games.findIndex((game: Game): boolean => game.id === id)
-    if (gameIndex === -1) {
+    // Check if game exists
+    const existingGame = await prisma.game.findUnique({
+      where: { id }
+    })
+    
+    if (!existingGame) {
       return NextResponse.json(
         { error: 'Game not found' },
         { status: 404 }
       )
     }
     
-    data.games[gameIndex] = {
-      ...data.games[gameIndex],
-      ...updates,
-      id // Preserve the original ID
-    }
-    data.lastUpdated = new Date().toISOString()
+    // Update the game
+    const updatedGame = await prisma.game.update({
+      where: { id },
+      data: {
+        ...updates,
+        updatedAt: new Date()
+      }
+    })
     
-    await writeFile(gamesPath, JSON.stringify(data, null, 2))
-    
-    return NextResponse.json({ success: true, game: data.games[gameIndex] })
+    return NextResponse.json({ success: true, game: updatedGame })
   } catch (error) {
     console.error('Error updating game:', error)
     return NextResponse.json(
@@ -174,7 +161,6 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    await initDataFile()
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
     
@@ -185,21 +171,22 @@ export async function DELETE(request: NextRequest) {
       )
     }
     
-    const content = await readFile(gamesPath, 'utf8')
-    const data: GamesDatabase = JSON.parse(content)
+    // Check if game exists
+    const existingGame = await prisma.game.findUnique({
+      where: { id }
+    })
     
-    const gameIndex = data.games.findIndex((game: Game): boolean => game.id === id)
-    if (gameIndex === -1) {
+    if (!existingGame) {
       return NextResponse.json(
         { error: 'Game not found' },
         { status: 404 }
       )
     }
     
-    data.games.splice(gameIndex, 1)
-    data.lastUpdated = new Date().toISOString()
-    
-    await writeFile(gamesPath, JSON.stringify(data, null, 2))
+    // Delete the game
+    await prisma.game.delete({
+      where: { id }
+    })
     
     return NextResponse.json({ success: true })
   } catch (error) {
@@ -208,5 +195,7 @@ export async function DELETE(request: NextRequest) {
       { error: 'Failed to delete game' },
       { status: 500 }
     )
+  } finally {
+    await prisma.$disconnect()
   }
 } 

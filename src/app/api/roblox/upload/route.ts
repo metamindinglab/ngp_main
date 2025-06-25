@@ -5,13 +5,6 @@ import { createReadStream } from 'fs';
 import fetch from 'node-fetch';
 import { Blob } from 'node:buffer';
 
-// Configure to handle file uploads
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
-
 const ROBLOX_ASSET_TYPES = {
   AUDIO: 'Audio',
   IMAGE: 'Image',

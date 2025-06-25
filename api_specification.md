@@ -2,6 +2,34 @@
 
 **Base URL**: `http://23.96.197.67:3000/api/v1`
 
+## Getting Started
+
+1. **Register Your Game:** Ensure your game is added to the system by an admin or through the dashboard. Each game entry will have an owner and related information in the Game table.
+2. **Generate API Key:** Use the API to generate a unique API key for your game (see below).
+3. **Authenticate:** Use your API key to obtain a Bearer token for secure access to all endpoints.
+4. **Make Authenticated Requests:** Include the Bearer token in the Authorization header for all API calls.
+
+## API Key Generation
+
+To generate (or rotate) an API key for your game, use the following endpoint. Only the game owner (or admin) should be allowed to call this endpoint.
+
+```
+POST /games/{game_id}
+```
+
+**Description:** Generates a new API key for the specified game. The new key will replace any existing key for that game.
+
+**Response (200 OK):**
+```
+{
+  "apiKey": "RBXG-..."
+}
+```
+
+**Security Note:**
+- Treat your API key like a password. Do not share it publicly or commit it to source control.
+- If your key is compromised, generate a new one immediately.
+
 ## Authentication
 
 ### Authenticate Game
@@ -24,6 +52,11 @@ Response (401 Unauthorized):
     "error": "Invalid API key"
 }
 ```
+
+**Instructions:**
+- Use the API key generated for your game to authenticate.
+- The returned token must be included in the Authorization header for all subsequent requests:
+  `Authorization: Bearer {token}`
 
 ## Display Objects API
 
@@ -145,77 +178,256 @@ Response (404 Not Found):
 }
 ```
 
-## Example Roblox Implementation
+## Game Ads API
 
-```lua
-local HttpService = game:GetService("HttpService")
-local BASE_URL = "http://23.96.197.67:3000/api/v1"
-local API_KEY = "RBXG-your-api-key"
-local token = nil
+### List Game Ads
+```
+GET /api/game-ads
+Content-Type: application/json
 
--- Authentication function
-local function authenticate()
-    local response = HttpService:RequestAsync({
-        Url = BASE_URL .. "/authenticate",
-        Method = "POST",
-        Headers = {
-            ["Content-Type"] = "application/json"
-        },
-        Body = HttpService:JSONEncode({
-            api_key = API_KEY
-        })
-    })
-    
-    if response.Success then
-        local data = HttpService:JSONDecode(response.Body)
-        token = data.token
-        return true
-    end
-    return false
-end
+Query Parameters:
+{
+    "page": number,      // Optional: Page number for pagination (default: 1)
+    "search": string,    // Optional: Search term to filter by name
+    "status": string,    // Optional: Filter by status
+    "gameId": string     // Optional: Filter by game ID
+}
 
--- Create a display object
-local function createDisplayObject(gameId, assetId, assetType, position)
-    if not token then
-        authenticate()
-    end
-    
-    local response = HttpService:RequestAsync({
-        Url = BASE_URL .. "/game/" .. gameId .. "/display",
-        Method = "POST",
-        Headers = {
-            ["Authorization"] = "Bearer " .. token,
-            ["Content-Type"] = "application/json"
-        },
-        Body = HttpService:JSONEncode({
-            asset_id = assetId,
-            asset_type = assetType,
-            position = position or {x = 0, y = 0, z = 0}
-        })
-    })
-    
-    if response.Success then
-        return HttpService:JSONDecode(response.Body)
-    end
-    return nil
-end
+Response (200 OK):
+{
+    "gameAds": [
+        {
+            "id": string,
+            "name": string,
+            "templateType": string,
+            "gameId": string,
+            "status": string,
+            "schedule": object | null,
+            "targeting": object | null,
+            "metrics": object | null,
+            "assets": [
+                {
+                    "assetType": string,
+                    "assetId": string,
+                    "robloxAssetId": string
+                }
+            ],
+            "createdAt": string,
+            "updatedAt": string,
+            "game": {
+                "id": string,
+                "name": string,
+                "thumbnail": string | null
+            } | null,
+            "performance": {
+                "impressions": number,
+                "clicks": number,
+                "conversions": number
+            } | null
+        }
+    ],
+    "total": number,
+    "page": number,
+    "totalPages": number
+}
 
--- Example usage
-local success = authenticate()
-if success then
-    local result = createDisplayObject(
-        "game123",
-        "asset456",
-        "image",
-        {x = 10, y = 5, z = 10}
-    )
-    if result then
-        print("Created display object with ID:", result.display_id)
-    end
-end
+Response (500 Internal Server Error):
+{
+    "error": "Failed to load game ads"
+}
 ```
 
-All endpoints require authentication via Bearer token, which must be obtained through the `/authenticate` endpoint first. Error responses include appropriate HTTP status codes and error messages in the response body.
+### Create Game Ad
+```
+POST /api/game-ads
+Content-Type: application/json
 
-The server is running on port 3000, and based on the logs, it's using Next.js 14.2.16. All requests should include appropriate headers, especially the `Authorization` header with the Bearer token for authenticated endpoints.
+Request Body:
+{
+    "name": string,              // Required: Name of the game ad
+    "templateType": string,      // Required: Type of template to use
+    "gameId": string,           // Optional: ID of the game (default: "game_001")
+    "status": string,           // Optional: Status of the ad (default: "active")
+    "schedule": object | null,  // Optional: Scheduling information
+    "targeting": object | null, // Optional: Targeting criteria
+    "metrics": object | null,   // Optional: Custom metrics
+    "assets": [                 // Required: At least one asset
+        {
+            "assetType": string,    // Required: Type of asset
+            "assetId": string,      // Required: Asset ID
+            "robloxAssetId": string // Required: Roblox Asset ID
+        }
+    ]
+}
 
+Response (200 OK):
+{
+    "id": string,
+    "name": string,
+    "templateType": string,
+    "gameId": string,
+    "status": string,
+    "schedule": object | null,
+    "targeting": object | null,
+    "metrics": object | null,
+    "assets": array,
+    "createdAt": string,
+    "updatedAt": string,
+    "game": {
+        "id": string,
+        "name": string,
+        "thumbnail": string | null
+    } | null
+}
+
+Response (400 Bad Request):
+{
+    "error": "Validation failed",
+    "details": array // Validation error details
+}
+
+Response (409 Conflict):
+{
+    "error": "A game ad with this name already exists"
+}
+
+Response (500 Internal Server Error):
+{
+    "error": "Failed to create game ad"
+}
+```
+
+### Get Game Ad
+```
+GET /api/game-ads/{id}
+Content-Type: application/json
+
+Response (200 OK):
+{
+    "id": string,
+    "name": string,
+    "templateType": string,
+    "gameId": string,
+    "status": string,
+    "schedule": object | null,
+    "targeting": object | null,
+    "metrics": object | null,
+    "assets": array,
+    "createdAt": string,
+    "updatedAt": string,
+    "game": {
+        "id": string,
+        "name": string,
+        "thumbnail": string | null
+    } | null,
+    "performance": {
+        "impressions": number,
+        "clicks": number,
+        "conversions": number
+    } | null
+}
+
+Response (404 Not Found):
+{
+    "error": "Game ad not found"
+}
+
+Response (500 Internal Server Error):
+{
+    "error": "Failed to load game ad"
+}
+```
+
+### Update Game Ad
+```
+PUT /api/game-ads/{id}
+Content-Type: application/json
+
+Request Body:
+{
+    "name": string,              // Required: Name of the game ad
+    "templateType": string,      // Required: Type of template to use
+    "status": string,           // Optional: Status of the ad
+    "schedule": object | null,  // Optional: Scheduling information
+    "targeting": object | null, // Optional: Targeting criteria
+    "metrics": object | null,   // Optional: Custom metrics
+    "assets": [                 // Required: At least one asset
+        {
+            "assetType": string,    // Required: Type of asset
+            "assetId": string,      // Required: Asset ID
+            "robloxAssetId": string // Required: Roblox Asset ID
+        }
+    ]
+}
+
+Response (200 OK):
+{
+    "id": string,
+    "name": string,
+    "templateType": string,
+    "gameId": string,
+    "status": string,
+    "schedule": object | null,
+    "targeting": object | null,
+    "metrics": object | null,
+    "assets": array,
+    "createdAt": string,
+    "updatedAt": string,
+    "game": {
+        "id": string,
+        "name": string,
+        "thumbnail": string | null
+    } | null,
+    "performance": {
+        "impressions": number,
+        "clicks": number,
+        "conversions": number
+    } | null
+}
+
+Response (400 Bad Request):
+{
+    "error": "Validation failed",
+    "details": array // Validation error details
+}
+
+Response (404 Not Found):
+{
+    "error": "Game ad not found"
+}
+
+Response (409 Conflict):
+{
+    "error": "A game ad with this name already exists"
+}
+
+Response (500 Internal Server Error):
+{
+    "error": "Failed to update game ad"
+}
+```
+
+### Delete Game Ad
+```
+DELETE /api/game-ads/{id}
+Content-Type: application/json
+
+Response (200 OK):
+{
+    "success": true
+}
+
+Response (404 Not Found):
+{
+    "error": "Game ad not found"
+}
+
+Response (500 Internal Server Error):
+{
+    "error": "Failed to delete game ad"
+}
+```
+
+## Example Roblox Implementation
+
+```
