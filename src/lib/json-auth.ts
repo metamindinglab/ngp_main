@@ -5,6 +5,7 @@ import { v4 as uuidv4 } from 'uuid'
 
 export interface GameOwnerUser {
   id: string
+  gameOwnerId: string  // Unique game owner identifier for game mapping
   email: string
   passwordHash: string
   name: string
@@ -108,6 +109,7 @@ class JSONAuthService {
       // Create new user
       const newUser: GameOwnerUser = {
         id: uuidv4(),
+        gameOwnerId: uuidv4(),
         email: email.toLowerCase(),
         passwordHash,
         name,
@@ -248,6 +250,11 @@ class JSONAuthService {
   async getUserByEmail(email: string): Promise<GameOwnerUser | null> {
     const users = this.loadUsers()
     return users.find(u => u.email.toLowerCase() === email.toLowerCase()) || null
+  }
+
+  // Get all users (for migration purposes)
+  async getAllUsers(): Promise<GameOwnerUser[]> {
+    return this.loadUsers()
   }
 
   // Update user

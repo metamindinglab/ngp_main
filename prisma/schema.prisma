@@ -25,6 +25,9 @@ model Game {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   
+  // Game Owner ID for proper owner mapping
+  gameOwnerId String?
+  
   // Roblox Cloud API authorization (for fetching game info FROM Roblox)
   robloxAuthorization Json?  // Contains: { type, apiKey, clientId, clientSecret, lastVerified, status }
   

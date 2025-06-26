@@ -4,6 +4,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react'
 
 export interface GameOwnerUser {
   id: string
+  gameOwnerId: string  // Unique game owner identifier for game mapping
   email: string
   name: string
   country: string

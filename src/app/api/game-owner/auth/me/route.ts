@@ -37,6 +37,7 @@ export async function GET(request: NextRequest) {
       success: true,
       user: {
         id: user.id,
+        gameOwnerId: user.gameOwnerId,
         email: user.email,
         name: user.name,
         country: user.country,

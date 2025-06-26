@@ -6,6 +6,34 @@
       "sessionToken": "0f6d1ef6-ee4d-48f5-a8fa-e781f0fb858b",
       "expiresAt": "2025-07-02T16:37:21.199Z",
       "createdAt": "2025-06-25T16:37:21.199Z"
+    },
+    {
+      "id": "7c1d8426-4e24-43ed-a6ba-7b4b49cd7017",
+      "userId": "1f40029a-f7ad-414a-92f1-bb905c0cae7e",
+      "sessionToken": "5db1d584-6500-4811-adfa-1de36856d63e",
+      "expiresAt": "2025-07-03T02:13:56.659Z",
+      "createdAt": "2025-06-26T02:13:56.659Z"
+    },
+    {
+      "id": "9f15c5c5-6d42-46ee-84e7-ea3e75ff920e",
+      "userId": "22675872-7401-4c75-a24a-c753add1743d",
+      "sessionToken": "dfd453f9-d197-4c6e-974e-9f5534f47643",
+      "expiresAt": "2025-07-03T02:13:56.746Z",
+      "createdAt": "2025-06-26T02:13:56.746Z"
+    },
+    {
+      "id": "b681010a-7e3a-4e14-a753-a5e7d1650420",
+      "userId": "78f1ff21-0896-476f-9169-06aec8c7a7b5",
+      "sessionToken": "6e229ed0-b0ea-4530-b83c-d3f42e345d2b",
+      "expiresAt": "2025-07-03T02:13:56.834Z",
+      "createdAt": "2025-06-26T02:13:56.834Z"
+    },
+    {
+      "id": "9258f903-3395-41e6-bb5a-1b509a891647",
+      "userId": "57acdc50-df8d-46ef-af80-a843d882c445",
+      "sessionToken": "c032c90b-73f2-4b3b-8952-b071e0ec1ca3",
+      "expiresAt": "2025-07-03T02:13:56.920Z",
+      "createdAt": "2025-06-26T02:13:56.920Z"
     }
   ]
 }

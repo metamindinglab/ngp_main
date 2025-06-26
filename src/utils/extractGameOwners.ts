@@ -89,7 +89,29 @@ export function extractGameOwners(): ExtractedOwnerResult {
   }
 }
 
-// Function to get games for a specific owner
+// Function to get games for a specific owner by gameOwnerId (using database)
+export async function getOwnerGamesByOwnerId(gameOwnerId: string): Promise<any[]> {
+  // Import prisma dynamically to avoid edge runtime issues
+  const { PrismaClient } = await import('@prisma/client')
+  const prisma = new PrismaClient()
+  
+  try {
+    const games = await prisma.game.findMany({
+      where: {
+        gameOwnerId: gameOwnerId
+      }
+    })
+    
+    return games
+  } catch (error) {
+    console.error('Error fetching games by gameOwnerId:', error)
+    return []
+  } finally {
+    await prisma.$disconnect()
+  }
+}
+
+// Function to get games for a specific owner by email (legacy - for migration)
 export function getOwnerGames(ownerEmail: string): any[] {
   const gamesDataPath = path.join(process.cwd(), 'data/games.json')
   const gamesData = JSON.parse(fs.readFileSync(gamesDataPath, 'utf8'))
@@ -97,6 +119,43 @@ export function getOwnerGames(ownerEmail: string): any[] {
   return gamesData.games.filter((game: any) => 
     game.owner?.email && game.owner.email.trim().toLowerCase() === ownerEmail.toLowerCase()
   )
+}
+
+// Function to migrate games to use gameOwnerId mapping
+export async function migrateGamesToOwnerIds(): Promise<void> {
+  const { PrismaClient } = await import('@prisma/client')
+  const prisma = new PrismaClient()
+  
+  try {
+    // Get all games that don't have gameOwnerId set
+    const gamesWithoutOwnerId = await prisma.game.findMany({
+      where: {
+        gameOwnerId: null
+      }
+    })
+    
+    // Get all game owner users to map emails to gameOwnerIds
+    const { jsonAuthService } = await import('@/lib/json-auth')
+    const users = await jsonAuthService.getAllUsers()
+    
+    for (const game of gamesWithoutOwnerId) {
+      const gameOwnerEmail = game.owner?.email
+      if (gameOwnerEmail) {
+        const user = users.find(u => u.email.toLowerCase() === gameOwnerEmail.toLowerCase())
+        if (user) {
+          await prisma.game.update({
+            where: { id: game.id },
+            data: { gameOwnerId: user.gameOwnerId }
+          })
+          console.log(`Mapped game ${game.name} to gameOwnerId ${user.gameOwnerId}`)
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Error migrating games to gameOwnerIds:', error)
+  } finally {
+    await prisma.$disconnect()
+  }
 }
 
 // Function to find owner by email

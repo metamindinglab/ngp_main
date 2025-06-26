@@ -10,8 +10,61 @@
       "isActive": true,
       "emailVerified": false,
       "createdAt": "2025-06-25T16:31:54.663Z",
-      "updatedAt": "2025-06-25T16:37:21.198Z",
-      "lastLogin": "2025-06-25T16:37:21.198Z"
+      "updatedAt": "2025-06-26T02:58:36.626Z",
+      "lastLogin": "2025-06-25T16:37:21.198Z",
+      "gameOwnerId": "9be282ab-42b0-4e1d-a9fa-c8facfea9470"
+    },
+    {
+      "id": "1f40029a-f7ad-414a-92f1-bb905c0cae7e",
+      "gameOwnerId": "9d8257c5-b7ef-437d-95cc-e4cb8cb0201a",
+      "email": "contact@dreamcraftstudios.com",
+      "passwordHash": "$2b$10$mXRlGdYhiF3LJFU8vUtQk.KOzi3SY3gPCaljlc.34uiF.S1ah5GYi",
+      "name": "DreamCraft Studios",
+      "country": "United States",
+      "discordId": "dreamcraft#1234",
+      "isActive": true,
+      "emailVerified": false,
+      "createdAt": "2025-06-26T02:13:56.658Z",
+      "updatedAt": "2025-06-26T02:13:56.658Z"
+    },
+    {
+      "id": "22675872-7401-4c75-a24a-c753add1743d",
+      "gameOwnerId": "dd698dec-8b90-4dd3-86b4-cd7d3d12f675",
+      "email": "support@gamerrobot.com",
+      "passwordHash": "$2b$10$mf1I4SEfSfleCEjkvcaX7./hZPGOBMu0LjOrdSIrMX3QiK5/0XOlu",
+      "name": "Gamer Robot Inc",
+      "country": "Canada",
+      "discordId": "gamerrobot#5678",
+      "isActive": true,
+      "emailVerified": false,
+      "createdAt": "2025-06-26T02:13:56.746Z",
+      "updatedAt": "2025-06-26T02:13:56.746Z"
+    },
+    {
+      "id": "78f1ff21-0896-476f-9169-06aec8c7a7b5",
+      "gameOwnerId": "5c95f626-dc17-42db-b2f8-18ca07ec03dc",
+      "email": "contact@stylisstudios.com",
+      "passwordHash": "$2b$10$JMeRtL./9uim8WRhPOrCdOkxAicXvZ746kvZAFA.EwDl/16F9kHW6",
+      "name": "StyLiS Studios",
+      "country": "United States",
+      "discordId": "stylis#9012",
+      "isActive": true,
+      "emailVerified": false,
+      "createdAt": "2025-06-26T02:13:56.833Z",
+      "updatedAt": "2025-06-26T02:13:56.833Z"
+    },
+    {
+      "id": "57acdc50-df8d-46ef-af80-a843d882c445",
+      "gameOwnerId": "3e3829e3-a41b-40de-ab4c-85f71515c73e",
+      "email": "info@paradoxstudios.net",
+      "passwordHash": "$2b$10$6AqZ6kZscqnM.zbtRidZPeCmKMs/EZRGgNJpxLs.uCpfgkZwVMaf.",
+      "name": "ParadoxStudios",
+      "country": "Australia",
+      "discordId": "paradox#3456",
+      "isActive": true,
+      "emailVerified": false,
+      "createdAt": "2025-06-26T02:13:56.920Z",
+      "updatedAt": "2025-06-26T02:13:56.920Z"
     }
   ]
 }

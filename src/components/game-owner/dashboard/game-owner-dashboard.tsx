@@ -215,6 +215,17 @@ export function GameOwnerDashboard() {
               {games.map((game) => (
                 <Card key={game.id} className="hover:shadow-lg transition-shadow">
                   <CardHeader>
+                    {/* Game Image */}
+                    <div className="aspect-video relative mb-4 overflow-hidden rounded-lg">
+                      <img
+                        src={game.thumbnail || '/games/default-game.png'}
+                        alt={game.name}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = '/games/default-game.png'
+                        }}
+                      />
+                    </div>
                     <div className="flex justify-between items-start">
                       <div>
                         <CardTitle className="text-lg">{game.name}</CardTitle>
@@ -225,31 +236,31 @@ export function GameOwnerDashboard() {
                   </CardHeader>
                   <CardContent className="space-y-4">
                     {/* Game Metrics */}
-                                         <div className="grid grid-cols-3 gap-4 text-center">
-                       <div>
-                         <div className="text-lg font-semibold text-blue-600">
-                           {(game.metrics?.dau || 0).toLocaleString()}
-                         </div>
-                         <div className="text-xs text-gray-600">DAU</div>
-                       </div>
-                       <div>
-                         <div className="text-lg font-semibold text-green-600">
-                           {(game.metrics?.mau || 0).toLocaleString()}
-                         </div>
-                         <div className="text-xs text-gray-600">MAU</div>
-                       </div>
-                       <div>
-                         <div className="text-lg font-semibold text-purple-600">
-                           {game.metrics?.day1Retention || 0}%
-                         </div>
-                         <div className="text-xs text-gray-600">D1 Retention</div>
-                       </div>
-                     </div>
+                    <div className="grid grid-cols-3 gap-4 text-center">
+                      <div>
+                        <div className="text-lg font-semibold text-blue-600">
+                          {(game.metrics?.dau || 0).toLocaleString()}
+                        </div>
+                        <div className="text-xs text-gray-600">DAU</div>
+                      </div>
+                      <div>
+                        <div className="text-lg font-semibold text-green-600">
+                          {(game.metrics?.mau || 0).toLocaleString()}
+                        </div>
+                        <div className="text-xs text-gray-600">MAU</div>
+                      </div>
+                      <div>
+                        <div className="text-lg font-semibold text-purple-600">
+                          {game.metrics?.day1Retention || 0}%
+                        </div>
+                        <div className="text-xs text-gray-600">D1 Retention</div>
+                      </div>
+                    </div>
 
                     {/* API Key Section */}
                     <div className="border-t pt-4">
                       <div className="flex items-center justify-between mb-2">
-                        <h4 className="font-medium text-sm">API Access</h4>
+                        <h4 className="font-medium text-sm">API Access to MML Game Network</h4>
                         <Badge 
                           variant={game.serverApiKeyStatus === 'active' ? 'default' : 'secondary'}
                         >
@@ -336,15 +347,26 @@ export function GameOwnerDashboard() {
 
                     {/* Actions */}
                     <div className="border-t pt-4 flex space-x-2">
-                      <Link href={game.robloxLink} target="_blank" rel="noopener noreferrer">
-                        <Button variant="outline" size="sm">
+                      <Link 
+                        href={game.robloxLink} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className={game.robloxLink === '#' ? 'pointer-events-none opacity-50' : ''}
+                      >
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          disabled={game.robloxLink === '#'}
+                        >
                           View Game
                         </Button>
                       </Link>
-                      <Button variant="outline" size="sm">
-                        <Settings className="h-4 w-4 mr-2" />
-                        Manage
-                      </Button>
+                      <Link href={`/game-owner/games/${game.id}/manage`}>
+                        <Button variant="outline" size="sm">
+                          <Settings className="h-4 w-4 mr-2" />
+                          Manage
+                        </Button>
+                      </Link>
                     </div>
                   </CardContent>
                 </Card>

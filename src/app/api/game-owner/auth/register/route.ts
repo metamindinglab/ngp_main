@@ -43,6 +43,7 @@ export async function POST(request: NextRequest) {
       success: true,
       user: {
         id: result.user!.id,
+        gameOwnerId: result.user!.gameOwnerId,
         email: result.user!.email,
         name: result.user!.name,
         country: result.user!.country,
