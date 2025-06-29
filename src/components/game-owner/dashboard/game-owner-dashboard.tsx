@@ -9,6 +9,7 @@ import { Gamepad2, Users, TrendingUp, Key, Settings, LogOut, Eye, Copy, RefreshC
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Game } from '@/types/game'
+import { ContainerManagement } from '../containers/container-management'
 
 interface GameWithDetails extends Game {
   serverApiKey: string | undefined
@@ -23,15 +24,21 @@ interface GameWithDetails extends Game {
   }>
 }
 
+interface DashboardStats {
+  totalGames: number
+  activeApiKeys: number
+  totalAssignedAds: number
+}
+
 export function GameOwnerDashboard() {
   const { user, logout, isLoading } = useGameOwnerAuth()
   const router = useRouter()
   const [games, setGames] = useState<GameWithDetails[]>([])
   const [selectedImage, setSelectedImage] = useState<{[key: string]: string}>({})
-  const [stats, setStats] = useState({
+  const [stats, setStats] = useState<DashboardStats>({
     totalGames: 0,
     activeApiKeys: 0,
-    totalAssignedAds: 0
+    totalAssignedAds: 0,
   })
   const [loadingGames, setLoadingGames] = useState(true)
   const [showApiKeys, setShowApiKeys] = useState<{[key: string]: boolean}>({})
@@ -393,6 +400,8 @@ export function GameOwnerDashboard() {
             </div>
           )}
         </div>
+
+        <ContainerManagement games={games} />
       </main>
     </div>
   )

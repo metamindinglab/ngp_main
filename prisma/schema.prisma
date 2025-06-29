@@ -1,5 +1,3 @@
-// Prisma schema for Roblox Asset Management System
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -10,65 +8,60 @@ datasource db {
 }
 
 model Game {
-  id          String    @id @default(cuid())
-  name        String
-  description String?
-  genre       String?
-  robloxLink  String?
-  thumbnail   String?
-  metrics     Json?
-  dates       Json?
-  owner       Json?
-  assets      Asset[]   @relation("GameAssets")
-  ads         GameAd[]
-  playlists   Playlist[] @relation("GamePlaylists")
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  
-  // Game Owner ID for proper owner mapping
-  gameOwnerId String?
-  
-  // Roblox Cloud API authorization (for fetching game info FROM Roblox)
-  robloxAuthorization Json?  // Contains: { type, apiKey, clientId, clientSecret, lastVerified, status }
-  
-  // Server API key management (for games to connect TO our server)
-  serverApiKey         String?   @unique
+  id                    String      @id @default(cuid())
+  name                  String
+  description           String?
+  genre                 String?
+  robloxLink            String?
+  thumbnail             String?
+  metrics               Json?
+  dates                 Json?
+  owner                 Json?
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
+  gameOwnerId           String?
+  robloxAuthorization   Json?
+  serverApiKey          String?     @unique
   serverApiKeyCreatedAt DateTime?
-  serverApiKeyStatus   String?
+  serverApiKeyStatus    String?
+  ads                   GameAd[]
+  media                 GameMedia[]
+  assets                Asset[]     @relation("GameAssets")
+  playlists             Playlist[]  @relation("GamePlaylists")
+  adContainers          GameAdContainer[]
 }
 
 model Asset {
-  id          String    @id @default(cuid())
-  name        String
-  type        String?
-  status      String?
-  robloxId    String?
-  creator     Json?
-  metadata    Json?
-  versions    Json?
+  id            String     @id @default(cuid())
+  name          String
+  type          String?
+  status        String?
+  robloxId      String?
+  creator       Json?
+  metadata      Json?
+  versions      Json?
   relationships Json?
-  games       Game[]    @relation("GameAssets")
-  playlists   Playlist[] @relation("AssetPlaylists")
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  playlists     Playlist[] @relation("AssetPlaylists")
+  games         Game[]     @relation("GameAssets")
 }
 
 model Playlist {
-  id          String    @id @default(cuid())
+  id          String   @id @default(cuid())
   name        String
   description String?
   type        String?
   createdBy   String?
-  assets      Asset[]   @relation("AssetPlaylists")
-  games       Game[]    @relation("GamePlaylists")
   metadata    Json?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  assets      Asset[]  @relation("AssetPlaylists")
+  games       Game[]   @relation("GamePlaylists")
 }
 
 model GameAd {
-  id          String    @id @default(cuid())
-  game        Game     @relation(fields: [gameId], references: [id])
+  id          String              @id @default(cuid())
   gameId      String
   name        String
   type        String?
@@ -76,36 +69,77 @@ model GameAd {
   schedule    Json?
   targeting   Json?
   metrics     Json?
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
   assets      Json?
+  game        Game                @relation(fields: [gameId], references: [id])
   performance GameAdPerformance[]
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  containers  GameAdContainer[]
 }
 
 model GameAdPerformance {
-  id              String    @id @default(cuid())
-  gameAd          GameAd    @relation(fields: [gameAdId], references: [id])
-  gameAdId        String
-  gameId          String
-  playlistId      String?
-  date            DateTime
-  metrics         Json?
-  demographics    Json?
-  engagements     Json?
-  playerDetails   Json?
-  timeDistribution Json?
+  id                String   @id @default(cuid())
+  gameAdId          String
+  gameId            String
+  playlistId        String?
+  date              DateTime
+  metrics           Json?
+  demographics      Json?
+  engagements       Json?
+  playerDetails     Json?
+  timeDistribution  Json?
   performanceTrends Json?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  gameAd            GameAd   @relation(fields: [gameAdId], references: [id])
+}
+
+model GameAdContainer {
+  id          String   @id @default(cuid())
+  gameId      String
+  name        String
+  description String?
+  type        String   // DISPLAY, NPC, MINIGAME
+  locationX   Float
+  locationY   Float
+  locationZ   Float
+  status      String   // ACTIVE, INACTIVE
+  currentAdId String?
+  game        Game     @relation(fields: [gameId], references: [id])
+  currentAd   GameAd?  @relation(fields: [currentAdId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([gameId])
+  @@index([currentAdId])
 }
 
 model RemovableAsset {
-  id                  String    @id @default(cuid())
+  id                  String   @id @default(cuid())
   robloxAssetId       String
   name                String
   replacedBy          String?
   reason              String?
   dateMarkedRemovable DateTime
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
-} 
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+model GameMedia {
+  id           String   @id @default(cuid())
+  gameId       String
+  type         String
+  robloxId     String?
+  title        String?
+  altText      String?
+  localPath    String
+  thumbnailUrl String?
+  width        Int?
+  height       Int?
+  duration     Int?
+  approved     Boolean  @default(true)
+  uploadedAt   DateTime @default(now())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  game         Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+}
