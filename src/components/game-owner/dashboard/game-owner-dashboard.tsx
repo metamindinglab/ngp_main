@@ -8,20 +8,10 @@ import { useGameOwnerAuth } from '@/components/game-owner/auth/auth-context'
 import { Gamepad2, Users, TrendingUp, Key, Settings, LogOut, Eye, Copy, RefreshCw, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { Game } from '@/types/game'
 
-interface GameWithDetails {
-  id: string
-  name: string
-  description: string
-  genre: string
-  robloxLink: string
-  thumbnail: string
-  metrics: {
-    dau: number
-    mau: number
-    day1Retention: number
-  }
-  serverApiKey: string | null
+interface GameWithDetails extends Game {
+  serverApiKey: string | undefined
   serverApiKeyStatus: string
   enabledTemplates: string[]
   assignedAds: Array<{
@@ -37,6 +27,7 @@ export function GameOwnerDashboard() {
   const { user, logout, isLoading } = useGameOwnerAuth()
   const router = useRouter()
   const [games, setGames] = useState<GameWithDetails[]>([])
+  const [selectedImage, setSelectedImage] = useState<{[key: string]: string}>({})
   const [stats, setStats] = useState({
     totalGames: 0,
     activeApiKeys: 0,
@@ -215,16 +206,44 @@ export function GameOwnerDashboard() {
               {games.map((game) => (
                 <Card key={game.id} className="hover:shadow-lg transition-shadow">
                   <CardHeader>
-                    {/* Game Image */}
-                    <div className="aspect-video relative mb-4 overflow-hidden rounded-lg">
-                      <img
-                        src={game.thumbnail || '/games/default-game.png'}
-                        alt={game.name}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src = '/games/default-game.png'
-                        }}
-                      />
+                    {/* Game Images Gallery */}
+                    <div className="relative mb-4">
+                      {/* Main Image */}
+                      <div className="aspect-video overflow-hidden rounded-lg">
+                        <img
+                          src={selectedImage[game.id] || game.thumbnail || (game.media && game.media[0]?.localPath) || '/games/default-game.png'}
+                          alt={game.name}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            console.error('Failed to load image:', selectedImage[game.id] || game.thumbnail || (game.media && game.media[0]?.localPath));
+                            (e.target as HTMLImageElement).src = '/games/default-game.png';
+                          }}
+                        />
+                      </div>
+                      
+                      {/* Additional Images Gallery */}
+                      {game.media && game.media.length > 0 && (
+                        <div className="absolute bottom-0 left-0 right-0 p-2 flex gap-2 overflow-x-auto bg-black/50 rounded-b-lg">
+                          {game.media.map((media) => (
+                            media.type === 'image' && (
+                              <img
+                                key={media.id}
+                                src={media.localPath}
+                                alt={media.title || 'Game image'}
+                                className={`h-16 w-24 object-cover rounded cursor-pointer transition-all ${
+                                  selectedImage[game.id] === media.localPath ? 'ring-2 ring-white' : 'hover:opacity-80'
+                                }`}
+                                onClick={() => {
+                                  setSelectedImage(prev => ({
+                                    ...prev,
+                                    [game.id]: media.localPath
+                                  }))
+                                }}
+                              />
+                            )
+                          ))}
+                        </div>
+                      )}
                     </div>
                     <div className="flex justify-between items-start">
                       <div>
@@ -358,7 +377,7 @@ export function GameOwnerDashboard() {
                           size="sm"
                           disabled={game.robloxLink === '#'}
                         >
-                          View Game
+                          View Game in Roblox
                         </Button>
                       </Link>
                       <Link href={`/game-owner/games/${game.id}/manage`}>
