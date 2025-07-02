@@ -50,7 +50,7 @@ interface Container {
     id: string
     name: string
   }
-  currentAd: {
+  ad: {
     id: string
     name: string
     type: string
@@ -83,7 +83,12 @@ export function ContainerManagement({ games }: ContainerManagementProps) {
 
   const fetchContainers = async () => {
     try {
-      const response = await fetch('/api/game-owner/containers')
+      const sessionToken = localStorage.getItem('gameOwnerSessionToken')
+      const response = await fetch('/api/game-owner/containers', {
+        headers: {
+          'Authorization': `Bearer ${sessionToken}`
+        }
+      })
       const data = await response.json()
       if (data.success) {
         setContainers(data.containers)
@@ -108,10 +113,12 @@ export function ContainerManagement({ games }: ContainerManagementProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
+      const sessionToken = localStorage.getItem('gameOwnerSessionToken')
       const response = await fetch('/api/game-owner/containers', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${sessionToken}`
         },
         body: JSON.stringify(formData),
       })
@@ -334,12 +341,12 @@ miniGameAd:Initialize()`
                       Z: {container.locationZ}
                     </TableCell>
                     <TableCell>
-                      {container.currentAd ? (
+                      {container.ad ? (
                         <>
-                          {container.currentAd.name}
+                          {container.ad.name}
                           <div className="text-sm text-gray-500">
-                            {container.currentAd.type} -{' '}
-                            {container.currentAd.status}
+                            {container.ad.type} -{' '}
+                            {container.ad.status}
                           </div>
                         </>
                       ) : (

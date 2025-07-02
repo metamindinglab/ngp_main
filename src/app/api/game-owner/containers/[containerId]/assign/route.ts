@@ -1,27 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { prisma } from '@/lib/prisma'
 import { jsonAuthService } from '@/lib/json-auth'
-import { PrismaClient } from '@prisma/client'
-
-const prisma = new PrismaClient()
 
 export async function POST(
   request: NextRequest,
   { params }: { params: { containerId: string } }
 ) {
   try {
-    // Get user from auth token
-    const sessionToken = request.cookies.get('game-owner-session')?.value
+    // Get session token from Authorization header
+    const authHeader = request.headers.get('Authorization')
+    const sessionToken = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null
+
     if (!sessionToken) {
       return NextResponse.json(
-        { success: false, error: 'Authentication required' },
+        { success: false, error: 'Unauthorized' },
         { status: 401 }
       )
     }
 
+    // Validate session and get user
     const user = await jsonAuthService.validateSession(sessionToken)
-    if (!user || !user.gameOwnerId) {
+    if (!user) {
       return NextResponse.json(
-        { success: false, error: 'Invalid session' },
+        { success: false, error: 'Unauthorized' },
         { status: 401 }
       )
     }
@@ -35,9 +36,6 @@ export async function POST(
         game: {
           gameOwnerId: user.gameOwnerId
         }
-      },
-      include: {
-        game: true
       }
     })
 
@@ -48,25 +46,25 @@ export async function POST(
       )
     }
 
-    // Verify ad assignment
-    const ad = await prisma.gameAd.findFirst({
-      where: {
-        id: adId,
-        gameId: container.gameId
-      }
-    })
+    // Verify ad assignment using _GameToAds table
+    const gameToAd = await prisma.$queryRaw`
+      SELECT * FROM "_GameToAds"
+      WHERE "A" = ${container.gameId}
+      AND "B" = ${adId}
+      LIMIT 1
+    `
 
-    if (!ad) {
+    if (!gameToAd || (Array.isArray(gameToAd) && gameToAd.length === 0)) {
       return NextResponse.json(
         { success: false, error: 'Ad not found or not assigned to this game' },
         { status: 404 }
       )
     }
 
-    // Update container with new ad
+    // Update container with ad
     const updatedContainer = await prisma.gameAdContainer.update({
       where: {
-        id: params.containerId
+        id: container.id
       },
       data: {
         currentAdId: adId
@@ -78,7 +76,7 @@ export async function POST(
             name: true
           }
         },
-        currentAd: {
+        ad: {
           select: {
             id: true,
             name: true,

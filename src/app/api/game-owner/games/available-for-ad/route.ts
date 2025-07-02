@@ -41,30 +41,60 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    // Get container type from query params
+    const searchParams = request.nextUrl.searchParams
+    const containerType = searchParams.get('containerType')
+
+    if (!containerType) {
+      return NextResponse.json(
+        { success: false, error: 'Container type is required' },
+        { status: 400 }
+      )
+    }
+
+    // Find games that have the specified container type
     const games = await prisma.game.findMany({
       where: {
-        gameOwnerId: user.id
+        gameOwnerId: user.id,
+        adContainers: {
+          some: {
+            type: containerType,
+            status: 'ACTIVE'
+          }
+        }
       },
       select: {
         id: true,
         name: true,
         description: true,
         thumbnail: true,
-        gameOwnerId: true,
-        createdAt: true,
-        updatedAt: true,
-      },
+        adContainers: {
+          where: {
+            type: containerType,
+            status: 'ACTIVE'
+          },
+          select: {
+            id: true,
+            name: true,
+            description: true,
+            locationX: true,
+            locationY: true,
+            locationZ: true
+          }
+        }
+      }
     })
 
-    // Transform the data to match the frontend interface
-    const transformedGames = games.map((game) => ({
-      ...game,
-      thumbnailUrl: game.thumbnail || '/placeholder.svg',
-    }))
-
-    return NextResponse.json({ success: true, games: transformedGames })
+    return NextResponse.json({
+      success: true,
+      games: games.map(game => ({
+        ...game,
+        thumbnailUrl: game.thumbnail || '/placeholder.svg',
+        containerCount: game.adContainers.length
+      }))
+    })
   } catch (error) {
-    console.error('Error fetching games:', error)
+    console.error('Error fetching available games:', error)
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
       { status: 500 }

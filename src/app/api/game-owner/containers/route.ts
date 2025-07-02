@@ -1,27 +1,51 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { jsonAuthService } from '@/lib/json-auth'
-import { PrismaClient } from '@prisma/client'
+import { prisma } from '@/lib/prisma'
+import { verify } from 'jsonwebtoken'
 
-const prisma = new PrismaClient()
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key'
 
 export async function GET(request: NextRequest) {
   try {
-    // Get user from auth token
-    const sessionToken = request.cookies.get('game-owner-session')?.value
+    // Get session token from Authorization header
+    const authHeader = request.headers.get('Authorization')
+    const sessionToken = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null
+
     if (!sessionToken) {
-      return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 })
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      )
     }
 
-    const user = await jsonAuthService.validateSession(sessionToken)
-    if (!user || !user.gameOwnerId) {
-      return NextResponse.json({ success: false, error: 'Invalid session' }, { status: 401 })
+    // Verify JWT token
+    let userId: string
+    try {
+      const decoded = verify(sessionToken, JWT_SECRET) as { userId: string }
+      userId = decoded.userId
+    } catch (error) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid or expired token' },
+        { status: 401 }
+      )
+    }
+
+    // Get user from database
+    const user = await prisma.gameOwner.findUnique({
+      where: { id: userId }
+    })
+
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: 'User not found' },
+        { status: 404 }
+      )
     }
 
     // Get containers for all games owned by this user
     const containers = await prisma.gameAdContainer.findMany({
       where: {
         game: {
-          gameOwnerId: user.gameOwnerId
+          gameOwnerId: user.id
         }
       },
       include: {
@@ -31,7 +55,7 @@ export async function GET(request: NextRequest) {
             name: true
           }
         },
-        currentAd: {
+        ad: {
           select: {
             id: true,
             name: true,
@@ -54,15 +78,39 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    // Get user from auth token
-    const sessionToken = request.cookies.get('game-owner-session')?.value
+    // Get session token from Authorization header
+    const authHeader = request.headers.get('Authorization')
+    const sessionToken = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null
+
     if (!sessionToken) {
-      return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 })
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      )
     }
 
-    const user = await jsonAuthService.validateSession(sessionToken)
-    if (!user || !user.gameOwnerId) {
-      return NextResponse.json({ success: false, error: 'Invalid session' }, { status: 401 })
+    // Verify JWT token
+    let userId: string
+    try {
+      const decoded = verify(sessionToken, JWT_SECRET) as { userId: string }
+      userId = decoded.userId
+    } catch (error) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid or expired token' },
+        { status: 401 }
+      )
+    }
+
+    // Get user from database
+    const user = await prisma.gameOwner.findUnique({
+      where: { id: userId }
+    })
+
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: 'User not found' },
+        { status: 404 }
+      )
     }
 
     const body = await request.json()
@@ -72,7 +120,7 @@ export async function POST(request: NextRequest) {
     const game = await prisma.game.findFirst({
       where: {
         id: gameId,
-        gameOwnerId: user.gameOwnerId
+        gameOwnerId: user.id
       }
     })
 
@@ -83,6 +131,7 @@ export async function POST(request: NextRequest) {
     // Create container
     const container = await prisma.gameAdContainer.create({
       data: {
+        id: crypto.randomUUID(),
         gameId,
         name,
         description,
@@ -90,7 +139,8 @@ export async function POST(request: NextRequest) {
         locationX,
         locationY,
         locationZ,
-        status: 'ACTIVE'
+        status: 'ACTIVE',
+        updatedAt: new Date()
       },
       include: {
         game: {
