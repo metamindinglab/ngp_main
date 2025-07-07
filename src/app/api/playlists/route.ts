@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient, Prisma } from '@prisma/client'
 import { addCorsHeaders, handleAuth, applyRateLimit, addRateLimitHeaders, handleOptions } from '../middleware'
+import { randomUUID } from 'crypto'
 
 const prisma = new PrismaClient()
 
@@ -65,18 +66,98 @@ export async function GET(request: NextRequest) {
   }
 }
 
+interface PlaylistScheduleInput {
+  gameAdId: string
+  startDate: string
+  duration: number
+  selectedGames: string[]
+}
+
+interface PlaylistInput {
+  name: string
+  description?: string | null
+  type?: string
+  createdBy?: string | null
+  metadata?: any
+  schedules: PlaylistScheduleInput[]
+}
+
 export async function POST(request: Request) {
   try {
-    const body = await request.json()
+    const body = await request.json() as PlaylistInput
+    const playlistId = randomUUID()
     
-    const playlist = await prisma.playlist.create({
-      data: {
-        name: body.name,
-        description: body.description || null,
-        type: body.type || 'standard',
-        createdBy: body.createdBy || null,
-        metadata: body.metadata || {}
+    // Create playlist with schedules and deployments using a transaction
+    const playlist = await prisma.$transaction(async (tx) => {
+      // Create the playlist first
+      const newPlaylist = await tx.playlist.create({
+        data: {
+          id: playlistId,
+          name: body.name,
+          description: body.description || null,
+          type: body.type || 'standard',
+          createdBy: body.createdBy || null,
+          metadata: body.metadata || {},
+          updatedAt: new Date()
+        }
+      })
+
+      // Create schedules and deployments
+      if (body.schedules.length > 0) {
+        for (const schedule of body.schedules) {
+          const scheduleId = randomUUID()
+          await tx.$executeRaw`
+            INSERT INTO "PlaylistSchedule" (
+              id, "playlistId", "gameAdId", "startDate", duration, status, "createdAt", "updatedAt"
+            ) VALUES (
+              ${scheduleId}, ${playlistId}, ${schedule.gameAdId}, ${new Date(schedule.startDate)}, 
+              ${schedule.duration}, 'scheduled', NOW(), NOW()
+            )
+          `
+
+          // Create deployments
+          for (const gameId of schedule.selectedGames) {
+            const deploymentId = randomUUID()
+            await tx.$executeRaw`
+              INSERT INTO "GameDeployment" (
+                id, "scheduleId", "gameId", status, "createdAt", "updatedAt"
+              ) VALUES (
+                ${deploymentId}, ${scheduleId}, ${gameId}, 'pending', NOW(), NOW()
+              )
+            `
+          }
+        }
       }
+
+      // Return the complete playlist with schedules and deployments
+      return await tx.$queryRaw`
+        SELECT p.*, 
+          json_agg(DISTINCT jsonb_build_object(
+            'id', ps.id,
+            'playlistId', ps."playlistId",
+            'gameAdId', ps."gameAdId",
+            'startDate', ps."startDate",
+            'duration', ps.duration,
+            'status', ps.status,
+            'createdAt', ps."createdAt",
+            'updatedAt', ps."updatedAt",
+            'deployments', (
+              SELECT json_agg(jsonb_build_object(
+                'id', gd.id,
+                'gameId', gd."gameId",
+                'status', gd.status,
+                'createdAt', gd."createdAt",
+                'updatedAt', gd."updatedAt"
+              ))
+              FROM "GameDeployment" gd
+              WHERE gd."scheduleId" = ps.id
+            )
+          )) as schedules
+        FROM "Playlist" p
+        LEFT JOIN "PlaylistSchedule" ps ON ps."playlistId" = p.id
+        WHERE p.id = ${playlistId}
+        GROUP BY p.id
+      `
     })
     
     return NextResponse.json(playlist)
