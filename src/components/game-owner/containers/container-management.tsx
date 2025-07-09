@@ -17,6 +17,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Copy, Settings, Trash } from 'lucide-react'
 import {
   Select,
   SelectContent,
@@ -26,36 +27,41 @@ import {
 } from '@/components/ui/select'
 import { useToast } from '@/components/ui/use-toast'
 import { Game } from '@/types/game'
-
-interface ContainerFormData {
-  gameId: string
-  name: string
-  description: string
-  type: string
-  locationX: number
-  locationY: number
-  locationZ: number
-}
+import Link from 'next/link'
+import { Badge } from '@/components/ui/badge'
 
 interface Container {
   id: string
   name: string
   description: string | null
   type: string
-  locationX: number
-  locationY: number
-  locationZ: number
+  position: {
+    x: number
+    y: number
+    z: number
+  }
   status: string
   game: {
     id: string
     name: string
   }
-  ad: {
+  currentAd: {
     id: string
     name: string
     type: string
-    status: string
   } | null
+}
+
+interface ContainerFormData {
+  gameId: string
+  name: string
+  description: string
+  type: string
+  position: {
+    x: number
+    y: number
+    z: number
+  }
 }
 
 interface ContainerManagementProps {
@@ -70,9 +76,11 @@ export function ContainerManagement({ games }: ContainerManagementProps) {
     name: '',
     description: '',
     type: 'DISPLAY',
-    locationX: 0,
-    locationY: 0,
-    locationZ: 0,
+    position: {
+      x: 0,
+      y: 0,
+      z: 0
+    }
   })
 
   const { toast } = useToast()
@@ -90,8 +98,10 @@ export function ContainerManagement({ games }: ContainerManagementProps) {
         }
       })
       const data = await response.json()
+      console.log('Container data:', data) // Debug log
       if (data.success) {
         setContainers(data.containers)
+        console.log('Containers set:', data.containers) // Debug log
       } else {
         toast({
           title: 'Error',
@@ -100,6 +110,7 @@ export function ContainerManagement({ games }: ContainerManagementProps) {
         })
       }
     } catch (error) {
+      console.error('Error fetching containers:', error)
       toast({
         title: 'Error',
         description: 'Failed to fetch containers',
@@ -136,9 +147,11 @@ export function ContainerManagement({ games }: ContainerManagementProps) {
           name: '',
           description: '',
           type: 'DISPLAY',
-          locationX: 0,
-          locationY: 0,
-          locationZ: 0,
+          position: {
+            x: 0,
+            y: 0,
+            z: 0
+          }
         })
       } else {
         toast({
@@ -157,19 +170,30 @@ export function ContainerManagement({ games }: ContainerManagementProps) {
   }
 
   const getIntegrationCode = (container: Container) => {
-    switch (container.type) {
-      case 'DISPLAY':
-        return `local adContainer = game:GetService("MMLAds"):GetContainer("${container.id}")
-adContainer:DisplayAd()`
-      case 'NPC':
-        return `local npcAd = game:GetService("MMLAds"):GetNPCAd("${container.id}")
-npcAd:Spawn(Vector3.new(${container.locationX}, ${container.locationY}, ${container.locationZ}))`
-      case 'MINIGAME':
-        return `local miniGameAd = game:GetService("MMLAds"):GetMiniGame("${container.id}")
-miniGameAd:Initialize()`
-      default:
-        return ''
-    }
+    const gameId = container.game.id
+    const containerId = container.id
+    const { x, y, z } = container.position
+
+    return `-- Place this code in a Script under ServerScriptService
+local MMLAds = game:GetService("MMLAds")
+
+-- Initialize the ad container
+local container = MMLAds:InitializeContainer({
+    containerId = "${containerId}",
+    gameId = "${gameId}",
+    position = Vector3.new(${x}, ${y}, ${z})
+})
+
+-- Start displaying ads
+container:Start()`
+  }
+
+  const handleCopyCode = (code: string) => {
+    navigator.clipboard.writeText(code)
+    toast({
+      title: 'Copied!',
+      description: 'Integration code copied to clipboard',
+    })
   }
 
   return (
@@ -253,11 +277,14 @@ miniGameAd:Initialize()`
                 <Input
                   id="locationX"
                   type="number"
-                  value={formData.locationX}
+                  value={formData.position.x}
                   onChange={(e) =>
                     setFormData({
                       ...formData,
-                      locationX: parseFloat(e.target.value),
+                      position: {
+                        ...formData.position,
+                        x: parseFloat(e.target.value) || 0
+                      }
                     })
                   }
                 />
@@ -267,11 +294,14 @@ miniGameAd:Initialize()`
                 <Input
                   id="locationY"
                   type="number"
-                  value={formData.locationY}
+                  value={formData.position.y}
                   onChange={(e) =>
                     setFormData({
                       ...formData,
-                      locationY: parseFloat(e.target.value),
+                      position: {
+                        ...formData.position,
+                        y: parseFloat(e.target.value) || 0
+                      }
                     })
                   }
                 />
@@ -281,11 +311,14 @@ miniGameAd:Initialize()`
                 <Input
                   id="locationZ"
                   type="number"
-                  value={formData.locationZ}
+                  value={formData.position.z}
                   onChange={(e) =>
                     setFormData({
                       ...formData,
-                      locationZ: parseFloat(e.target.value),
+                      position: {
+                        ...formData.position,
+                        z: parseFloat(e.target.value) || 0
+                      }
                     })
                   }
                 />
@@ -297,87 +330,100 @@ miniGameAd:Initialize()`
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Ad Containers</CardTitle>
-          <CardDescription>
-            Manage your registered ad containers
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div>Loading containers...</div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Game</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Location</TableHead>
-                  <TableHead>Current Ad</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Integration Code</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {containers.map((container) => (
-                  <TableRow key={container.id}>
-                    <TableCell className="font-medium">
-                      {container.name}
-                      {container.description && (
-                        <div className="text-sm text-gray-500">
-                          {container.description}
-                        </div>
-                      )}
-                    </TableCell>
-                    <TableCell>{container.game.name}</TableCell>
-                    <TableCell>{container.type}</TableCell>
-                    <TableCell>
-                      X: {container.locationX}
-                      <br />
-                      Y: {container.locationY}
-                      <br />
-                      Z: {container.locationZ}
-                    </TableCell>
-                    <TableCell>
-                      {container.ad ? (
-                        <>
-                          {container.ad.name}
-                          <div className="text-sm text-gray-500">
-                            {container.ad.type} -{' '}
-                            {container.ad.status}
-                          </div>
-                        </>
-                      ) : (
-                        'No ad assigned'
-                      )}
-                    </TableCell>
-                    <TableCell>{container.status}</TableCell>
-                    <TableCell>
+      {/* Container List */}
+      <div className="space-y-4">
+        <div className="flex justify-between items-center">
+          <h2 className="text-2xl font-bold">Ad Containers</h2>
+          <Button onClick={() => fetchContainers()} variant="outline" size="sm">
+            Refresh
+          </Button>
+        </div>
+
+        {loading ? (
+          <div className="flex justify-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          </div>
+        ) : containers.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">
+            No containers found. Create one above to get started.
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {containers.map((container) => {
+              console.log('Rendering container:', container) // Debug log
+              const integrationCode = getIntegrationCode(container)
+              console.log('Integration code:', integrationCode) // Debug log
+              return (
+                <div key={container.id} className="bg-white rounded-lg shadow p-6 space-y-4">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h3 className="text-lg font-semibold">{container.name}</h3>
+                      <p className="text-sm text-gray-600">Game: {container.game.name}</p>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Badge variant={container.status === 'ACTIVE' ? 'default' : 'secondary'}>
+                        {container.status}
+                      </Badge>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <span className="text-sm font-medium">Type</span>
+                      <p className="text-sm text-gray-600">{container.type}</p>
+                    </div>
+                    <div>
+                      <span className="text-sm font-medium">Position</span>
+                      <p className="text-sm text-gray-600">{container.position.x}, {container.position.y}, {container.position.z}</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Integration Code</Label>
+                    <div className="relative">
+                      <pre className="bg-gray-50 p-3 rounded-md text-sm font-mono overflow-x-auto whitespace-pre-wrap">
+                        {integrationCode}
+                      </pre>
                       <Button
-                        variant="outline"
+                        variant="ghost"
                         size="sm"
-                        onClick={() => {
-                          navigator.clipboard.writeText(
-                            getIntegrationCode(container)
-                          )
-                          toast({
-                            title: 'Copied!',
-                            description: 'Integration code copied to clipboard',
-                          })
-                        }}
+                        className="absolute top-2 right-2"
+                        onClick={() => handleCopyCode(integrationCode)}
                       >
-                        Copy Code
+                        <Copy className="h-4 w-4" />
                       </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+                    </div>
+                  </div>
+
+                  <div className="flex space-x-2 mt-4">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      asChild
+                    >
+                      <Link href={`/game-owner/games/${container.game.id}/containers/${container.id}`}>
+                        <Settings className="h-4 w-4 mr-2" />
+                        Configure
+                      </Link>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-red-600 hover:text-red-700"
+                      onClick={() => {
+                        // TODO: Implement remove functionality
+                      }}
+                    >
+                      <Trash className="h-4 w-4 mr-2" />
+                      Remove
+                    </Button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
     </div>
   )
 } 
