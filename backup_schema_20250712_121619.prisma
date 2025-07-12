@@ -1,0 +1,287 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Asset {
+  id             String           @id
+  name           String
+  type           String?
+  status         String?
+  robloxId       String?
+  creator        Json?
+  metadata       Json?
+  versions       Json?
+  relationships  Json?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime
+  AssetPlaylists AssetPlaylists[]
+  GameAssets     GameAssets[]
+}
+
+model Game {
+  id                         String           @id
+  name                       String
+  description                String?
+  genre                      String?
+  robloxLink                 String?
+  thumbnail                  String?
+  metrics                    Json?            // Current metrics snapshot
+  dates                      Json?
+  owner                      Json?
+  robloxInfo                 Json?            // Fetched Roblox data
+  createdAt                  DateTime         @default(now())
+  updatedAt                  DateTime
+  gameOwnerId                String?
+  robloxAuthorization        Json?
+  serverApiKey               String?          @unique
+  serverApiKeyCreatedAt      DateTime?
+  serverApiKeyStatus         String?
+  adContainers               AdContainer[]
+  gameOwner                  GameOwner?       @relation(fields: [gameOwnerId], references: [id])
+  GameAd_GameAd_gameIdToGame GameAd[]         @relation("GameAd_gameIdToGame")
+  deployments                GameDeployment[]
+  media                      GameMedia[]
+  GameAssets                 GameAssets[]
+  GamePlaylists              GamePlaylists[]
+  ads                        GameAd[]         @relation("GameToAds")
+  metricData                 GameMetricData[]
+}
+
+model GameMetricData {
+  id          String   @id @default(cuid())
+  gameId      String
+  game        Game     @relation(fields: [gameId], references: [id])
+  metricType  MetricType  // Enum for all possible metric types
+  date        DateTime
+  value       Float    // Using Float for all numbers as some metrics have decimals
+  breakdown   String   @default("Total") // For time series metrics, always "Total"
+  category    String?  // For demographics: specific country, gender, age group, or language
+  series      String?  // For demographics: "Monthly Active Users"
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([gameId, metricType, date]) // For time series queries
+  @@index([gameId, metricType, category]) // For demographic queries
+  @@index([gameId, date]) // For querying all metrics in a date range
+  @@index([gameId, metricType]) // For latest demographic snapshots
+}
+
+model GameAd {
+  id                       String              @id
+  gameId                   String
+  name                     String
+  type                     String?
+  createdAt                DateTime            @default(now())
+  updatedAt                DateTime
+  assets                   Json?
+  containers               AdContainer[]
+  Game_GameAd_gameIdToGame Game                @relation("GameAd_gameIdToGame", fields: [gameId], references: [id])
+  performance              GameAdPerformance[]
+  playlistSchedules        PlaylistSchedule[]
+  games                    Game[]              @relation("GameToAds")
+}
+
+model GameAdPerformance {
+  id                String   @id
+  gameAdId          String
+  gameId            String
+  playlistId        String?
+  date              DateTime
+  metrics           Json?
+  demographics      Json?
+  engagements       Json?
+  playerDetails     Json?
+  timeDistribution  Json?
+  performanceTrends Json?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime
+  ad                GameAd   @relation(fields: [gameAdId], references: [id])
+}
+
+model GameMedia {
+  id           String   @id
+  type         String
+  title        String?
+  localPath    String
+  thumbnailUrl String?
+  gameId       String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime
+  width        Int?
+  height       Int?
+  duration     Int?
+  approved     Boolean  @default(true)
+  uploadedAt   DateTime @default(now())
+  robloxId     String?
+  altText      String?
+  game         Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  @@index([gameId])
+}
+
+model GameOwner {
+  id        String   @id
+  email     String   @unique
+  name      String
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+  games     Game[]
+}
+
+model Playlist {
+  id             String             @id
+  name           String
+  description    String?
+  type           String?
+  createdBy      String?
+  metadata       Json?
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime
+  schedules      PlaylistSchedule[]
+  AssetPlaylists AssetPlaylists[]
+  GamePlaylists  GamePlaylists[]
+}
+
+model PlaylistSchedule {
+  id          String           @id @default(uuid())
+  playlistId  String
+  gameAdId    String
+  startDate   DateTime
+  duration    Int
+  status      String           @default("scheduled")
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime
+  deployments GameDeployment[]
+  gameAd      GameAd           @relation(fields: [gameAdId], references: [id])
+  playlist    Playlist         @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+
+  @@index([playlistId])
+  @@index([gameAdId])
+}
+
+model GameDeployment {
+  id         String           @id @default(uuid())
+  scheduleId String
+  gameId     String
+  status     String           @default("pending")
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime
+  game       Game             @relation(fields: [gameId], references: [id])
+  schedule   PlaylistSchedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+
+  @@index([scheduleId])
+  @@index([gameId])
+}
+
+model RemovableAsset {
+  id                  String   @id
+  robloxAssetId       String
+  name                String
+  replacedBy          String?
+  reason              String?
+  dateMarkedRemovable DateTime
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime
+}
+
+model AdContainer {
+  id          String            @id @default(uuid())
+  gameId      String
+  name        String
+  description String?
+  type        AdContainerType
+  position    Json
+  status      AdContainerStatus @default(ACTIVE)
+  currentAdId String?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  currentAd   GameAd?           @relation(fields: [currentAdId], references: [id])
+  game        Game              @relation(fields: [gameId], references: [id])
+  engagements AdEngagement[]
+
+  @@index([gameId])
+  @@index([currentAdId])
+}
+
+model AdEngagement {
+  id          String      @id @default(uuid())
+  containerId String
+  adId        String?
+  eventType   String
+  data        Json
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  container   AdContainer @relation(fields: [containerId], references: [id], onDelete: Cascade)
+
+  @@index([containerId])
+  @@index([adId])
+}
+
+model AssetPlaylists {
+  A        String
+  B        String
+  Asset    Asset    @relation(fields: [A], references: [id], onDelete: Cascade)
+  Playlist Playlist @relation(fields: [B], references: [id], onDelete: Cascade)
+
+  @@id([A, B], map: "_AssetPlaylists_AB_pkey")
+  @@index([B], map: "_AssetPlaylists_B_index")
+  @@map("_AssetPlaylists")
+}
+
+model GameAssets {
+  A     String
+  B     String
+  Asset Asset  @relation(fields: [A], references: [id], onDelete: Cascade)
+  Game  Game   @relation(fields: [B], references: [id], onDelete: Cascade)
+
+  @@id([A, B], map: "_GameAssets_AB_pkey")
+  @@index([B], map: "_GameAssets_B_index")
+  @@map("_GameAssets")
+}
+
+model GamePlaylists {
+  A        String
+  B        String
+  Game     Game     @relation(fields: [A], references: [id], onDelete: Cascade)
+  Playlist Playlist @relation(fields: [B], references: [id], onDelete: Cascade)
+
+  @@id([A, B], map: "_GamePlaylists_AB_pkey")
+  @@index([B], map: "_GamePlaylists_B_index")
+  @@map("_GamePlaylists")
+}
+
+enum AdContainerType {
+  DISPLAY
+  NPC
+  MINIGAME
+}
+
+enum AdContainerStatus {
+  ACTIVE
+  INACTIVE
+  MAINTENANCE
+}
+
+enum MetricType {
+  // Time Series Metrics
+  d1Retention                     @map("d1_retention")
+  d7Retention                     @map("d7_retention")
+  d1Stickiness                    @map("d1_stickiness")
+  d7Stickiness                    @map("d7_stickiness")
+  dailyActiveUsers                @map("daily_active_users")
+  averagePlayTimeMinutes          @map("average_play_time_minutes")
+  averageSessionLengthMinutes     @map("average_session_length_minutes")
+  monthlyActiveUsersByDay         @map("monthly_active_users_by_day")
+  
+  // Demographic Metrics
+  demographicsGender              @map("demographics_gender")
+  demographicsCountry             @map("demographics_country")
+  demographicsLanguage            @map("demographics_language")
+  demographicsAgeGroup            @map("demographics_age_group")
+}

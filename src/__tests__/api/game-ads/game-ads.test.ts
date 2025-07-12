@@ -2,7 +2,7 @@ import { describe, expect, it, beforeEach, afterEach } from '@jest/globals'
 import { NextRequest } from 'next/server'
 import { GET, POST } from '@/app/api/game-ads/route'
 import { GET as GET_BY_ID, PUT, DELETE } from '@/app/api/game-ads/[id]/route'
-import { prisma } from '@/lib/db'
+import { prismaTestClient as prisma } from '@/lib/db/test-client'
 
 // Mock data
 const mockGame = {

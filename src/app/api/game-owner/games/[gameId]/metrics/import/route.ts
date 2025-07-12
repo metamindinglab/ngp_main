@@ -121,7 +121,7 @@ function parseDemographicCSV(content: string): DemographicData[] {
   return data;
 }
 
-function parseTimeSeriesCSV(content: string, params: { gameId: string }): TimeSeriesData[] {
+function parseTimeSeriesCSV(content: string, params: { gameId: string }, metricType: MetricType): TimeSeriesData[] {
   // Parse without column headers to see the raw data
   const rawRecords = parse(content, {
     columns: false,
@@ -164,8 +164,8 @@ function parseTimeSeriesCSV(content: string, params: { gameId: string }): TimeSe
 
     // Generate a unique ID that includes the category if present
     const uniqueId = seriesName 
-      ? `${params.gameId}_${MetricType.averagePlayTimeMinutes}_${seriesName}_${date.toISOString()}`
-      : `${params.gameId}_${MetricType.averagePlayTimeMinutes}_${date.toISOString()}`;
+      ? `${params.gameId}_${metricType}_${seriesName}_${date.toISOString()}`
+      : `${params.gameId}_${metricType}_${date.toISOString()}`;
 
     data.push({
       date,
@@ -235,6 +235,8 @@ export async function POST(
       );
     }
 
+    console.log('Processing files:', files.map(f => f.name));
+
     const summary: ImportSummary = {
       totalFiles: files.length,
       processedFiles: 0,
@@ -283,6 +285,13 @@ export async function POST(
           continue;
         }
 
+        console.log('Processing file:', {
+          filename: file.name,
+          metricType,
+          firstRow: rawRecords[0],
+          totalRows: rawRecords.length
+        });
+
         const isDemographic = [
           MetricType.demographicsCountry,
           MetricType.demographicsGender,
@@ -308,7 +317,7 @@ export async function POST(
             processedRecords++;
           }
         } else {
-          const data = parseTimeSeriesCSV(content, params);
+          const data = parseTimeSeriesCSV(content, params, metricType);
           for (const item of data) {
             metricEntries.push({
               id: item.id,
@@ -353,6 +362,8 @@ export async function POST(
         { status: 400 }
       );
     }
+
+    console.log('Metric entries to insert:', JSON.stringify(metricEntries, null, 2));
 
     // Update the metrics data using upsert with verification
     const results = await Promise.all(
@@ -403,6 +414,8 @@ export async function POST(
         return result as unknown as Array<{ operation: 'inserted' | 'updated' }>;
       })
     );
+
+    console.log('Database operation results:', JSON.stringify(results, null, 2));
 
     // Update summary with database operation results
     results.forEach(result => {

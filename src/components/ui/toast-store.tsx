@@ -154,20 +154,24 @@ function useToast(): UseToastReturn {
         listeners.splice(index, 1)
       }
     }
-  }, [state])
+  }, [])
 
-  const toast = (props: ToastProps) => {
+  const toast = React.useCallback((props: ToastProps) => {
     const id = genId()
     dispatch({
       type: "ADD_TOAST",
       toast: { ...props, id } as ToasterToast,
     })
-  }
+  }, [])
+
+  const dismiss = React.useCallback((toastId?: string) => {
+    dispatch({ type: "DISMISS_TOAST", toastId })
+  }, [])
 
   return {
     ...state,
     toast,
-    dismiss: (toastId?: string) => dispatch({ type: "DISMISS_TOAST", toastId }),
+    dismiss,
   }
 }
 

@@ -30,7 +30,7 @@ export async function POST(
     const { adId } = await request.json()
 
     // Verify container ownership
-    const container = await prisma.gameAdContainer.findFirst({
+    const container = await prisma.adContainer.findFirst({
       where: {
         id: params.containerId,
         game: {
@@ -62,7 +62,7 @@ export async function POST(
     }
 
     // Update container with ad
-    const updatedContainer = await prisma.gameAdContainer.update({
+    const updatedContainer = await prisma.adContainer.update({
       where: {
         id: container.id
       },
@@ -76,12 +76,11 @@ export async function POST(
             name: true
           }
         },
-        ad: {
+        currentAd: {
           select: {
             id: true,
             name: true,
-            type: true,
-            status: true
+            type: true
           }
         }
       }

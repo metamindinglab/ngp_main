@@ -28,6 +28,34 @@ interface GameData {
   dates?: any
   owner?: any
   authorization?: any
+  robloxInfo?: {
+    media?: {
+      images?: Array<{
+        id: string
+        robloxId?: number | null
+        type: string
+        approved: boolean
+        title?: string
+        altText?: string
+        localPath: string
+        thumbnailUrl: string
+        width: number
+        height: number
+        uploadedAt: string
+      }>
+      videos?: Array<{
+        id: string
+        robloxId: string
+        type: string
+        approved: boolean
+        title: string
+        localPath: string
+        thumbnailUrl?: string
+        duration?: number
+        uploadedAt: string
+      }>
+    }
+  }
 }
 
 interface GamesDatabase {
@@ -74,60 +102,131 @@ interface PlaylistData {
   status?: string
 }
 
+async function loadGamesData(): Promise<GamesDatabase> {
+  const gamesPath = join(process.cwd(), 'data/games.json')
+  const content = await readFile(gamesPath, 'utf8')
+  return JSON.parse(content)
+}
+
 async function migrateGames() {
-  console.log('🎮 Migrating Games...')
+  console.log('Migrating games...')
   
-  try {
-    const gamesPath = join(process.cwd(), 'data/games.json')
-    const content = await readFile(gamesPath, 'utf8')
-    const data: GamesDatabase = JSON.parse(content)
-    
-    let migrated = 0
-    for (const game of data.games) {
-      try {
-        // Use upsert to handle duplicates gracefully
-        await prisma.game.upsert({
-          where: { id: game.id },
-          update: {
-            name: game.name,
-            description: game.description || null,
-            genre: game.genre || null,
-            robloxLink: game.robloxLink || null,
-            thumbnail: game.thumbnail || null,
-            metrics: game.metrics || null,
-            dates: game.dates || null,
-            owner: game.owner || null,
-            robloxAuthorization: game.authorization || null,
-            serverApiKey: game.authorization?.apiKey || null,
-            serverApiKeyStatus: game.authorization?.status || null,
-            serverApiKeyCreatedAt: game.authorization?.apiKey ? new Date() : null,
-            updatedAt: new Date()
-          },
-          create: {
-            id: game.id,
-            name: game.name,
-            description: game.description || null,
-            genre: game.genre || null,
-            robloxLink: game.robloxLink || null,
-            thumbnail: game.thumbnail || null,
-            metrics: game.metrics || null,
-            dates: game.dates || null,
-            owner: game.owner || null,
-            robloxAuthorization: game.authorization || null,
-            serverApiKey: game.authorization?.apiKey || null,
-            serverApiKeyStatus: game.authorization?.status || null,
-            serverApiKeyCreatedAt: game.authorization?.apiKey ? new Date() : null,
-          }
-        })
-        migrated++
-      } catch (error) {
-        console.error(`❌ Failed to migrate game ${game.id}:`, error)
+  const gamesData = await loadGamesData()
+  
+  for (const game of gamesData.games) {
+    try {
+      // Create or update game
+      const upsertedGame = await prisma.game.upsert({
+        where: { id: game.id },
+        update: {
+          name: game.name,
+          description: game.description || '',
+          genre: game.genre || '',
+          robloxLink: game.robloxLink || '',
+          thumbnail: game.thumbnail || '',
+          metrics: game.metrics || {},
+          dates: game.dates || {},
+          owner: game.owner || {},
+          robloxAuthorization: game.authorization || {},
+          updatedAt: new Date()
+        },
+        create: {
+          id: game.id,
+          name: game.name,
+          description: game.description || '',
+          genre: game.genre || '',
+          robloxLink: game.robloxLink || '',
+          thumbnail: game.thumbnail || '',
+          metrics: game.metrics || {},
+          dates: game.dates || {},
+          owner: game.owner || {},
+          robloxAuthorization: game.authorization || {},
+          createdAt: new Date(),
+          updatedAt: new Date()
+        }
+      })
+
+      // Process media if available
+      if (game.robloxInfo?.media) {
+        const { images = [], videos = [] } = game.robloxInfo.media
+
+        // Process images
+        for (const image of images) {
+          await prisma.gameMedia.upsert({
+            where: {
+              id: image.id
+            },
+            update: {
+              type: 'image',
+              robloxId: image.robloxId?.toString(),
+              title: image.title,
+              altText: image.altText,
+              localPath: image.localPath,
+              thumbnailUrl: image.thumbnailUrl,
+              width: image.width,
+              height: image.height,
+              approved: image.approved,
+              uploadedAt: new Date(image.uploadedAt),
+              updatedAt: new Date()
+            },
+            create: {
+              id: image.id,
+              gameId: upsertedGame.id,
+              type: 'image',
+              robloxId: image.robloxId?.toString(),
+              title: image.title,
+              altText: image.altText,
+              localPath: image.localPath,
+              thumbnailUrl: image.thumbnailUrl,
+              width: image.width,
+              height: image.height,
+              approved: image.approved,
+              uploadedAt: new Date(image.uploadedAt),
+              createdAt: new Date(),
+              updatedAt: new Date()
+            }
+          })
+        }
+
+        // Process videos
+        for (const video of videos) {
+          await prisma.gameMedia.upsert({
+            where: {
+              id: video.id
+            },
+            update: {
+              type: 'video',
+              robloxId: video.robloxId,
+              title: video.title,
+              localPath: video.localPath,
+              thumbnailUrl: video.thumbnailUrl,
+              duration: video.duration,
+              approved: video.approved,
+              uploadedAt: new Date(video.uploadedAt),
+              updatedAt: new Date()
+            },
+            create: {
+              id: video.id,
+              gameId: upsertedGame.id,
+              type: 'video',
+              robloxId: video.robloxId,
+              title: video.title,
+              localPath: video.localPath,
+              thumbnailUrl: video.thumbnailUrl,
+              duration: video.duration,
+              approved: video.approved,
+              uploadedAt: new Date(video.uploadedAt),
+              createdAt: new Date(),
+              updatedAt: new Date()
+            }
+          })
+        }
       }
+
+      console.log(`Migrated game: ${game.name}`)
+    } catch (error) {
+      console.error(`Error migrating game ${game.name}:`, error)
     }
-    
-    console.log(`✅ Successfully migrated ${migrated} games`)
-  } catch (error) {
-    console.error('❌ Error migrating games:', error)
   }
 }
 
@@ -223,12 +322,18 @@ async function migrateGameAds() {
     for (const gameAd of data.gameAds) {
       try {
         const gameAdData = {
-          gameId: defaultGame.id, // Use default game for now
           name: gameAd.name,
-          type: gameAd.templateType || null,
+          type: gameAd.templateType || 'default', // Provide default value instead of null
           status: 'active', // Default status
           assets: JSON.stringify(gameAd.assets || []),
-          updatedAt: new Date(gameAd.updatedAt)
+          schedule: {},
+          targeting: {},
+          metrics: {},
+          description: '',
+          updatedAt: new Date(gameAd.updatedAt),
+          games: {
+            connect: [{ id: defaultGame.id }]
+          }
         }
 
         await prisma.gameAd.upsert({

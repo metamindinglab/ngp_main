@@ -280,6 +280,12 @@ class JSONAuthService {
       return null
     }
   }
+
+  async validateRequest(request: Request): Promise<GameOwnerUser | null> {
+    const sessionToken = request.headers.get('Authorization')?.replace('Bearer ', '')
+    if (!sessionToken) return null
+    return this.validateSession(sessionToken)
+  }
 }
 
 export const jsonAuthService = new JSONAuthService() 

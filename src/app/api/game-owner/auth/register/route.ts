@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { jsonAuthService } from '@/lib/json-auth'
+import { prisma } from '@/lib/prisma'
+import { hash } from 'bcrypt'
+import { sign } from 'jsonwebtoken'
+import { v4 as uuidv4 } from 'uuid'
 import { extractGameOwners } from '@/utils/extractGameOwners'
+
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key'
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,7 +19,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if this email is in our extracted game owners (for validation)
-    const extractedOwners = extractGameOwners()
+    const extractedOwners = await extractGameOwners()
     const validOwner = extractedOwners.validOwners.find(
       owner => owner.email.toLowerCase() === email.toLowerCase()
     )
@@ -29,38 +34,88 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const result = await jsonAuthService.registerUser(email, password, name, country, discordId)
+    // Check if user already exists
+    const existingUser = await prisma.gameOwner.findUnique({
+      where: {
+        email: email.toLowerCase()
+      }
+    })
 
-    if (!result.success) {
+    if (existingUser) {
       return NextResponse.json(
-        { success: false, error: result.error },
+        { success: false, error: 'User already exists' },
         { status: 400 }
       )
     }
 
-    // Set session cookie
-    const response = NextResponse.json({
+    // Hash password
+    const hashedPassword = await hash(password, 10)
+
+    // Create new user
+    const userId = uuidv4()
+    const user = await prisma.gameOwner.create({
+      data: {
+        id: userId,
+        email: email.toLowerCase(),
+        password: hashedPassword,
+        name,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }
+    })
+
+    // Update games with this owner's email to use the new gameOwnerId
+    await prisma.game.updateMany({
+      where: {
+        owner: {
+          path: ['email'],
+          equals: email.toLowerCase()
+        }
+      },
+      data: {
+        gameOwnerId: userId,
+        owner: {
+          name,
+          email: email.toLowerCase(),
+          country: country || '',
+          discordId: discordId || ''
+        }
+      }
+    })
+
+    // Get user's games
+    const games = await prisma.game.findMany({
+      where: { gameOwnerId: userId },
+      select: {
+        id: true,
+        name: true,
+        genre: true,
+        thumbnail: true,
+        metrics: true
+      }
+    })
+
+    // Create JWT token
+    const sessionToken = sign(
+      { userId },
+      JWT_SECRET,
+      { expiresIn: '7d' }
+    )
+
+    return NextResponse.json({
       success: true,
       user: {
-        id: result.user!.id,
-        gameOwnerId: result.user!.gameOwnerId,
-        email: result.user!.email,
-        name: result.user!.name,
-        country: result.user!.country,
-        discordId: result.user!.discordId
+        id: userId,
+        email: user.email,
+        name: user.name,
+        gameOwnerId: userId,
+        emailVerified: true,
+        lastLogin: new Date().toISOString()
       },
-      gamesCount: validOwner.games.length
+      games,
+      gamesCount: games.length,
+      sessionToken
     })
-
-    // Set httpOnly cookie for session
-    response.cookies.set('game-owner-session', result.sessionToken!, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60 // 7 days
-    })
-
-    return response
   } catch (error) {
     console.error('Registration error:', error)
     return NextResponse.json(

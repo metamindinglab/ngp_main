@@ -7,7 +7,7 @@ export type GameAdPerformanceUpdateInput = Prisma.GameAdPerformanceUpdateInput;
 export async function getAllGameAdPerformance() {
   return prisma.gameAdPerformance.findMany({
     include: {
-      gameAd: true,
+      ad: true,
     },
   });
 }
@@ -16,7 +16,7 @@ export async function getGameAdPerformanceById(id: string) {
   return prisma.gameAdPerformance.findUnique({
     where: { id },
     include: {
-      gameAd: true,
+      ad: true,
     },
   });
 }
@@ -25,7 +25,7 @@ export async function createGameAdPerformance(data: GameAdPerformanceCreateInput
   return prisma.gameAdPerformance.create({
     data,
     include: {
-      gameAd: true,
+      ad: true,
     },
   });
 }
@@ -35,7 +35,7 @@ export async function updateGameAdPerformance(id: string, data: GameAdPerformanc
     where: { id },
     data,
     include: {
-      gameAd: true,
+      ad: true,
     },
   });
 }
@@ -52,7 +52,7 @@ export async function getGameAdPerformanceByGameAdId(gameAdId: string) {
       gameAdId,
     },
     include: {
-      gameAd: true,
+      ad: true,
     },
   });
 }
@@ -63,7 +63,7 @@ export async function getGameAdPerformanceByGameId(gameId: string) {
       gameId,
     },
     include: {
-      gameAd: true,
+      ad: true,
     },
   });
 }
@@ -74,7 +74,7 @@ export async function getGameAdPerformanceByPlaylistId(playlistId: string) {
       playlistId,
     },
     include: {
-      gameAd: true,
+      ad: true,
     },
   });
 } 

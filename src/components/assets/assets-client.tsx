@@ -117,9 +117,10 @@ export function AssetsClient({ initialAssets = [] }: AssetsClientProps) {
     try {
       const response = await fetch('/api/assets');
       const data = await response.json();
-      setAssets(data.assets);
+      setAssets(data.assets || []);
     } catch (error) {
       console.error('Error loading assets:', error);
+      setAssets([]); // Ensure assets is always an array
       toast({
         title: "Error",
         description: "Failed to load assets. Please try again.",
@@ -233,7 +234,7 @@ export function AssetsClient({ initialAssets = [] }: AssetsClientProps) {
       }
 
       const savedAsset = await assetResponse.json();
-      setAssets(prevAssets => [...prevAssets, savedAsset]);
+      setAssets(prevAssets => [...(prevAssets || []), savedAsset]);
       
       toast({
         title: "Success",
@@ -270,7 +271,7 @@ export function AssetsClient({ initialAssets = [] }: AssetsClientProps) {
         throw new Error('Failed to delete asset');
       }
 
-      setAssets(assets => assets.filter(a => a.id !== asset.id));
+      setAssets(assets => (assets || []).filter(a => a.id !== asset.id));
       closeAllDialogs();
       
       toast({
@@ -296,7 +297,7 @@ export function AssetsClient({ initialAssets = [] }: AssetsClientProps) {
     return 'bg-gray-100 text-gray-800';
   };
 
-  const filteredAssets = assets
+  const filteredAssets = (assets || [])
     .filter(asset => {
       if (!asset) return false;
       

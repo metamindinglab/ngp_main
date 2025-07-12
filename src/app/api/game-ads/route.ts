@@ -1,27 +1,42 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAllGameAds, createGameAd } from '@/lib/db/gameAds'
+import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
 import { z } from 'zod'
-import type { GameAd, Asset as GameAdAsset } from '@/types/gameAd'
+import type { GameAd, Asset as GameAdAsset, AssetType, GameAdTemplateType } from '@/types/gameAd'
 import type { GameAdPerformanceMetrics } from '@/types/gameAdPerformance'
 import { addCorsHeaders, handleAuth, applyRateLimit, addRateLimitHeaders, handleOptions } from '../middleware'
 
 const PAGE_SIZE = 10 // Number of items per page
 
+const validAssetTypes = [
+  'kol_character', 'hat', 'clothing', 'item', 'shoes', 
+  'animation', 'audio', 'multi_display'
+] as const
+
 // Validation schema for creating a game ad
 const GameAdCreateSchema = z.object({
   name: z.string().min(1, 'Name is required'),
-  templateType: z.string().min(1, 'Template type is required'),
-  gameId: z.string().optional(),
+  type: z.enum(['multimedia_display', 'dancing_npc', 'minigame_ad'] as const),
+  gameIds: z.array(z.string()).optional(),
   status: z.string().optional(),
   schedule: z.any().optional(),
   targeting: z.any().optional(),
   metrics: z.any().optional(),
   assets: z.array(z.object({
-    assetType: z.string().min(1, 'Asset type is required'),
+    assetType: z.enum(validAssetTypes),
     assetId: z.string().min(1, 'Asset ID is required'),
     robloxAssetId: z.string().min(1, 'Roblox Asset ID is required')
-  })).min(1, 'At least one asset is required')
+  })).refine((assets) => {
+    // For dancing_npc template, only kol_character is required
+    if (assets.some(asset => asset.assetType === 'kol_character')) {
+      return true;
+    }
+    // For other templates, require at least one asset
+    return assets.length > 0;
+  }, {
+    message: 'At least one asset is required. For Dancing NPC Ad, KOL character is required.'
+  }).optional()
 })
 
 // Type guard for GameAdAsset
@@ -30,6 +45,7 @@ function isGameAdAsset(obj: unknown): obj is GameAdAsset {
   const asset = obj as Record<string, unknown>
   return (
     typeof asset.assetType === 'string' &&
+    validAssetTypes.includes(asset.assetType as AssetType) &&
     typeof asset.assetId === 'string' &&
     typeof asset.robloxAssetId === 'string'
   )
@@ -51,123 +67,52 @@ export async function OPTIONS() {
   return handleOptions()
 }
 
-export async function GET(request: NextRequest) {
+export async function GET(request: Request) {
   try {
-    // Check if this is an external API request (has API key) or internal admin request
-    const apiKey = request.headers.get('X-API-Key') || request.headers.get('Authorization')?.replace('Bearer ', '')
-    const isExternalRequest = !!apiKey
-    
-    // Handle authentication for external Roblox games only
-    let auth: { isValid: boolean; gameId?: string; error?: string } = { isValid: true, gameId: undefined }
-    let rateLimit: { allowed: boolean; remainingRequests: number; resetTime: number } | null = null
-    
-    if (isExternalRequest) {
-      auth = await handleAuth(request)
-      if (!auth.isValid) {
-        const response = NextResponse.json({ error: auth.error }, { status: 401 })
-        return addCorsHeaders(response)
-      }
-
-      // Apply rate limiting for external requests only
-      rateLimit = applyRateLimit(apiKey!)
-      
-      if (!rateLimit.allowed) {
-        const response = NextResponse.json(
-          { error: 'Rate limit exceeded', resetTime: rateLimit.resetTime },
-          { status: 429 }
-        )
-        addRateLimitHeaders(response, rateLimit)
-        return addCorsHeaders(response)
-      }
-    }
-
     const { searchParams } = new URL(request.url)
     const page = parseInt(searchParams.get('page') || '1')
-    const search = searchParams.get('search') || ''
-    const status = searchParams.get('status')
-    // Use authenticated game ID instead of query param for security
-    const gameId = auth.gameId
+    const skip = (page - 1) * PAGE_SIZE
 
-    // Fetch all game ads from the database
-    let gameAds = await getAllGameAds()
+    // Get total count for pagination
+    const totalCount = await prisma.gameAd.count()
+    const totalPages = Math.ceil(totalCount / PAGE_SIZE)
 
-    // Apply filters
-    let filteredAds = gameAds
-    
-    if (search) {
-      filteredAds = filteredAds.filter(ad =>
-        ad.name.toLowerCase().includes(search.toLowerCase())
-      )
-    }
+    const results = await prisma.gameAd.findMany({
+      skip,
+      take: PAGE_SIZE,
+      include: {
+        games: {
+          select: {
+            id: true,
+            name: true,
+            thumbnail: true
+          }
+        },
+        performance: true,
+        containers: true
+      }
+    })
 
-    if (status) {
-      filteredAds = filteredAds.filter(ad => ad.status === status)
-    }
-
-    if (gameId) {
-      filteredAds = filteredAds.filter(ad => ad.gameId === gameId)
-    }
-
-    // Calculate pagination
-    const start = (page - 1) * PAGE_SIZE
-    const end = start + PAGE_SIZE
-    const paginatedAds = filteredAds.slice(start, end)
-
-    // Map DB fields to API response shape
-    const mappedAds = paginatedAds.map(ad => {
-      const dbAd = ad as unknown as { assets: unknown; performance: Array<{ metrics: unknown }> }
-      const assets = dbAd.assets
-      const metrics = dbAd.performance?.[0]?.metrics
-
-      return {
+    return NextResponse.json({
+      gameAds: results.map(ad => ({
         id: ad.id,
         name: ad.name,
-        templateType: ad.type,
-        gameId: ad.gameId,
-        status: ad.status,
-        schedule: ad.schedule,
-        targeting: ad.targeting,
-        metrics: ad.metrics,
-        assets: Array.isArray(assets) && assets.every(isGameAdAsset) ? assets : [],
+        type: ad.type,
+        assets: Array.isArray(ad.assets) && ad.assets.every(isGameAdAsset) ? ad.assets : [],
         createdAt: ad.createdAt.toISOString(),
         updatedAt: ad.updatedAt.toISOString(),
-        game: ad.game ? {
-          id: ad.game.id,
-          name: ad.game.name,
-          thumbnail: ad.game.thumbnail
-        } : null,
-        performance: isGameAdPerformanceMetrics(metrics) ? {
-          impressions: metrics.totalImpressions,
-          clicks: metrics.totalEngagements,
-          conversions: metrics.conversionRate
-        } : null
-      }
+        games: ad.games,
+        performance: ad.performance,
+        containers: ad.containers
+      })),
+      totalPages
     })
-
-    const response = NextResponse.json({
-      success: true,
-      gameId: auth.gameId,
-      gameAds: mappedAds,
-      total: filteredAds.length,
-      page,
-      totalPages: Math.ceil(filteredAds.length / PAGE_SIZE)
-    }, {
-      headers: {
-        'Cache-Control': 'public, max-age=60',
-      }
-    })
-
-    if (rateLimit) {
-      addRateLimitHeaders(response, rateLimit)
-    }
-    return addCorsHeaders(response)
   } catch (error) {
     console.error('Error in GET /api/game-ads:', error)
-    const response = NextResponse.json(
-      { error: 'Failed to load game ads' },
+    return NextResponse.json(
+      { error: 'Internal server error' },
       { status: 500 }
     )
-    return addCorsHeaders(response)
   }
 }
 
@@ -186,69 +131,47 @@ export async function POST(request: Request) {
 
     const gameAd = validationResult.data
 
-    // Prepare data for Prisma
-    const data: Prisma.GameAdCreateInput = {
-      name: gameAd.name,
-      type: gameAd.templateType,
-      game: {
-        connect: {
-          id: gameAd.gameId || 'game_001' // Default game ID if not specified
-        }
+    // Create game ad using Prisma client
+    const created = await prisma.gameAd.create({
+      data: {
+        id: crypto.randomUUID(),
+        gameId: gameAd.gameIds && gameAd.gameIds.length > 0 ? gameAd.gameIds[0] : 'game_001', // Use first game ID or default
+        name: gameAd.name,
+        type: gameAd.type,
+        assets: gameAd.assets,
+        updatedAt: new Date(),
+        games: gameAd.gameIds ? {
+          connect: gameAd.gameIds.map(id => ({ id }))
+        } : undefined
       },
-      status: gameAd.status || 'active',
-      schedule: gameAd.schedule || null,
-      targeting: gameAd.targeting || null,
-      metrics: gameAd.metrics || null
-    }
-
-    // Add assets as JSON field
-    const createData = {
-      ...data,
-      assets: gameAd.assets
-    } as const
-
-    const created = await createGameAd(createData)
-
-    // Map response
-    const dbAd = created as unknown as { assets: unknown }
-    const assets = dbAd.assets
+      include: {
+        games: {
+          select: {
+            id: true,
+            name: true,
+            thumbnail: true
+          }
+        },
+        performance: true,
+        containers: true
+      }
+    })
 
     return NextResponse.json({
       id: created.id,
       name: created.name,
-      templateType: created.type,
-      gameId: created.gameId,
-      status: created.status,
-      schedule: created.schedule,
-      targeting: created.targeting,
-      metrics: created.metrics,
-      assets: Array.isArray(assets) && assets.every(isGameAdAsset) ? assets : [],
+      type: created.type,
+      assets: Array.isArray(created.assets) && created.assets.every(isGameAdAsset) ? created.assets : [],
       createdAt: created.createdAt.toISOString(),
       updatedAt: created.updatedAt.toISOString(),
-      game: created.game ? {
-        id: created.game.id,
-        name: created.game.name,
-        thumbnail: created.game.thumbnail
-      } : null
+      games: created.games,
+      performance: created.performance,
+      containers: created.containers
     })
   } catch (error) {
     console.error('Error in POST /api/game-ads:', error)
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      if (error.code === 'P2002') {
-        return NextResponse.json(
-          { error: 'A game ad with this name already exists' },
-          { status: 409 }
-        )
-      }
-      if (error.code === 'P2003') {
-        return NextResponse.json(
-          { error: 'Referenced game does not exist' },
-          { status: 400 }
-        )
-      }
-    }
     return NextResponse.json(
-      { error: 'Failed to create game ad' },
+      { error: 'Internal server error' },
       { status: 500 }
     )
   }

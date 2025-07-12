@@ -21,7 +21,7 @@ export function addCorsHeaders(response: NextResponse) {
   return response
 }
 
-export async function handleAuth(request: NextRequest): Promise<{ isValid: boolean; gameId?: string; error?: string }> {
+export async function handleAuth(request: NextRequest): Promise<{ isValid: boolean; gameId?: string; apiKey?: string; error?: string }> {
   // Check for API key in header (Roblox-friendly)
   const apiKey = request.headers.get('X-API-Key') || request.headers.get('Authorization')?.replace('Bearer ', '')
   
@@ -47,7 +47,7 @@ export async function handleAuth(request: NextRequest): Promise<{ isValid: boole
       return { isValid: false, error: 'Invalid or inactive API key' }
     }
 
-    return { isValid: true, gameId: game.id }
+    return { isValid: true, gameId: game.id, apiKey }
   } catch (error) {
     console.error('Auth error:', error)
     return { isValid: false, error: 'Authentication failed' }

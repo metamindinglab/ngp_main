@@ -8,7 +8,11 @@ A comprehensive asset management system for Roblox games, featuring modules for 
 - **Games Manager**: Control and monitor your games
 - **Game Ads Manager**: Configure and manage game advertisements
 - **Playlist Manager**: Organize and schedule game playlists
-- **Game Ads Performance**: Track and analyze ad performance metrics
+- **Game Ads Performance**: Track and analyze ad performance metrics with optimized loading states and memory management
+  - Real-time performance data fetching
+  - Efficient memory management with proper cleanup
+  - Improved component lifecycle handling
+  - AbortController integration for request management
 
 ## Getting Started
 
@@ -60,6 +64,15 @@ src/
 - `npm run start` - Start production server
 - `npm run lint` - Run ESLint
 - `npm run type-check` - Run TypeScript type checking
+
+### Performance Optimization
+
+The system includes several performance optimizations:
+- Proper handling of React Strict Mode double-mounting
+- Efficient cleanup of intervals and active fetches
+- Memory leak prevention through useRef hooks
+- Improved loading state management
+- Request cancellation using AbortController
 
 ## Contributing
 

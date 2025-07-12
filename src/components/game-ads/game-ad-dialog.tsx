@@ -23,6 +23,15 @@ import { Card, CardContent } from "@/components/ui/card"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { GameAd, GameAdTemplate, GAME_AD_TEMPLATES, GameAdTemplateType, Asset, AssetType, AssetData } from '@/types/gameAd'
 import RobloxAssetPreview from '@/components/display-objects/roblox-asset-preview'
+import Image from 'next/image'
+import { cn } from '@/lib/utils'
+import { Loader2 } from 'lucide-react'
+
+interface FormData {
+  name: string;
+  templateType: GameAdTemplateType;
+  assets: (Asset | null)[];
+}
 
 interface GameAdDialogProps {
   open: boolean
@@ -32,12 +41,10 @@ interface GameAdDialogProps {
 }
 
 export function GameAdDialog({ open, onClose, initialData, onSave }: GameAdDialogProps) {
-  const [formData, setFormData] = useState<Partial<GameAd>>({
-    name: '',
-    templateType: undefined,
-    assets: [],
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+  const [formData, setFormData] = useState<FormData>({
+    name: initialData?.name || '',
+    templateType: (initialData?.type as GameAdTemplateType) || 'multimedia_display',
+    assets: initialData?.assets || []
   })
 
   const [selectedTemplate, setSelectedTemplate] = useState<GameAdTemplate | null>(null)
@@ -57,7 +64,17 @@ export function GameAdDialog({ open, onClose, initialData, onSave }: GameAdDialo
           throw new Error('Failed to load assets')
         }
         const data = await response.json()
-        setAvailableAssets(data.assets)
+        if (Array.isArray(data.assets)) {
+          // Transform the assets to ensure they have the correct type
+          const transformedAssets = data.assets.map((asset: { type?: AssetType; assetType?: AssetType; id: string; name: string; robloxAssetId: string }) => ({
+            ...asset,
+            assetType: asset.type || asset.assetType // Handle both type and assetType fields
+          }))
+          setAvailableAssets(transformedAssets)
+        } else {
+          console.error('Invalid assets data:', data)
+          setError('Invalid assets data received')
+        }
       } catch (error) {
         console.error('Error loading assets:', error)
         setError('Failed to load assets. Please try again.')
@@ -72,26 +89,39 @@ export function GameAdDialog({ open, onClose, initialData, onSave }: GameAdDialo
 
   useEffect(() => {
     if (initialData) {
-      setFormData(initialData)
-      const template = GAME_AD_TEMPLATES.find(t => t.id === initialData.templateType)
+      // Create a mapping of asset types to their positions
+      const template = GAME_AD_TEMPLATES.find(t => t.id === initialData.type)
       setSelectedTemplate(template || null)
       
-      // Load selected asset details
-      const details: Record<number, AssetData | null> = {}
-      initialData.assets?.forEach((asset, index) => {
-        const assetDetail = availableAssets.find(a => a.id === asset.assetId)
-        if (assetDetail) {
-          details[index] = assetDetail
-        }
-      })
-      setSelectedAssetDetails(details)
+      if (template) {
+        // Initialize an array with the same length as required asset types
+        const newAssets = new Array(template.requiredAssetTypes.length).fill(null)
+        const details: Record<number, AssetData | null> = {}
+
+        // Map each asset to its corresponding position based on asset type
+        template.requiredAssetTypes.forEach((requiredType, index) => {
+          const matchingAsset = initialData.assets?.find(asset => asset.assetType === requiredType)
+          if (matchingAsset) {
+            newAssets[index] = matchingAsset
+            const assetDetail = availableAssets.find(a => a.id === matchingAsset.assetId)
+            if (assetDetail) {
+              details[index] = assetDetail
+            }
+          }
+        })
+
+        setFormData({
+          name: initialData.name,
+          templateType: initialData.type as GameAdTemplateType,
+          assets: newAssets
+        })
+        setSelectedAssetDetails(details)
+      }
     } else {
       setFormData({
         name: '',
-        templateType: undefined,
+        templateType: 'multimedia_display',
         assets: [],
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
       })
       setSelectedTemplate(null)
       setSelectedAssetDetails({})
@@ -99,27 +129,30 @@ export function GameAdDialog({ open, onClose, initialData, onSave }: GameAdDialo
   }, [initialData, availableAssets])
 
   const handleTemplateChange = (templateId: GameAdTemplateType) => {
-    const template = GAME_AD_TEMPLATES.find(t => t.id === templateId)
-    setSelectedTemplate(template || null)
-    
-    // Initialize assets array with empty values for each required asset type
-    const initializedAssets = template?.requiredAssetTypes.map(assetType => ({
-      assetType,
-      assetId: '',
-      robloxAssetId: ''
-    })) || []
-
-    console.log('Initializing assets:', JSON.stringify(initializedAssets, null, 2))
-    
-    setFormData(prev => ({
-      ...prev,
+    setFormData({
+      name: '',
       templateType: templateId,
-      assets: initializedAssets,
-    }))
-    setSelectedAssetDetails({})
+      assets: []
+    })
+    setSelectedTemplate(GAME_AD_TEMPLATES.find(t => t.id === templateId) || null)
   }
 
   const handleAssetChange = (index: number, assetId: string) => {
+    // Handle "none" selection
+    if (assetId === 'none') {
+      setSelectedAssetDetails(prev => ({
+        ...prev,
+        [index]: null
+      }))
+      
+      setFormData(prev => {
+        const newAssets = [...prev.assets]
+        newAssets[index] = null
+        return { ...prev, assets: newAssets }
+      })
+      return
+    }
+
     const selectedAsset = availableAssets.find(asset => asset.id === assetId)
     console.log('Selected asset:', selectedAsset)
     
@@ -131,38 +164,25 @@ export function GameAdDialog({ open, onClose, initialData, onSave }: GameAdDialo
     // Update selected asset details
     setSelectedAssetDetails(prev => ({
       ...prev,
-      [index]: selectedAsset,
+      [index]: selectedAsset
     }))
     
     // Update form data assets
     setFormData(prev => {
-      const newAssets = [...(prev.assets || [])]
-      
-      // Ensure all required fields are set
+      const newAssets = [...prev.assets]
       newAssets[index] = {
-        assetType: selectedAsset.assetType,
+        assetType: selectedAsset.assetType || selectedAsset.type as AssetType,
         assetId: selectedAsset.id,
         robloxAssetId: selectedAsset.robloxAssetId
       }
-      
-      // Log the updated array for debugging
-      console.log('Updated assets array:', JSON.stringify(newAssets, null, 2))
-
-      // Validate the updated array
-      const hasInvalidAssets = newAssets.some(asset => 
-        !asset || !asset.assetType || !asset.assetId || !asset.robloxAssetId
-      )
-
-      if (hasInvalidAssets) {
-        console.warn('Invalid assets in array:', newAssets)
-      }
-
       return { ...prev, assets: newAssets }
     })
   }
 
   const getAssetsByType = (assetType: AssetType) => {
-    return availableAssets.filter(asset => asset.assetType === assetType)
+    return availableAssets.filter(asset => 
+      asset.assetType === assetType || asset.type === assetType
+    );
   }
 
   const renderAssetPreview = (asset: AssetData | null, assetType: AssetType) => {
@@ -174,6 +194,7 @@ export function GameAdDialog({ open, onClose, initialData, onSave }: GameAdDialo
           <RobloxAssetPreview
             assetId={asset.robloxAssetId}
             height="200px"
+            priority={assetType === 'kol_character'}
           />
           <div className="mt-2 text-sm">
             <p className="font-medium">{asset.name}</p>
@@ -184,150 +205,207 @@ export function GameAdDialog({ open, onClose, initialData, onSave }: GameAdDialo
     )
   }
 
-  // Add a function to validate assets
-  const validateAssets = (assets: Asset[]) => {
-    const invalidAssets = assets.filter(asset => {
-      if (!asset.assetType || !asset.assetId) return true
-      
-      const selectedAsset = availableAssets.find(a => a.id === asset.assetId)
-      return !selectedAsset?.robloxAssetId
-    })
-
-    return {
-      isValid: invalidAssets.length === 0,
-      invalidAssets
-    }
+  // Helper function to validate asset type
+  const isValidAssetType = (type: string): type is AssetType => {
+    const validTypes: AssetType[] = [
+      'kol_character', 'hat', 'clothing', 'item', 'shoes', 
+      'animation', 'audio', 'multi_display'
+    ]
+    return validTypes.includes(type as AssetType)
   }
 
   const handleSubmit = async () => {
-    if (!formData.name) {
-      setError('Please fill in the name field')
-      return
-    }
-
-    // Add debug logging
-    console.log('Submitting form data:', JSON.stringify(formData, null, 2))
-    console.log('Selected asset details:', JSON.stringify(selectedAssetDetails, null, 2))
-    
-    const gameAdData = {
-      ...formData,
-      id: initialData?.id || `ad_${Date.now()}`,
-      updatedAt: new Date().toISOString(),
-    } as GameAd
-
-    // Validate that all required assets are present and have all required fields
-    const requiredAssetTypes = GAME_AD_TEMPLATES.find(t => t.id === gameAdData.templateType)?.requiredAssetTypes || []
-    const assets = gameAdData.assets || []
-
-    // Check if we have all required asset types
-    const missingAssetTypes = requiredAssetTypes.filter(type => 
-      !assets.some(asset => asset.assetType === type)
-    )
-
-    if (missingAssetTypes.length > 0) {
-      setError(`Missing required assets: ${missingAssetTypes.join(', ')}`)
-      return
-    }
-
-    // Check if all assets have required fields
-    const invalidAssets = assets.filter(asset => 
-      !asset.assetType || !asset.assetId || !asset.robloxAssetId
-    )
-
-    if (invalidAssets.length > 0) {
-      setError('Some assets are missing required fields')
-      console.error('Invalid assets:', invalidAssets)
-      return
-    }
-
     try {
       setLoading(true)
       setError(null)
-      await onSave(gameAdData)
+
+      // Validate form data
+      if (!formData.name.trim()) {
+        throw new Error('Name is required')
+      }
+
+      if (!formData.templateType) {
+        throw new Error('Please select a template')
+      }
+
+      // Get the selected template
+      const template = GAME_AD_TEMPLATES.find(t => t.id === formData.templateType)
+
+      // For Dancing NPC template, ensure KOL character is present
+      if (template?.id === 'dancing_npc') {
+        const hasKolCharacter = formData.assets?.some(asset => asset?.assetType === 'kol_character')
+        if (!hasKolCharacter) {
+          throw new Error('KOL character is required for Dancing NPC template')
+        }
+      }
+
+      // Filter out null assets and ensure all remaining assets have the required fields
+      const validatedAssets = (formData.assets || [])
+        .filter((asset): asset is Asset => asset !== null && 
+          asset.assetType !== undefined && 
+          asset.assetId !== undefined && 
+          asset.robloxAssetId !== undefined)
+        .map(asset => ({
+          assetType: asset.assetType,
+          assetId: asset.assetId,
+          robloxAssetId: asset.robloxAssetId
+        }))
+
+      // Prepare the data for submission
+      const submitData: GameAd = {
+        id: initialData?.id || '',
+        name: formData.name.trim(),
+        type: formData.templateType,
+        assets: validatedAssets,
+        createdAt: initialData?.createdAt || new Date(),
+        updatedAt: new Date(),
+        games: initialData?.games || [],
+        performance: initialData?.performance || [],
+        containers: initialData?.containers || []
+      }
+
+      console.log('Submitting game ad data:', submitData)
+      await onSave(submitData)
     } catch (error) {
-      console.error('Error saving game ad:', error)
-      setError('Failed to save game ad. Please try again.')
+      console.error('Error submitting form:', error)
+      setError(error instanceof Error ? error.message : 'Failed to save game ad')
     } finally {
       setLoading(false)
     }
   }
 
+  const renderAssetSelectors = () => {
+    if (!selectedTemplate) return null;
+
+    return selectedTemplate.requiredAssetTypes.map((assetType, index) => {
+      const assets = getAssetsByType(assetType);
+      const selectedAsset = selectedAssetDetails[index];
+      const isRequired = assetType === 'kol_character' && selectedTemplate.id === 'dancing_npc';
+
+      return (
+        <div key={assetType} className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label>{assetType.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</Label>
+            {isRequired && (
+              <span className="text-sm text-red-500">Required</span>
+            )}
+          </div>
+          <Select
+            value={formData.assets[index]?.assetId || 'none'}
+            onValueChange={(value) => handleAssetChange(index, value)}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder={`Select ${assetType.replace(/_/g, ' ')}`} />
+            </SelectTrigger>
+            <SelectContent>
+              {!isRequired && (
+                <SelectItem value="none">None</SelectItem>
+              )}
+              {assets.length > 0 ? (
+                assets.map((asset) => (
+                  <SelectItem key={asset.id} value={asset.id}>
+                    {asset.name}
+                  </SelectItem>
+                ))
+              ) : (
+                <div className="p-2 text-sm text-muted-foreground">
+                  No {assetType.replace(/_/g, ' ')} assets available
+                </div>
+              )}
+            </SelectContent>
+          </Select>
+          {selectedAsset && renderAssetPreview(selectedAsset, assetType)}
+        </div>
+      );
+    });
+  };
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] p-0">
-        <DialogHeader className="px-6 pt-6">
-          <DialogTitle>{initialData?.id ? 'Edit Game Ad' : 'Create New Game Ad'}</DialogTitle>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>
+            {initialData ? 'Edit Game Ad' : 'Create New Game Ad'}
+          </DialogTitle>
           <DialogDescription>
-            {initialData?.id ? 'Update your game ad details' : `Create a new ${selectedTemplate?.name}`}
+            {initialData ? 'Edit your game ad details below.' : 'Create a new game ad by filling out the details below.'}
           </DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="px-6 py-4 max-h-[calc(90vh-180px)]">
-          {error && (
-            <div className="bg-destructive/15 text-destructive px-4 py-2 rounded-md mb-4">
-              {error}
+        <div className="space-y-6 py-4">
+          <div className="space-y-2">
+            <Label>Name</Label>
+            <Input
+              value={formData.name}
+              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+              placeholder="Enter game ad name"
+            />
+          </div>
+
+          {!initialData && (
+            <div className="space-y-4">
+              <Label>Template</Label>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {GAME_AD_TEMPLATES.map((template) => (
+                  <Card
+                    key={template.id}
+                    className={cn(
+                      "cursor-pointer hover:border-primary transition-colors",
+                      formData.templateType === template.id && "border-primary"
+                    )}
+                    onClick={() => handleTemplateChange(template.id)}
+                  >
+                    <CardContent className="p-4">
+                      <div className="aspect-video relative mb-4">
+                        <Image
+                          src={template.thumbnail}
+                          alt={template.name}
+                          fill
+                          className="object-cover rounded-md"
+                          priority
+                          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                        />
+                      </div>
+                      <h3 className="font-medium">{template.name}</h3>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {template.description}
+                      </p>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             </div>
           )}
 
-          <div className="grid gap-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="name" className="text-right">
-                Name
-              </Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="col-span-3"
-              />
+          {(selectedTemplate || initialData) && (
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium">Assets</h3>
+              <ScrollArea className="h-[400px] pr-4">
+                {loading ? (
+                  <div className="flex items-center justify-center h-full">
+                    <Loader2 className="h-8 w-8 animate-spin" />
+                  </div>
+                ) : error ? (
+                  <div className="flex items-center justify-center h-full">
+                    <p className="text-red-500">{error}</p>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    {renderAssetSelectors()}
+                  </div>
+                )}
+              </ScrollArea>
             </div>
+          )}
+        </div>
 
-            {selectedTemplate && (
-              <div className="mt-4">
-                <h3 className="font-semibold mb-4">Required Assets</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {formData.assets?.map((asset, index) => {
-                    const assetsOfType = getAssetsByType(asset.assetType)
-                    return (
-                      <div key={index} className="space-y-4">
-                        <div className="grid grid-cols-4 items-center gap-4">
-                          <Label className="text-right">
-                            {asset.assetType}
-                          </Label>
-                          <div className="col-span-3">
-                            <Select
-                              value={asset.assetId}
-                              onValueChange={(value) => handleAssetChange(index, value)}
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder={`Select ${asset.assetType}`} />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {assetsOfType.map(option => (
-                                  <SelectItem key={option.id} value={option.id}>
-                                    {option.name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        </div>
-                        {renderAssetPreview(selectedAssetDetails[index], asset.assetType)}
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-            )}
-          </div>
-        </ScrollArea>
-
-        <DialogFooter className="px-6 py-4 border-t">
-          <Button variant="outline" onClick={onClose} disabled={loading}>
-            Cancel
-          </Button>
+        <DialogFooter>
+          {error && (
+            <div className="text-red-500 text-sm mb-2">{error}</div>
+          )}
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
           <Button onClick={handleSubmit} disabled={loading}>
-            {loading ? 'Saving...' : initialData?.id ? 'Update' : 'Create'}
+            {initialData ? 'Save Changes' : 'Create'}
           </Button>
         </DialogFooter>
       </DialogContent>

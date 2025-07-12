@@ -50,9 +50,7 @@ export async function GET(request: NextRequest) {
         id: ad.id,
         name: ad.name,
         type: ad.type,
-        status: ad.status,
         assets: ad.assets,
-        metrics: ad.metrics,
         createdAt: ad.createdAt,
         updatedAt: ad.updatedAt,
         latestPerformance: ad.performance[0] || null
@@ -109,14 +107,12 @@ export async function POST(request: NextRequest) {
     // Create the game ad
     const gameAd = await prisma.gameAd.create({
       data: {
+        id: `ad_${Date.now()}`,
         gameId: auth.gameId!,
         name: body.name,
         type: body.type,
-        status: body.status || 'draft',
-        assets: body.assets || [],
-        metrics: body.metrics || {},
-        schedule: body.schedule || {},
-        targeting: body.targeting || {}
+        assets: body.assets || {},
+        updatedAt: new Date()
       }
     })
 
@@ -126,7 +122,6 @@ export async function POST(request: NextRequest) {
         id: gameAd.id,
         name: gameAd.name,
         type: gameAd.type,
-        status: gameAd.status,
         createdAt: gameAd.createdAt
       }
     }, { status: 201 })

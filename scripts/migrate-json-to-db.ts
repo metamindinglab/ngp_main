@@ -2,6 +2,12 @@ import { PrismaClient } from '@prisma/client';
 import fs from 'fs/promises';
 import path from 'path';
 
+// Environment check
+if (process.env.NODE_ENV === 'production') {
+  console.error('❌ This script cannot be run in production');
+  process.exit(1);
+}
+
 const prisma = new PrismaClient();
 
 interface GameData {
@@ -24,7 +30,7 @@ interface GamesDatabase {
   games: GameData[];
 }
 
-async function migrateGamesToDatabase() {
+async function migrateGamesToDatabase(clearExisting: boolean = false) {
   try {
     console.log('Starting migration from JSON to database...');
     
@@ -35,9 +41,11 @@ async function migrateGamesToDatabase() {
     
     console.log(`Found ${data.games.length} games to migrate`);
     
-    // Clear existing games (optional - remove if you want to keep existing data)
-    await prisma.game.deleteMany();
-    console.log('Cleared existing games from database');
+    // Clear existing games only if explicitly requested
+    if (clearExisting) {
+      await prisma.game.deleteMany();
+      console.log('Cleared existing games from database');
+    }
     
     // Insert each game
     for (const game of data.games) {

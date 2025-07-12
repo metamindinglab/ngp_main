@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { jsonAuthService } from '@/lib/json-auth'
-import { cookies } from 'next/headers'
+import { prisma } from '@/lib/prisma'
+import { compare } from 'bcrypt'
+import { sign } from 'jsonwebtoken'
+
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key'
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,37 +16,61 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const result = await jsonAuthService.loginUser(email, password)
+    // Find user in database
+    const user = await prisma.gameOwner.findUnique({
+      where: { email: email.toLowerCase() }
+    })
 
-    if (!result.success) {
+    if (!user) {
       return NextResponse.json(
-        { success: false, error: result.error },
+        { success: false, error: 'Invalid credentials' },
         { status: 401 }
       )
     }
 
-    // Set session cookie
-    const response = NextResponse.json({
-      success: true,
-      user: {
-        id: result.user!.id,
-        gameOwnerId: result.user!.gameOwnerId,
-        email: result.user!.email,
-        name: result.user!.name,
-        country: result.user!.country,
-        discordId: result.user!.discordId
+    // Verify password
+    const isPasswordValid = await compare(password, user.password)
+    if (!isPasswordValid) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid credentials' },
+        { status: 401 }
+      )
+    }
+
+    // Get user's games
+    const games = await prisma.game.findMany({
+      where: { gameOwnerId: user.id },
+      select: {
+        id: true,
+        name: true,
+        genre: true,
+        thumbnail: true,
+        metrics: true
       }
     })
 
-    // Set httpOnly cookie for session
-    response.cookies.set('game-owner-session', result.sessionToken!, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60 // 7 days
-    })
+    // Create JWT token
+    const sessionToken = sign(
+      { userId: user.id },
+      JWT_SECRET,
+      { expiresIn: '7d' }
+    )
 
-    return response
+    // Return success with user data
+    return NextResponse.json({
+      success: true,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        gameOwnerId: user.id,
+        emailVerified: true,
+        lastLogin: new Date().toISOString()
+      },
+      games,
+      gamesCount: games.length,
+      sessionToken
+    })
   } catch (error) {
     console.error('Login error:', error)
     return NextResponse.json(

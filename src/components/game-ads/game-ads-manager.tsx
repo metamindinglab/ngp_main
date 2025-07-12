@@ -12,7 +12,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { GameAd, GAME_AD_TEMPLATES } from '@/types/gameAd'
+import { GameAd, GAME_AD_TEMPLATES, GameAdTemplate } from '@/types/gameAd'
 import { GameAdDialog } from './game-ad-dialog'
 import { useToast } from "@/components/ui/use-toast"
 import { useRouter } from "next/navigation"
@@ -22,6 +22,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { v4 as uuidv4 } from 'uuid'
 import { MMLLogo } from "@/components/ui/mml-logo"
+import { Badge } from "@/components/ui/badge"
 
 // Add color constants
 const COLORS = {
@@ -52,6 +53,28 @@ export function GameAdsManager() {
     url: "",
   })
   const { toast } = useToast()
+
+  const fetchGameAds = async () => {
+    try {
+      const response = await fetch('/api/game-ads')
+      if (!response.ok) {
+        throw new Error('Failed to fetch game ads')
+      }
+      const data = await response.json()
+      setGameAds(data.gameAds || [])
+    } catch (error) {
+      console.error('Error fetching game ads:', error)
+      toast({
+        title: "Error",
+        description: "Failed to fetch game ads",
+        variant: "destructive"
+      })
+    }
+  }
+
+  useEffect(() => {
+    fetchGameAds()
+  }, [])
 
   // Load game ads with pagination
   useEffect(() => {
@@ -94,7 +117,7 @@ export function GameAdsManager() {
           setError('Failed to load game ads. Please try again.');
           toast({
             title: "Error",
-            description: "Failed to load game ads. Please try again.",
+            description: "Failed to load game ads",
             variant: "destructive"
           });
         }
@@ -194,32 +217,87 @@ export function GameAdsManager() {
     setHasInitialLoad(false);
   }, [searchTerm]);
 
-  const handleDeleteAd = async (adId: string) => {
-    if (confirm('Are you sure you want to delete this game ad?')) {
-      try {
-        const response = await fetch(`/api/game-ads/${adId}`, { method: 'DELETE' })
-        if (!response.ok) {
-          throw new Error('Failed to delete game ad')
-        }
-        setGameAds(gameAds.filter(ad => ad.id !== adId))
-        toast({
-          title: "Success",
-          description: "Game ad deleted successfully."
-        })
-      } catch (error) {
-        console.error('Error deleting game ad:', error)
-        toast({
-          title: "Error",
-          description: "Failed to delete game ad. Please try again.",
-          variant: "destructive"
-        })
+  const handleEdit = (ad: GameAd) => {
+    setSelectedAd(ad)
+    setIsDialogOpen(true)
+  }
+
+  const handleSave = async (data: GameAd) => {
+    try {
+      setIsCreating(true)
+      
+      // Prepare the data for the API
+      const apiData = {
+        name: data.name,
+        type: data.type,
+        assets: data.assets,
+        gameIds: data.games.map(g => g.id)
       }
+
+      const response = await fetch(data.id ? `/api/game-ads/${data.id}` : '/api/game-ads', {
+        method: data.id ? 'PUT' : 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(apiData),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to save game ad')
+      }
+
+      await fetchGameAds()
+      setIsDialogOpen(false)
+      setSelectedAd(null)
+      toast({
+        title: "Success",
+        description: data.id ? "Game ad updated successfully" : "Game ad created successfully",
+      })
+    } catch (error) {
+      console.error('Error saving game ad:', error)
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to save game ad",
+        variant: "destructive"
+      })
+    } finally {
+      setIsCreating(false)
     }
   }
 
-  const filteredAds = gameAds.filter(ad => 
+  const handleDelete = async (ad: GameAd) => {
+    if (!confirm('Are you sure you want to delete this game ad?')) {
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/game-ads/${ad.id}`, {
+        method: 'DELETE',
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to delete game ad')
+      }
+
+      await fetchGameAds()
+      toast({
+        title: "Success",
+        description: "Game ad deleted successfully",
+      })
+    } catch (error) {
+      console.error('Error deleting game ad:', error)
+      toast({
+        title: "Error",
+        description: "Failed to delete game ad",
+        variant: "destructive"
+      })
+    }
+  }
+
+  const filteredAds = Array.isArray(gameAds) ? gameAds.filter(ad => 
     ad.name.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  ) : [];
 
   const handleCreateGameAd = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -261,6 +339,22 @@ export function GameAdsManager() {
     }
   }
 
+  const handleTemplateClick = (template: GameAdTemplate) => {
+    const newAd: GameAd = {
+      id: '',
+      name: '',
+      type: template.id,
+      assets: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      games: [],
+      performance: [],
+      containers: []
+    }
+    setSelectedAd(newAd)
+    setIsDialogOpen(true)
+  }
+
   if (isLoading) {
     return (
       <div className="container mx-auto p-6">
@@ -282,124 +376,104 @@ export function GameAdsManager() {
   }
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="flex flex-col space-y-6">
-        <Link href="/" className="self-start transform hover:scale-105 transition-transform">
-          <MMLLogo />
-        </Link>
-
-        <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold" style={{ color: COLORS.primary }}>Game Ads Manager</h1>
+    <div className="container mx-auto py-8">
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold">Game Ads Manager</h1>
+        <div className="flex gap-4">
           <Input
             placeholder="Search ads..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-64 border-gray-200 focus:border-primary focus:ring-primary transition-colors"
+            className="w-64"
           />
         </div>
+      </div>
 
-        <div className="space-y-6">
-          <h2 className="text-2xl font-semibold" style={{ color: COLORS.accent }}>Ad Templates</h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="space-y-8">
+        <div>
+          <h2 className="text-2xl font-semibold mb-4">Ad Templates</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {GAME_AD_TEMPLATES.map(template => (
-              <Card key={template.id} className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border-l-4" style={{ borderLeftColor: COLORS.primary }}>
-                <CardHeader>
-                  <CardTitle className="text-lg font-semibold group-hover:text-primary transition-colors">{template.name}</CardTitle>
-                  <CardDescription className="text-gray-600">{template.description}</CardDescription>
-                </CardHeader>
-                <CardContent className="relative overflow-hidden rounded-md group">
-                  <Image
-                    src={template.thumbnail}
-                    alt={template.name}
-                    width={400}
-                    height={300}
-                    className="w-full h-48 object-cover transform group-hover:scale-105 transition-transform duration-300"
-                    style={{ width: '100%', height: '192px' }}
-                  />
-                </CardContent>
-                <CardFooter>
+              <Card key={template.id} className="group hover:shadow-lg transition-all duration-300">
+                <CardContent className="p-6">
+                  <div className="aspect-video relative mb-4">
+                    <Image
+                      src={template.thumbnail}
+                      alt={template.name}
+                      fill
+                      className="object-cover rounded-md"
+                      priority
+                    />
+                  </div>
+                  <h3 className="text-xl font-semibold mb-2">{template.name}</h3>
+                  <p className="text-muted-foreground mb-4">{template.description}</p>
                   <Button
-                    className="w-full bg-primary hover:bg-primary/90 text-white transition-all duration-300 hover:scale-[1.02]"
-                    onClick={() => {
-                      setSelectedAd({
-                        id: '',
-                        name: '',
-                        templateType: template.id,
-                        createdAt: new Date().toISOString(),
-                        updatedAt: new Date().toISOString(),
-                        assets: template.requiredAssetTypes.map(assetType => ({
-                          assetType,
-                          assetId: '',
-                          robloxAssetId: ''
-                        })),
-                      })
-                      setIsDialogOpen(true)
-                    }}
+                    className="w-full"
+                    onClick={() => handleTemplateClick(template)}
                   >
                     Create New Ad
                   </Button>
-                </CardFooter>
-              </Card>
-            ))}
-          </div>
-
-          <h2 className="text-2xl font-semibold mt-8" style={{ color: COLORS.secondary }}>Your Game Ads</h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredAds.map(ad => (
-              <Card key={ad.id} className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border-l-4" style={{ borderLeftColor: COLORS.primary }}>
-                <CardHeader>
-                  <CardTitle className="text-lg font-semibold group-hover:text-primary transition-colors">{ad.name}</CardTitle>
-                  <CardDescription className="text-gray-600">Template: {GAME_AD_TEMPLATES.find(t => t.id === ad.templateType)?.name}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex items-center justify-between p-2 rounded hover:bg-gray-50 transition-colors">
-                      <span className="text-gray-600">Created:</span>
-                      <span className="text-gray-900">{new Date(ad.createdAt).toLocaleDateString()}</span>
-                    </div>
-                    <div className="flex items-center justify-between p-2 rounded hover:bg-gray-50 transition-colors">
-                      <span className="text-gray-600">Last Updated:</span>
-                      <span className="text-gray-900">{new Date(ad.updatedAt).toLocaleDateString()}</span>
-                    </div>
-                  </div>
                 </CardContent>
-                <CardFooter className="flex justify-end gap-2">
-                  <Button
-                    variant="outline"
-                    className="border-2 border-gray-300 hover:border-primary hover:bg-primary/5 hover:text-primary transition-all duration-300 hover:scale-105"
-                    onClick={() => {
-                      setSelectedAd(ad)
-                      setIsDialogOpen(true)
-                    }}
-                  >
-                    Edit
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    className="border-2 border-destructive bg-white text-destructive hover:bg-destructive hover:text-white transition-all duration-300 hover:scale-105"
-                    onClick={() => handleDeleteAd(ad.id)}
-                  >
-                    Delete
-                  </Button>
-                </CardFooter>
               </Card>
             ))}
           </div>
         </div>
 
-        {isFetchingMore && (
-          <div className="flex justify-center py-4">
-            <div className="text-lg text-muted-foreground">Loading more...</div>
-          </div>
-        )}
-
-        {!isLoading && !isFetchingMore && gameAds.length === 0 && (
-          <div className="text-center py-8 text-muted-foreground">
-            No game ads found{searchTerm ? ` matching "${searchTerm}"` : ''}.
-          </div>
-        )}
+        <div>
+          <h2 className="text-2xl font-semibold mb-4">Your Game Ads</h2>
+          {isLoading ? (
+            <div className="flex justify-center items-center h-64">
+              <div className="text-lg text-muted-foreground">Loading game ads...</div>
+            </div>
+          ) : error ? (
+            <div className="flex justify-center items-center h-64">
+              <div className="text-lg text-red-500">{error}</div>
+            </div>
+          ) : filteredAds.length === 0 ? (
+            <div className="flex justify-center items-center h-64">
+              <div className="text-lg text-muted-foreground">
+                {searchTerm ? `No game ads found matching "${searchTerm}"` : 'No game ads found'}
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {filteredAds.map(ad => (
+                <Card key={ad.id} className="group hover:shadow-lg transition-all duration-300">
+                  <CardContent className="p-6">
+                    <div className="flex justify-between items-start mb-4">
+                      <div>
+                        <h3 className="text-xl font-semibold">{ad.name}</h3>
+                        <p className="text-sm text-muted-foreground">
+                          Template: {GAME_AD_TEMPLATES.find(t => t.id === ad.type)?.name}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="space-y-2 text-sm text-muted-foreground">
+                      <p>Created: {new Date(ad.createdAt).toLocaleDateString()}</p>
+                      <p>Last Updated: {new Date(ad.updatedAt).toLocaleDateString()}</p>
+                    </div>
+                    <div className="flex gap-2 mt-4">
+                      <Button
+                        variant="outline"
+                        className="flex-1"
+                        onClick={() => handleEdit(ad)}
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        className="flex-1"
+                        onClick={() => handleDelete(ad)}
+                      >
+                        Delete
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       <GameAdDialog
@@ -409,45 +483,7 @@ export function GameAdsManager() {
           setSelectedAd(null)
         }}
         initialData={selectedAd}
-        onSave={async (adData) => {
-          try {
-            const method = selectedAd?.id ? 'PUT' : 'POST'
-            const url = selectedAd?.id ? `/api/game-ads/${selectedAd.id}` : '/api/game-ads'
-            
-            const response = await fetch(url, {
-              method,
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(adData)
-            })
-
-            if (!response.ok) {
-              const errorData = await response.json()
-              throw new Error(errorData.error || 'Failed to save game ad')
-            }
-
-            const savedAd = await response.json()
-            
-            if (selectedAd?.id) {
-              setGameAds(ads => ads.map(ad => ad.id === selectedAd.id ? savedAd : ad))
-            } else {
-              setGameAds(ads => [...ads, savedAd])
-            }
-            
-            setIsDialogOpen(false)
-            setSelectedAd(null)
-            toast({
-              title: "Success",
-              description: "Game ad saved successfully."
-            })
-          } catch (error) {
-            console.error('Error saving game ad:', error)
-            toast({
-              title: "Error",
-              description: "Failed to save game ad. Please try again.",
-              variant: "destructive"
-            })
-          }
-        }}
+        onSave={handleSave}
       />
     </div>
   )

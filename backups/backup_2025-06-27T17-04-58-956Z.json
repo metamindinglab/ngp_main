@@ -1,0 +1,342 @@
+{
+  "assets": [
+    {
+      "id": "k1",
+      "name": "TechTrix",
+      "type": "kol_character",
+      "metadata": "{\"description\":\"Tech-savvy gaming influencer with a vibrant personality\",\"tags\":[\"gaming\",\"tech\",\"influencer\"],\"characterType\":\"Streamer\",\"appearance\":{\"gender\":\"Female\",\"style\":[\"Streetwear\",\"Tech-wear\",\"Urban\"],\"hairStyle\":\"Neon Purple Bob Cut\",\"hairColor\":\"Purple\",\"height\":\"Medium\",\"features\":[\"RGB Glasses\",\"Holographic Accessories\",\"Tech Tattoos\"]},\"personality\":[\"Energetic\",\"Tech-Savvy\",\"Trendy\"],\"defaultAnimations\":[\"Victory Dance\",\"Gaming Pose\",\"Energetic Wave\"],\"suitableFor\":{\"brands\":[\"Gaming Peripherals\",\"Energy Drinks\",\"Tech Gadgets\"],\"products\":[\"Gaming Chairs\",\"Headphones\",\"Custom PC Builds\"],\"gameTypes\":[\"Esports Arenas\",\"Gaming Cafes\",\"Tech Conventions\"]},\"marketingCapabilities\":[\"Brand Integration\",\"Live Game Reviews\",\"Tech Unboxing\"]}",
+      "relationships": null,
+      "createdAt": "2024-03-01T00:00:00.000Z",
+      "updatedAt": "2024-03-20T00:00:00.000Z"
+    },
+    {
+      "id": "c1",
+      "name": "White & Black Stitches Cozy Hoodie",
+      "type": "Model",
+      "metadata": "{\"description\":\"The white & black variant of the Eternos Digital STITCHES cozy hoodie series.\",\"tags\":[\"nike\",\"hoodie\",\"casual\"],\"image\":\"/customization/outfits/Nike-hoodie.png\",\"previewImage\":\"/customization/outfits/Nike-hoodie-preview.png\",\"compatibility\":[\"Gamer\",\"Athlete\",\"Lifestyle\",\"Artist\",\"Fashion\"],\"brands\":[\"Nike\"],\"size\":[\"S\",\"M\",\"L\",\"XL\"],\"itemType\":\"Clothing\",\"lastUpdated\":\"2025-06-24T05:45:18.182Z\"}",
+      "relationships": null,
+      "createdAt": "2024-03-01T00:00:00.000Z",
+      "updatedAt": "2025-06-24T05:45:19.603Z"
+    },
+    {
+      "id": "mg1",
+      "name": "Wheel Of Luck",
+      "type": "minigame",
+      "metadata": "{\"description\":\"Embark on a journey of luck and excitement with our exclusive Wheel of Fortune Spinner with your brand logo! This eye catching game accessory brings the thrill of spinning for prizes right to your avatar, good branding exposure.\",\"tags\":[\"game\",\"interactive\",\"wheel\"],\"marketingCapabilities\":[\"Brand Awareness\",\"Product Showcase\",\"Lead Generation\"],\"difficulty\":\"Easy\",\"maxPlayers\":1,\"gameplayDuration\":\"45 seconds\",\"customizableElements\":[{\"id\":\"wheel-bg\",\"name\":\"Wheel Background\",\"type\":\"image\",\"description\":\"Background image behind the wheel\"}]}",
+      "relationships": null,
+      "createdAt": "2024-03-01T00:00:00.000Z",
+      "updatedAt": "2025-03-29T04:49:39.129Z"
+    },
+    {
+      "id": "h1",
+      "name": "White 94 Baseball Cap",
+      "type": "hat",
+      "metadata": "{\"description\":\"More UGC: https://www.roblox.com/catalog?Category=1&CreatorName=Rey%20x%20Noob&CreatorType=Group&salesTypeFilter=1\\n\",\"tags\":[\"supreme\",\"cap\",\"streetwear\"],\"image\":\"/customization/hats/supreme-cap.png\",\"compatibility\":[\"Lifestyle\",\"Fashion\"],\"brands\":[\"Supreme\"]}",
+      "relationships": null,
+      "createdAt": "2024-03-01T00:00:00.000Z",
+      "updatedAt": "2025-03-21T14:53:38.210Z"
+    },
+    {
+      "id": "a1",
+      "name": "Frosty Flair - Tommy Hilfiger",
+      "type": "animation",
+      "metadata": "{\"description\":\"Celebratory dance animation for victory moments\",\"tags\":[\"dance\",\"celebration\"],\"compatibility\":[\"All\"],\"duration\":\"3.5 seconds\",\"category\":\"emote\",\"previewUrl\":\"/animations/victory-dance-preview.mp4\"}",
+      "relationships": null,
+      "createdAt": "2024-03-01T00:00:00.000Z",
+      "updatedAt": "2025-03-21T15:54:01.720Z"
+    },
+    {
+      "id": "img1",
+      "name": "Brand Logo Collection",
+      "type": "image",
+      "metadata": "{\"description\":\"High-resolution brand logos for in-game displays\",\"tags\":[\"logos\",\"branding\",\"marketing\"],\"url\":\"/images/brand-logos.png\",\"dimensions\":{\"width\":1920,\"height\":1080},\"fileFormat\":\"png\",\"fileSize\":2048}",
+      "relationships": null,
+      "createdAt": "2024-03-01T00:00:00.000Z",
+      "updatedAt": "2024-03-20T00:00:00.000Z"
+    },
+    {
+      "id": "aud1",
+      "name": "Victory Fanfare",
+      "type": "audio",
+      "metadata": "{\"description\":\"Triumphant music for victory moments\",\"tags\":[\"music\",\"victory\",\"fanfare\"],\"duration\":\"5.5 seconds\",\"url\":\"/audio/victory-fanfare.mp3\",\"fileFormat\":\"mp3\",\"fileSize\":1024}",
+      "relationships": null,
+      "createdAt": "2024-03-01T00:00:00.000Z",
+      "updatedAt": "2024-03-20T00:00:00.000Z"
+    },
+    {
+      "id": "vid1",
+      "name": "Brand Introduction",
+      "type": "video",
+      "metadata": "{\"description\":\"Video introduction for brand partnership\",\"tags\":[\"brand\",\"intro\",\"marketing\"],\"duration\":\"30 seconds\",\"url\":\"/videos/brand-intro.mp4\",\"dimensions\":{\"width\":1920,\"height\":1080},\"fileFormat\":\"mp4\",\"fileSize\":15360}",
+      "relationships": null,
+      "createdAt": "2024-03-01T00:00:00.000Z",
+      "updatedAt": "2024-03-20T00:00:00.000Z"
+    },
+    {
+      "id": "s1",
+      "name": "Dr. Boots",
+      "type": "shoes",
+      "metadata": "{\"description\":\"Dr. Marten Boot (Black)\",\"tags\":[\"boots\",\"dr-martens\",\"fashion\"],\"image\":\"/customization/outfits/DrMartenBoots.png\",\"compatibility\":[\"Artist\",\"Fashion\"],\"brands\":[\"Dr. Martens\"],\"size\":[\"UK6\",\"UK7\",\"UK8\",\"UK9\",\"UK10\"]}",
+      "relationships": null,
+      "createdAt": "2024-03-01T00:00:00.000Z",
+      "updatedAt": "2025-03-21T14:57:36.763Z"
+    },
+    {
+      "id": "k2",
+      "name": "SportStar",
+      "type": "kol_character",
+      "metadata": "{\"description\":\"Professional athlete influencer focused on sports and fitness\",\"tags\":[\"sports\",\"fitness\",\"athlete\"],\"characterType\":\"Athlete\",\"appearance\":{\"gender\":\"Male\",\"style\":[\"Athletic\",\"Sporty\",\"Modern\"],\"hairStyle\":\"Fade Cut\",\"hairColor\":\"Black\",\"height\":\"Tall\",\"features\":[\"Athletic Build\",\"Sports Accessories\",\"Team Jersey\"]},\"personality\":[\"Competitive\",\"Motivational\",\"Team Player\"],\"defaultAnimations\":[\"Sports Celebration\",\"Training Routine\",\"Victory Pose\"],\"suitableFor\":{\"brands\":[\"Sports Apparel\",\"Fitness Equipment\",\"Health Supplements\"],\"products\":[\"Athletic Shoes\",\"Sports Gear\",\"Energy Bars\"],\"gameTypes\":[\"Sports Games\",\"Training Simulators\",\"Competition Venues\"]},\"marketingCapabilities\":[\"Brand Endorsements\",\"Fitness Challenges\",\"Sports Events\"]}",
+      "relationships": null,
+      "createdAt": "2024-03-01T00:00:00.000Z",
+      "updatedAt": "2024-03-20T00:00:00.000Z"
+    },
+    {
+      "id": "k3",
+      "name": "ArtisticSoul",
+      "type": "kol_character",
+      "metadata": "{\"description\":\"Creative digital artist and design influencer\",\"tags\":[\"art\",\"design\",\"creative\"],\"characterType\":\"Artist\",\"appearance\":{\"gender\":\"Neutral\",\"style\":[\"Artistic\",\"Bohemian\",\"Creative\"],\"hairStyle\":\"Colorful Undercut\",\"hairColor\":\"Rainbow\",\"height\":\"Medium\",\"features\":[\"Paint Splatter Clothes\",\"Digital Tablet\",\"Creative Accessories\"]},\"personality\":[\"Creative\",\"Expressive\",\"Inspiring\"],\"defaultAnimations\":[\"Drawing Pose\",\"Creative Expression\",\"Artistic Flourish\"],\"suitableFor\":{\"brands\":[\"Art Supplies\",\"Digital Tools\",\"Creative Software\"],\"products\":[\"Drawing Tablets\",\"Art Materials\",\"Creative Tools\"],\"gameTypes\":[\"Art Studios\",\"Creative Spaces\",\"Design Workshops\"]},\"marketingCapabilities\":[\"Art Tutorials\",\"Creative Collaborations\",\"Digital Art Showcases\"]}",
+      "relationships": null,
+      "createdAt": "2024-03-01T00:00:00.000Z",
+      "updatedAt": "2024-03-20T00:00:00.000Z"
+    },
+    {
+      "id": "k4",
+      "name": "StyleIcon",
+      "type": "kol_character",
+      "metadata": "{\"description\":\"Fashion and lifestyle influencer with a keen eye for trends\",\"tags\":[\"fashion\",\"lifestyle\",\"luxury\"],\"characterType\":\"Fashion Influencer\",\"appearance\":{\"gender\":\"Female\",\"style\":[\"High Fashion\",\"Trendy\",\"Luxury\"],\"hairStyle\":\"Long Wavy\",\"hairColor\":\"Blonde\",\"height\":\"Tall\",\"features\":[\"Designer Accessories\",\"Premium Outfits\",\"Runway Walk\"]},\"personality\":[\"Sophisticated\",\"Trendsetter\",\"Charismatic\"],\"defaultAnimations\":[\"Catwalk\",\"Photo Pose\",\"Elegant Wave\"],\"suitableFor\":{\"brands\":[\"Fashion Brands\",\"Luxury Items\",\"Beauty Products\"],\"products\":[\"Designer Clothes\",\"Accessories\",\"Cosmetics\"],\"gameTypes\":[\"Fashion Shows\",\"Shopping Centers\",\"Beauty Studios\"]},\"marketingCapabilities\":[\"Fashion Showcases\",\"Style Tips\",\"Brand Collaborations\"]}",
+      "relationships": null,
+      "createdAt": "2024-03-01T00:00:00.000Z",
+      "updatedAt": "2024-03-20T00:00:00.000Z"
+    },
+    {
+      "id": "c2",
+      "name": "Adidas Black Professional Shirt",
+      "type": "clothing",
+      "metadata": "{\"description\":\"Adidas Black Professional Shirt\",\"tags\":[\"adidas\",\"sports\",\"athletic\"],\"image\":\"/customization/outfits/White-shirt-Adidas.png\",\"compatibility\":[\"Athlete\",\"Lifestyle\"],\"brands\":[\"Adidas\"],\"size\":[\"S\",\"M\",\"L\",\"XL\"]}",
+      "relationships": null,
+      "createdAt": "2024-03-01T00:00:00.000Z",
+      "updatedAt": "2025-03-21T15:03:59.656Z"
+    },
+    {
+      "id": "c3",
+      "name": "Adidas Anger Tracksuit Top",
+      "type": "clothing",
+      "metadata": "{\"description\":\"Adidas Anger Tracksuit Top (Red)\",\"tags\":[\"streetwear\",\"casual\",\"Adidas\"],\"image\":\"/customization/outfits/White-Shirt-Supreme.png\",\"compatibility\":[\"Lifestyle\",\"Artist\"],\"brands\":[\"Adidas\"],\"size\":[\"S\",\"M\",\"L\",\"XL\"]}",
+      "relationships": null,
+      "createdAt": "2024-03-01T00:00:00.000Z",
+      "updatedAt": "2025-03-21T15:13:12.926Z"
+    },
+    {
+      "id": "c4",
+      "name": "Naruto Jacket",
+      "type": "clothing",
+      "metadata": "{\"description\":\"Channel your inner ninja with this high-quality jacket inspired by Naruto Uzumaki.\",\"tags\":[\"gucci\",\"luxury\",\"jacket\"],\"image\":\"/customization/outfits/Color-jacket-Gucci.png\",\"compatibility\":[\"Fashion\",\"Lifestyle\"],\"brands\":[\"Naruto\"],\"size\":[\"S\",\"M\",\"L\",\"XL\"]}",
+      "relationships": null,
+      "createdAt": "2024-03-01T00:00:00.000Z",
+      "updatedAt": "2025-03-21T15:00:48.705Z"
+    },
+    {
+      "id": "s2",
+      "name": "Nike Air 1's Sneakers",
+      "type": "shoes",
+      "metadata": "{\"description\":\"Nike Air One (Green)\",\"tags\":[\"nike\",\"sneakers\",\"athletic\"],\"image\":\"/customization/outfits/MixColor-Nike-AirMax.png\",\"compatibility\":[\"Athlete\",\"Lifestyle\"],\"brands\":[\"Nike\"],\"size\":[\"US7\",\"US8\",\"US9\",\"US10\",\"US11\"]}",
+      "relationships": null,
+      "createdAt": "2024-03-01T00:00:00.000Z",
+      "updatedAt": "2025-03-21T15:18:31.166Z"
+    },
+    {
+      "id": "s3",
+      "name": "Large Classic Billboard",
+      "type": "multi_display",
+      "metadata": "{\"description\":\"Large Classic Billboard\",\"tags\":[\"Billboard\"],\"image\":\"/customization/outfits/Red-shoes-Adidas-Superstar.png\",\"compatibility\":[\"Lifestyle\",\"Fashion\"],\"brands\":[\"Adidas\"],\"size\":[\"US7\",\"US8\",\"US9\",\"US10\",\"US11\"]}",
+      "relationships": null,
+      "createdAt": "2024-03-01T00:00:00.000Z",
+      "updatedAt": "2025-03-21T15:50:27.126Z"
+    },
+    {
+      "id": "i1",
+      "name": "Coke",
+      "type": "item",
+      "metadata": "{\"description\":\"Coca Coka Red can\",\"tags\":[\"drink\",\"prop\",\"beverage\"],\"image\":\"/customization/items/CocaCola.png\",\"brands\":[\"Coca-Cola\"]}",
+      "relationships": null,
+      "createdAt": "2024-03-01T00:00:00.000Z",
+      "updatedAt": "2025-03-21T15:40:21.022Z"
+    },
+    {
+      "id": "i2",
+      "name": "Pepsi Blue Soda Can",
+      "type": "item",
+      "metadata": "{\"description\":\"Pepsi Blue Soda Can\",\"tags\":[\"drink\",\"prop\",\"beverage\"],\"image\":\"/customization/items/Pepsi.png\",\"brands\":[\"Pepsi\"]}",
+      "relationships": null,
+      "createdAt": "2024-03-01T00:00:00.000Z",
+      "updatedAt": "2025-03-21T15:43:40.602Z"
+    },
+    {
+      "id": "i3",
+      "name": "Redbull",
+      "type": "item",
+      "metadata": "{\"description\":\"Redbull \",\"tags\":[\"drink\",\"prop\",\"energy\",\"Redbull\"],\"image\":\"/customization/items/Redbull.png\",\"brands\":[\"Red Bull\"]}",
+      "relationships": null,
+      "createdAt": "2024-03-01T00:00:00.000Z",
+      "updatedAt": "2025-03-21T15:45:16.222Z"
+    },
+    {
+      "id": "i4",
+      "name": "Monster Energy",
+      "type": "item",
+      "metadata": "{\"description\":\"Interactive Monster Energy can prop\",\"tags\":[\"drink\",\"prop\",\"energy\",\"Monster\"],\"image\":\"/customization/items/MonsterEnergy.png\",\"brands\":[\"Monster\"]}",
+      "relationships": null,
+      "createdAt": "2024-03-01T00:00:00.000Z",
+      "updatedAt": "2025-03-21T15:37:18.649Z"
+    },
+    {
+      "id": "a2",
+      "name": "Hips Poppin' - Zara Larsson",
+      "type": "Animation",
+      "metadata": "{\"description\":\"Get your groove on!\",\"tags\":[\"dance\",\"hip-hop\",\"emote\"],\"compatibility\":[\"Lifestyle\",\"Artist\"],\"itemType\":\"Animation\",\"duration\":\"4.0 seconds\",\"category\":\"emote\",\"previewUrl\":\"/customization/animations/hiphop.png\",\"lastUpdated\":\"2025-04-27T23:55:54.632Z\"}",
+      "relationships": null,
+      "createdAt": "2024-03-01T00:00:00.000Z",
+      "updatedAt": "2025-04-27T23:55:56.153Z"
+    },
+    {
+      "id": "a3",
+      "name": "Victory Dance",
+      "type": "animation",
+      "metadata": "{\"description\":\"BIG WINNER ENERGY\",\"tags\":[\"victory\",\"celebration\",\"emote\"],\"compatibility\":[\"Athlete\",\"Gamer\"],\"duration\":\"3.0 seconds\",\"category\":\"emote\",\"previewUrl\":\"/customization/animations/Victory.png\"}",
+      "relationships": null,
+      "createdAt": "2024-03-01T00:00:00.000Z",
+      "updatedAt": "2025-03-21T15:56:26.216Z"
+    },
+    {
+      "id": "a4",
+      "name": "Drink Animation",
+      "type": "animation",
+      "metadata": "{\"description\":\"Generic drinking animation\",\"tags\":[\"drink\",\"action\",\"emote\"],\"duration\":\"2.5 seconds\",\"category\":\"action\",\"previewUrl\":\"/customization/animations/Drinking.png\"}",
+      "relationships": null,
+      "createdAt": "2024-03-01T00:00:00.000Z",
+      "updatedAt": "2024-03-20T00:00:00.000Z"
+    },
+    {
+      "id": "bb1",
+      "name": "Premium Billboard - Landscape",
+      "type": "multiMediaSignage",
+      "metadata": "{\"description\":\"Large format landscape billboard for premium game advertising\",\"tags\":[\"billboard\",\"landscape\",\"premium\"],\"dimensions\":{\"width\":1920,\"height\":1080}}",
+      "relationships": null,
+      "createdAt": "2024-03-01T00:00:00.000Z",
+      "updatedAt": "2025-03-29T03:34:56.184Z"
+    },
+    {
+      "id": "bb2",
+      "name": "City Square Billboard",
+      "type": "multiMediaSignage",
+      "metadata": "{\"description\":\"Central square billboard with high visibility\",\"tags\":[\"billboard\",\"square\",\"central\"],\"dimensions\":{\"width\":2560,\"height\":1440}}",
+      "relationships": null,
+      "createdAt": "2024-03-01T00:00:00.000Z",
+      "updatedAt": "2025-03-29T03:20:54.561Z"
+    },
+    {
+      "id": "bb3",
+      "name": "Digital Billboard - Portrait",
+      "type": "multiMediaSignage",
+      "metadata": "{\"description\":\"Vertical digital billboard with animation support\",\"tags\":[\"billboard\",\"portrait\",\"digital\"],\"dimensions\":{\"width\":1080,\"height\":1920}}",
+      "relationships": null,
+      "createdAt": "2024-03-01T00:00:00.000Z",
+      "updatedAt": "2025-03-29T03:33:25.663Z"
+    },
+    {
+      "id": "asset_004",
+      "name": "Default KOL character (Male)",
+      "type": "kol_character",
+      "metadata": "{\"description\":\"Male teenager in-game KOL character with short hair, medium build body. \",\"tags\":[\"male\",\"teenager\",\"short hair\",\"medium build body\"]}",
+      "relationships": null,
+      "createdAt": "2025-03-29T03:59:38.739Z",
+      "updatedAt": "2025-03-29T04:00:13.148Z"
+    },
+    {
+      "id": "asset_005",
+      "name": "Basketball shooting machine with Ad display",
+      "type": "minigame",
+      "metadata": "{\"description\":\"A fun arcade basketball shooting machine providing advertisement embedding.  Optional function to distribute rewards.  \",\"tags\":[\"basketball\",\"shooting\",\"arcade\",\"ad\",\"reward\"]}",
+      "relationships": null,
+      "createdAt": "2025-03-29T04:43:38.593Z",
+      "updatedAt": "2025-03-29T04:44:56.391Z"
+    },
+    {
+      "id": "asset_006",
+      "name": "Amnesty International Hoodie (Yellow)",
+      "type": "clothing",
+      "metadata": "{\"description\":\"Amnesty International Hoodie (Yellow)\",\"tags\":[\"Amnesty International\",\"NGO\",\"Hoodie\"]}",
+      "relationships": null,
+      "createdAt": "2025-03-29T10:29:52.910Z",
+      "updatedAt": "2025-03-29T16:11:01.676Z"
+    },
+    {
+      "id": "asset_007",
+      "name": "Pepsi logo",
+      "type": "image",
+      "metadata": "{\"description\":\"Pepsi logo (Blue Round)\",\"tags\":[\"Pepsi\",\"Blue\",\"Round\"]}",
+      "relationships": null,
+      "createdAt": "2025-04-01T16:55:02.067Z",
+      "updatedAt": "2025-04-01T16:55:02.067Z"
+    },
+    {
+      "id": "asset_008",
+      "name": "APT_Dance_Song",
+      "type": "audio",
+      "metadata": "{\"description\":\"Popular APT Song by Rose and Bruno Mars\",\"tags\":[\"APT\",\"Dance\",\"Song\"]}",
+      "relationships": null,
+      "createdAt": "2025-04-07T13:59:45.232Z",
+      "updatedAt": "2025-04-07T13:59:45.232Z"
+    },
+    {
+      "id": "asset_009",
+      "name": "YAS Insurance logo (Updated)",
+      "type": "Decal",
+      "metadata": "{\"description\":\"The logo of the YAS insurance app\",\"tags\":[\"YAS\",\"insurance\",\"logo\"],\"itemType\":\"image\",\"lastUpdated\":\"2025-04-08T15:36:30.777Z\"}",
+      "relationships": null,
+      "createdAt": "2025-04-08T05:39:11.585Z",
+      "updatedAt": "2025-04-08T15:36:39.375Z"
+    },
+    {
+      "id": "asset_010",
+      "name": "TikTok Popular Dance 1",
+      "type": "animation",
+      "metadata": "{\"description\":\"TikTok Popular Dance 1\",\"tags\":[\"TikTok Popular Dance\",\"style\"],\"itemType\":\"Animation\"}",
+      "relationships": null,
+      "createdAt": "2025-04-09T15:55:15.472Z",
+      "updatedAt": "2025-04-09T15:55:15.472Z"
+    }
+  ],
+  "gameAdPerformance": [
+    {
+      "id": "perf_001",
+      "gameAdId": "ad_1742820645812",
+      "metrics": "{\"totalImpressions\":15000,\"uniqueImpressions\":12000,\"totalEngagements\":4500,\"uniqueEngagements\":3800,\"averageEngagementDuration\":45,\"engagementRate\":30,\"completionRate\":85,\"conversionRate\":31.67}",
+      "createdAt": "2025-06-27T16:32:25.746Z",
+      "updatedAt": "2025-06-27T16:32:25.746Z"
+    }
+  ],
+  "gameMedia": [
+    {
+      "id": "image_1742794313661",
+      "type": "image",
+      "title": "ETF-V3.webp",
+      "localPath": "/media/game_005/1742794313661-ETF-V3.webp",
+      "thumbnailUrl": "/media/game_005/1742794313661-ETF-V3.webp",
+      "gameId": "game_005",
+      "createdAt": "2025-06-27T16:32:25.561Z",
+      "updatedAt": "2025-06-27T16:32:25.566Z"
+    },
+    {
+      "id": "image_1742794313862",
+      "type": "image",
+      "title": "ETF-v2.webp",
+      "localPath": "/media/game_005/1742794313862-ETF-v2.webp",
+      "thumbnailUrl": "/media/game_005/1742794313862-ETF-v2.webp",
+      "gameId": "game_005",
+      "createdAt": "2025-06-27T16:32:25.570Z",
+      "updatedAt": "2025-06-27T16:32:25.575Z"
+    }
+  ],
+  "timestamp": "2025-06-27T17:04:58.956Z"
+}

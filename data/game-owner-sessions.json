@@ -1,13 +1,6 @@
 {
   "sessions": [
     {
-      "id": "0cad2b8a-ab43-43af-8736-10ad8cbb8cd9",
-      "userId": "aebc960f-ab0f-4209-a445-e0d179382d2a",
-      "sessionToken": "0f6d1ef6-ee4d-48f5-a8fa-e781f0fb858b",
-      "expiresAt": "2025-07-02T16:37:21.199Z",
-      "createdAt": "2025-06-25T16:37:21.199Z"
-    },
-    {
       "id": "7c1d8426-4e24-43ed-a6ba-7b4b49cd7017",
       "userId": "1f40029a-f7ad-414a-92f1-bb905c0cae7e",
       "sessionToken": "5db1d584-6500-4811-adfa-1de36856d63e",
@@ -34,6 +27,34 @@
       "sessionToken": "c032c90b-73f2-4b3b-8952-b071e0ec1ca3",
       "expiresAt": "2025-07-03T02:13:56.920Z",
       "createdAt": "2025-06-26T02:13:56.920Z"
+    },
+    {
+      "id": "d767746e-ac8c-4b83-bd02-ed1c37dbc523",
+      "userId": "aebc960f-ab0f-4209-a445-e0d179382d2a",
+      "sessionToken": "774b6ee9-6987-4b0a-8c58-4a8af81fd38f",
+      "expiresAt": "2025-07-06T06:58:49.992Z",
+      "createdAt": "2025-06-29T06:58:49.992Z"
+    },
+    {
+      "id": "64a75daf-0a08-44e7-a1ac-e4013d7ed454",
+      "userId": "aebc960f-ab0f-4209-a445-e0d179382d2a",
+      "sessionToken": "74fac364-0b1a-4c43-bcf1-47604d0fa6c6",
+      "expiresAt": "2025-07-06T08:37:10.171Z",
+      "createdAt": "2025-06-29T08:37:10.171Z"
+    },
+    {
+      "id": "fe983fd8-c763-424a-9ae0-76c43bef3929",
+      "userId": "aebc960f-ab0f-4209-a445-e0d179382d2a",
+      "sessionToken": "1866ab99-bc66-47c7-a4e0-afa7b8421aac",
+      "expiresAt": "2025-07-08T12:46:31.329Z",
+      "createdAt": "2025-07-01T12:46:31.329Z"
+    },
+    {
+      "id": "d7ea0763-bd71-4f7b-889b-bd994b7579c8",
+      "userId": "aebc960f-ab0f-4209-a445-e0d179382d2a",
+      "sessionToken": "f69965c5-10e3-4f00-bc4d-8ed71e278996",
+      "expiresAt": "2025-07-08T13:18:51.361Z",
+      "createdAt": "2025-07-01T13:18:51.361Z"
     }
   ]
 }

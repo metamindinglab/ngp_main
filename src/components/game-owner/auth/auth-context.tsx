@@ -54,7 +54,27 @@ export function GameOwnerAuthProvider({ children }: { children: React.ReactNode 
 
   const checkAuth = async () => {
     try {
-      const response = await fetch('/api/game-owner/auth/me')
+      // Only access localStorage on the client side
+      if (typeof window === 'undefined') {
+        setIsLoading(false)
+        return
+      }
+
+      const sessionToken = localStorage.getItem('gameOwnerSessionToken')
+      if (!sessionToken) {
+        setUser(null)
+        setGames([])
+        setGamesCount(0)
+        setIsLoading(false)
+        return
+      }
+
+      const response = await fetch('/api/game-owner/auth/me', {
+        headers: {
+          'Authorization': `Bearer ${sessionToken}`,
+          'Content-Type': 'application/json'
+        }
+      })
       const data = await response.json()
 
       if (data.success) {
@@ -62,12 +82,18 @@ export function GameOwnerAuthProvider({ children }: { children: React.ReactNode 
         setGames(data.games || [])
         setGamesCount(data.gamesCount || 0)
       } else {
+        // Clear invalid token
+        localStorage.removeItem('gameOwnerSessionToken')
         setUser(null)
         setGames([])
         setGamesCount(0)
       }
     } catch (error) {
       console.error('Auth check failed:', error)
+      // Clear token on error
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('gameOwnerSessionToken')
+      }
       setUser(null)
       setGames([])
       setGamesCount(0)
@@ -93,6 +119,8 @@ export function GameOwnerAuthProvider({ children }: { children: React.ReactNode 
       const data = await response.json()
 
       if (data.success) {
+        // Store session token
+        localStorage.setItem('gameOwnerSessionToken', data.sessionToken)
         await checkAuth() // Refresh user data
         return { success: true }
       } else {
@@ -123,6 +151,8 @@ export function GameOwnerAuthProvider({ children }: { children: React.ReactNode 
       const data = await response.json()
 
       if (data.success) {
+        // Store session token
+        localStorage.setItem('gameOwnerSessionToken', data.sessionToken)
         await checkAuth() // Refresh user data
         return { success: true }
       } else {
@@ -136,9 +166,15 @@ export function GameOwnerAuthProvider({ children }: { children: React.ReactNode 
 
   const logout = async () => {
     try {
+      const sessionToken = localStorage.getItem('gameOwnerSessionToken')
       await fetch('/api/game-owner/auth/logout', {
         method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${sessionToken}`
+        }
       })
+      // Clear session token
+      localStorage.removeItem('gameOwnerSessionToken')
     } catch (error) {
       console.error('Logout failed:', error)
     } finally {

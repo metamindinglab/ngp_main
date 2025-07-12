@@ -33,6 +33,11 @@ interface MetricDataPoint {
   updatedAt: Date;
 }
 
+interface MetricLastUpdate {
+  metricType: MetricType;
+  lastUpdated: Date | null;
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: { gameId: string } }
@@ -65,6 +70,49 @@ export async function GET(
       WHERE "gameId" = ${params.gameId}
       ORDER BY date ASC
     `;
+
+    console.log('Total metric data points:', metricData.length);
+    console.log('Metric types found:', [...new Set(metricData.map(m => m.metricType))]);
+
+    // Get last update dates for each metric type
+    const lastUpdates = await prisma.$queryRaw<MetricLastUpdate[]>`
+      SELECT DISTINCT ON ("metricType") 
+        "metricType",
+        "updatedAt" as "lastUpdated"
+      FROM "GameMetricData"
+      WHERE "gameId" = ${params.gameId}
+      ORDER BY "metricType", "updatedAt" DESC
+    `;
+
+    console.log('Last updates:', lastUpdates);
+
+    // Create a map of metric types to their last update dates
+    const lastUpdateMap = new Map<string, Date | null>();
+    lastUpdates.forEach(update => {
+      lastUpdateMap.set(update.metricType, update.lastUpdated);
+    });
+
+    // Get all possible metric types
+    const allMetricTypes = Object.values(MetricType);
+
+    // Create a complete last updates object including missing metrics
+    const metricUpdates = allMetricTypes.map(type => ({
+      metricType: type,
+      lastUpdated: lastUpdateMap.get(type) || null,
+      isOutdated: false
+    }));
+
+    // Mark metrics as outdated if they haven't been updated in the last 7 days
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    metricUpdates.forEach(metric => {
+      if (!metric.lastUpdated || metric.lastUpdated < sevenDaysAgo) {
+        metric.isOutdated = true;
+      }
+    });
+
+    console.log('Raw metric data:', JSON.stringify(metricData, null, 2));
 
     // Transform the data into the format expected by the frontend
     const metrics = {
@@ -108,7 +156,30 @@ export async function GET(
       },
     };
 
-    return NextResponse.json({ metrics });
+    // Log counts for each metric type
+    Object.entries(metrics).forEach(([key, value]) => {
+      if (key === 'demographics') {
+        const demographics = value as {
+          country: { category: string; value: number; }[];
+          gender: { category: string; value: number; }[];
+          language: { category: string; value: number; }[];
+          age: { category: string; value: number; }[];
+        };
+        Object.entries(demographics).forEach(([dKey, dValue]) => {
+          console.log(`Demographics - ${dKey} count:`, dValue.length);
+        });
+      } else {
+        const timeSeriesData = value as { date: Date; value: number; }[];
+        console.log(`${key} count:`, timeSeriesData.length);
+      }
+    });
+
+    console.log('Transformed metrics:', JSON.stringify(metrics, null, 2));
+
+    return NextResponse.json({ 
+      metrics,
+      metricUpdates
+    });
   } catch (error) {
     console.error('Error fetching metrics:', error);
     return NextResponse.json(

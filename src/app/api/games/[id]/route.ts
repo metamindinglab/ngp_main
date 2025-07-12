@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
+import { prisma } from '@/lib/prisma'
 import crypto from 'crypto'
-
-const prisma = new PrismaClient()
 
 export async function GET(
   request: Request,
@@ -10,7 +8,18 @@ export async function GET(
 ) {
   try {
     const game = await prisma.game.findUnique({
-      where: { id: params.id }
+      where: { id: params.id },
+      include: {
+        media: {
+          select: {
+            id: true,
+            type: true,
+            title: true,
+            localPath: true,
+            thumbnailUrl: true
+          }
+        }
+      }
     })
     
     if (!game) {
@@ -24,74 +33,11 @@ export async function GET(
   }
 }
 
-export async function PUT(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
-  try {
-    const updatedGame = await request.json()
-    
-    // Check if game exists
-    const existingGame = await prisma.game.findUnique({
-      where: { id: params.id }
-    })
-    
-    if (!existingGame) {
-      return NextResponse.json({ error: 'Game not found' }, { status: 404 })
-    }
-
-    // Ensure we preserve the game ID
-    updatedGame.id = params.id
-
-    // Update the game and timestamps
-    const game = await prisma.game.update({
-      where: { id: params.id },
-      data: {
-        ...updatedGame,
-        updatedAt: new Date()
-      }
-    })
-    
-    return NextResponse.json(game)
-  } catch (error) {
-    console.error('Error updating game:', error)
-    return NextResponse.json({ error: 'Failed to update game' }, { status: 500 })
-  }
-}
-
-export async function DELETE(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
-  try {
-    // Check if game exists
-    const existingGame = await prisma.game.findUnique({
-      where: { id: params.id }
-    })
-    
-    if (!existingGame) {
-      return NextResponse.json({ error: 'Game not found' }, { status: 404 })
-    }
-    
-    // Delete the game
-    await prisma.game.delete({
-      where: { id: params.id }
-    })
-    
-    return NextResponse.json({ success: true })
-  } catch (error) {
-    console.error('Error deleting game:', error)
-    return NextResponse.json({ error: 'Failed to delete game' }, { status: 500 })
-  }
-}
-
 export async function POST(
   request: Request,
   { params }: { params: { id: string } }
 ) {
   try {
-    // TODO: Add authentication/authorization check to ensure only the game owner or admin can generate a key
-    
     // Check if game exists
     const existingGame = await prisma.game.findUnique({
       where: { id: params.id }
@@ -123,7 +69,80 @@ export async function POST(
   } catch (error) {
     console.error('Error generating server API key:', error)
     return NextResponse.json({ error: 'Failed to generate server API key' }, { status: 500 })
-  } finally {
-    await prisma.$disconnect()
+  }
+}
+
+export async function PUT(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const body = await request.json()
+    
+    // Check if game exists
+    const existingGame = await prisma.game.findUnique({
+      where: { id: params.id }
+    })
+    
+    if (!existingGame) {
+      return NextResponse.json({ error: 'Game not found' }, { status: 404 })
+    }
+    
+    // Update the game
+    const updatedGame = await prisma.game.update({
+      where: { id: params.id },
+      data: {
+        name: body.name,
+        description: body.description,
+        genre: body.genre,
+        robloxLink: body.robloxLink,
+        robloxAuthorization: body.robloxAuthorization,
+        metrics: body.metrics,
+        owner: body.owner,
+        updatedAt: new Date()
+      },
+      include: {
+        media: {
+          select: {
+            id: true,
+            type: true,
+            title: true,
+            localPath: true,
+            thumbnailUrl: true
+          }
+        }
+      }
+    })
+    
+    return NextResponse.json(updatedGame)
+  } catch (error) {
+    console.error('Error updating game:', error)
+    return NextResponse.json({ error: 'Failed to update game' }, { status: 500 })
+  }
+}
+
+export async function DELETE(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    // Check if game exists
+    const existingGame = await prisma.game.findUnique({
+      where: { id: params.id }
+    })
+    
+    if (!existingGame) {
+      return NextResponse.json({ error: 'Game not found' }, { status: 404 })
+    }
+    
+    // Delete the game
+    await prisma.game.delete({
+      where: { id: params.id }
+    })
+    
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error('Error deleting game:', error)
+    return NextResponse.json({ error: 'Failed to delete game' }, { status: 500 })
   }
 } 

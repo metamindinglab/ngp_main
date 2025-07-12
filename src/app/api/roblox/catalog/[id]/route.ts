@@ -15,7 +15,8 @@ async function fetchWithRetry(url: string, options: RequestInit, retries = 3, de
         ...options,
         headers: {
           ...options.headers,
-          'Accept': 'application/json'
+          'Accept': 'application/json',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
         }
       });
 
@@ -55,55 +56,97 @@ async function fetchWithRetry(url: string, options: RequestInit, retries = 3, de
 async function getAssetDetails(assetId: string) {
   // Try the economy API first
   console.log('Trying economy API...');
-  const assetResponse = await fetchWithRetry(
-    `https://economy.roblox.com/v2/assets/${assetId}/details`,
-    {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json'
+  try {
+    const assetResponse = await fetchWithRetry(
+      `https://economy.roblox.com/v2/assets/${assetId}/details`,
+      {
+        method: 'GET'
+      }
+    );
+
+    if (assetResponse.ok) {
+      const assetData = await assetResponse.json();
+      console.log('Economy API response:', assetData);
+
+      if (assetData.AssetId) {
+        // Also fetch the thumbnail URL
+        const thumbnailResponse = await fetch(
+          `https://thumbnails.roblox.com/v1/assets?assetIds=${assetId}&size=420x420&format=Png`,
+          {
+            headers: {
+              'Accept': 'application/json'
+            }
+          }
+        );
+        
+        let thumbnailUrl = null;
+        if (thumbnailResponse.ok) {
+          const thumbnailData = await thumbnailResponse.json();
+          if (thumbnailData.data?.[0]?.imageUrl) {
+            thumbnailUrl = thumbnailData.data[0].imageUrl;
+          }
+        }
+
+        return {
+          assetId: assetData.AssetId,
+          name: assetData.Name,
+          description: assetData.Description,
+          assetType: assetData.AssetTypeId,
+          creator: assetData.Creator,
+          thumbnailUrl,
+          previewUrl: thumbnailUrl
+        };
       }
     }
-  );
-
-  if (assetResponse.ok) {
-    const assetData = await assetResponse.json();
-    console.log('Economy API response:', assetData);
-
-    if (assetData.AssetId) {
-      return {
-        assetId: assetData.AssetId,
-        name: assetData.Name,
-        description: assetData.Description,
-        assetType: assetData.AssetTypeId,
-        creator: assetData.Creator
-      };
-    }
+  } catch (error) {
+    console.error('Economy API error:', error);
   }
 
   // If economy API fails, try the marketplace API
   console.log('Trying marketplace API...');
-  const marketplaceResponse = await fetchWithRetry(
-    `https://www.roblox.com/marketplace/productinfo?assetId=${assetId}`,
-    {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json'
+  try {
+    const marketplaceResponse = await fetchWithRetry(
+      `https://www.roblox.com/marketplace/productinfo?assetId=${assetId}`,
+      {
+        method: 'GET'
+      }
+    );
+
+    if (marketplaceResponse.ok) {
+      const marketplaceData = await marketplaceResponse.json();
+      console.log('Marketplace API response:', marketplaceData);
+
+      if (marketplaceData.AssetId) {
+        // Also fetch the thumbnail URL
+        const thumbnailResponse = await fetch(
+          `https://thumbnails.roblox.com/v1/assets?assetIds=${assetId}&size=420x420&format=Png`,
+          {
+            headers: {
+              'Accept': 'application/json'
+            }
+          }
+        );
+        
+        let thumbnailUrl = null;
+        if (thumbnailResponse.ok) {
+          const thumbnailData = await thumbnailResponse.json();
+          if (thumbnailData.data?.[0]?.imageUrl) {
+            thumbnailUrl = thumbnailData.data[0].imageUrl;
+          }
+        }
+
+        return {
+          assetId: marketplaceData.AssetId,
+          name: marketplaceData.Name,
+          description: marketplaceData.Description,
+          assetType: marketplaceData.AssetTypeId,
+          thumbnailUrl,
+          previewUrl: thumbnailUrl
+        };
       }
     }
-  );
-
-  if (marketplaceResponse.ok) {
-    const marketplaceData = await marketplaceResponse.json();
-    console.log('Marketplace API response:', marketplaceData);
-
-    if (marketplaceData.AssetId) {
-      return {
-        assetId: marketplaceData.AssetId,
-        name: marketplaceData.Name,
-        description: marketplaceData.Description,
-        assetType: marketplaceData.AssetTypeId
-      };
-    }
+  } catch (error) {
+    console.error('Marketplace API error:', error);
   }
 
   return null;
@@ -112,20 +155,21 @@ async function getAssetDetails(assetId: string) {
 async function getCatalogDetails(catalogId: string) {
   // Try the catalog v1 API
   console.log('Trying catalog API...');
-  const catalogResponse = await fetchWithRetry(
-    `https://catalog.roblox.com/v1/catalog/items/${catalogId}/details`,
-    {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json'
+  try {
+    const catalogResponse = await fetchWithRetry(
+      `https://catalog.roblox.com/v1/catalog/items/${catalogId}/details`,
+      {
+        method: 'GET'
       }
-    }
-  );
+    );
 
-  if (catalogResponse.ok) {
-    const catalogData = await catalogResponse.json();
-    console.log('Catalog API response:', catalogData);
-    return catalogData;
+    if (catalogResponse.ok) {
+      const catalogData = await catalogResponse.json();
+      console.log('Catalog API response:', catalogData);
+      return catalogData;
+    }
+  } catch (error) {
+    console.error('Catalog API error:', error);
   }
 
   return null;

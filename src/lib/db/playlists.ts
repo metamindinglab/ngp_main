@@ -7,8 +7,9 @@ export type PlaylistUpdateInput = Prisma.PlaylistUpdateInput;
 export async function getAllPlaylists() {
   return prisma.playlist.findMany({
     include: {
-      assets: true,
-      games: true,
+      AssetPlaylists: true,
+      GamePlaylists: true,
+      schedules: true,
     },
   });
 }
@@ -17,8 +18,9 @@ export async function getPlaylistById(id: string) {
   return prisma.playlist.findUnique({
     where: { id },
     include: {
-      assets: true,
-      games: true,
+      AssetPlaylists: true,
+      GamePlaylists: true,
+      schedules: true,
     },
   });
 }
@@ -27,8 +29,9 @@ export async function createPlaylist(data: PlaylistCreateInput) {
   return prisma.playlist.create({
     data,
     include: {
-      assets: true,
-      games: true,
+      AssetPlaylists: true,
+      GamePlaylists: true,
+      schedules: true,
     },
   });
 }
@@ -38,8 +41,9 @@ export async function updatePlaylist(id: string, data: PlaylistUpdateInput) {
     where: { id },
     data,
     include: {
-      assets: true,
-      games: true,
+      AssetPlaylists: true,
+      GamePlaylists: true,
+      schedules: true,
     },
   });
 }
@@ -53,15 +57,16 @@ export async function deletePlaylist(id: string) {
 export async function getPlaylistsByGameId(gameId: string) {
   return prisma.playlist.findMany({
     where: {
-      games: {
+      GamePlaylists: {
         some: {
-          id: gameId,
+          A: gameId,
         },
       },
     },
     include: {
-      assets: true,
-      games: true,
+      AssetPlaylists: true,
+      GamePlaylists: true,
+      schedules: true,
     },
   });
 }
@@ -69,15 +74,16 @@ export async function getPlaylistsByGameId(gameId: string) {
 export async function getPlaylistsByAssetId(assetId: string) {
   return prisma.playlist.findMany({
     where: {
-      assets: {
+      AssetPlaylists: {
         some: {
-          id: assetId,
+          A: assetId,
         },
       },
     },
     include: {
-      assets: true,
-      games: true,
+      AssetPlaylists: true,
+      GamePlaylists: true,
+      schedules: true,
     },
   });
 } 

@@ -93,4 +93,63 @@
 
 .group:hover .group-hover\:-rotate-12 {
   transform: rotate(-12deg);
+}
+
+/* Calendar alignment fixes for react-day-picker */
+.rdp {
+  margin: 0;
+}
+
+.rdp-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.rdp-head_row {
+  display: flex;
+  width: 100%;
+}
+
+.rdp-head_cell {
+  width: 14.28%;
+  text-align: center;
+  padding: 0.5rem;
+  font-weight: 500;
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rdp-row {
+  display: flex;
+  width: 100%;
+  margin-top: 0.5rem;
+}
+
+.rdp-cell {
+  width: 14.28%;
+  text-align: center;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rdp-button {
+  width: 2.5rem;
+  height: 2.5rem;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rdp-day {
+  width: 2.5rem;
+  height: 2.5rem;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 } 

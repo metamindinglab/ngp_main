@@ -7,8 +7,16 @@ export type AssetUpdateInput = Prisma.AssetUpdateInput;
 export async function getAllAssets() {
   return prisma.asset.findMany({
     include: {
-      games: true,
-      playlists: true,
+      GameAssets: {
+        include: {
+          Game: true
+        }
+      },
+      AssetPlaylists: {
+        include: {
+          Playlist: true
+        }
+      },
     },
     orderBy: {
       updatedAt: 'desc'  // Sort by most recently updated first
@@ -20,8 +28,16 @@ export async function getAssetById(id: string) {
   return prisma.asset.findUnique({
     where: { id },
     include: {
-      games: true,
-      playlists: true,
+      GameAssets: {
+        include: {
+          Game: true
+        }
+      },
+      AssetPlaylists: {
+        include: {
+          Playlist: true
+        }
+      },
     },
   });
 }
@@ -30,8 +46,16 @@ export async function createAsset(data: AssetCreateInput) {
   return prisma.asset.create({
     data,
     include: {
-      games: true,
-      playlists: true,
+      GameAssets: {
+        include: {
+          Game: true
+        }
+      },
+      AssetPlaylists: {
+        include: {
+          Playlist: true
+        }
+      },
     },
   });
 }
@@ -41,8 +65,16 @@ export async function updateAsset(id: string, data: AssetUpdateInput) {
     where: { id },
     data,
     include: {
-      games: true,
-      playlists: true,
+      GameAssets: {
+        include: {
+          Game: true
+        }
+      },
+      AssetPlaylists: {
+        include: {
+          Playlist: true
+        }
+      },
     },
   });
 }
@@ -56,15 +88,23 @@ export async function deleteAsset(id: string) {
 export async function getAssetsByGameId(gameId: string) {
   return prisma.asset.findMany({
     where: {
-      games: {
+      GameAssets: {
         some: {
-          id: gameId,
+          B: gameId,
         },
       },
     },
     include: {
-      games: true,
-      playlists: true,
+      GameAssets: {
+        include: {
+          Game: true
+        }
+      },
+      AssetPlaylists: {
+        include: {
+          Playlist: true
+        }
+      },
     },
   });
 }
@@ -72,15 +112,23 @@ export async function getAssetsByGameId(gameId: string) {
 export async function getAssetsByPlaylistId(playlistId: string) {
   return prisma.asset.findMany({
     where: {
-      playlists: {
+      AssetPlaylists: {
         some: {
-          id: playlistId,
+          B: playlistId,
         },
       },
     },
     include: {
-      games: true,
-      playlists: true,
+      GameAssets: {
+        include: {
+          Game: true
+        }
+      },
+      AssetPlaylists: {
+        include: {
+          Playlist: true
+        }
+      },
     },
   });
-} 
+}

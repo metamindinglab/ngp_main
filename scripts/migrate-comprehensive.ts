@@ -2,6 +2,12 @@ import { PrismaClient } from '@prisma/client'
 import { readFile } from 'fs/promises'
 import { join } from 'path'
 
+// Environment check
+if (process.env.NODE_ENV === 'production') {
+  console.error('❌ This script cannot be run in production');
+  process.exit(1);
+}
+
 const prisma = new PrismaClient()
 
 async function clearAllData() {
@@ -65,51 +71,31 @@ async function runComprehensiveMigration() {
 }
 
 async function verifyMigration() {
-  console.log('🔍 Verifying migration results...\n')
+  console.log('🔍 Verifying migration results...')
   
   try {
-    // Count all records
+    // Get current counts
     const counts = {
       games: await prisma.game.count(),
       assets: await prisma.asset.count(),
-      playlists: await prisma.playlist.count(),
       gameAds: await prisma.gameAd.count(),
       gameAdPerformance: await prisma.gameAdPerformance.count(),
-      removableAssets: await prisma.removableAsset.count()
+      playlists: await prisma.playlist.count()
     }
     
-    console.log('📊 Migration Results:')
-    console.log(`   Games: ${counts.games}`)
-    console.log(`   Assets: ${counts.assets}`)
-    console.log(`   Playlists: ${counts.playlists}`)
-    console.log(`   Game Ads: ${counts.gameAds}`)
-    console.log(`   Game Ad Performance: ${counts.gameAdPerformance}`)
-    console.log(`   Removable Assets: ${counts.removableAssets}`)
-    
-    // Verify foreign key relationships by checking for orphaned records
-    console.log('\n🔗 Verifying foreign key relationships...')
-    
+    // Check foreign key relationships
     const gameAds = await prisma.gameAd.findMany({
-      include: { game: true }
+      include: { games: true }
     })
     
-    const performanceRecords = await prisma.gameAdPerformance.findMany({
-      include: { gameAd: true }
-    })
+    // Check for invalid relationships
+    const gameAdsWithInvalidGames = gameAds.filter(ad => ad.games.length === 0).length
     
-    const gameAdsWithInvalidGames = gameAds.filter(ad => !ad.game).length
-    const performanceWithInvalidAds = performanceRecords.filter(perf => !perf.gameAd).length
-    
+    console.log('\n🔗 Foreign Key Relationship Check:')
     if (gameAdsWithInvalidGames > 0) {
-      console.error(`❌ Found ${gameAdsWithInvalidGames} GameAds with invalid game references`)
+      console.log(`   ❌ Found ${gameAdsWithInvalidGames} game ads without associated games`)
     } else {
-      console.log('   ✓ All GameAds have valid Game references')
-    }
-    
-    if (performanceWithInvalidAds > 0) {
-      console.error(`❌ Found ${performanceWithInvalidAds} GameAdPerformance records with invalid GameAd references`)
-    } else {
-      console.log('   ✓ All GameAdPerformance records have valid GameAd references')
+      console.log('   ✅ All game ads have valid game references')
     }
     
     // Expected data counts (based on JSON files)
@@ -118,7 +104,7 @@ async function verifyMigration() {
       assets: 34, // Based on assets.json  
       gameAds: 3, // Based on game-ads.json
       gameAdPerformance: 1, // Based on game-ad-performance.json
-      playlists: 1 // Based on playlists.json (only contains 1 playlist)
+      playlists: 1 // Based on playlists.json
     }
     
     console.log('\n📈 Migration Success Analysis:')

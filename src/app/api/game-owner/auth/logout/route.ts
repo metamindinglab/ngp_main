@@ -1,24 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { jsonAuthService } from '@/lib/json-auth'
 
 export async function POST(request: NextRequest) {
   try {
-    const sessionToken = request.cookies.get('game-owner-session')?.value
+    // Note: With JWT tokens, we don't need to do anything server-side
+    // The client should simply remove the token from localStorage
+    // If we want to implement token blacklisting in the future,
+    // we can add that functionality here
 
-    if (sessionToken) {
-      await jsonAuthService.logout(sessionToken)
-    }
-
-    // Clear session cookie
-    const response = NextResponse.json({ success: true })
-    response.cookies.set('game-owner-session', '', {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 0 // Expire immediately
-    })
-
-    return response
+    // Return success response
+    return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Logout error:', error)
     return NextResponse.json(

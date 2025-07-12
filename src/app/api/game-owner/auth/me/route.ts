@@ -1,58 +1,72 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { jsonAuthService } from '@/lib/json-auth'
-import { getOwnerGames } from '@/utils/extractGameOwners'
+import { prisma } from '@/lib/prisma'
+import { verify } from 'jsonwebtoken'
+
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key'
 
 export async function GET(request: NextRequest) {
   try {
-    const sessionToken = request.cookies.get('game-owner-session')?.value
+    // Get session token from Authorization header
+    const authHeader = request.headers.get('Authorization')
+    const sessionToken = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null
 
     if (!sessionToken) {
       return NextResponse.json(
-        { success: false, error: 'No session found' },
+        { success: false, error: 'Unauthorized' },
         { status: 401 }
       )
     }
 
-    const user = await jsonAuthService.validateSession(sessionToken)
+    // Verify JWT token
+    let userId: string
+    try {
+      const decoded = verify(sessionToken, JWT_SECRET) as { userId: string }
+      userId = decoded.userId
+    } catch (error) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid or expired token' },
+        { status: 401 }
+      )
+    }
+
+    // Get user from database
+    const user = await prisma.gameOwner.findUnique({
+      where: { id: userId }
+    })
 
     if (!user) {
-      // Clear invalid session cookie
-      const response = NextResponse.json(
-        { success: false, error: 'Invalid session' },
-        { status: 401 }
+      return NextResponse.json(
+        { success: false, error: 'User not found' },
+        { status: 404 }
       )
-      response.cookies.set('game-owner-session', '', {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 0
-      })
-      return response
     }
 
-    // Get user's games
-    const userGames = getOwnerGames(user.email)
+    // Get games for this user
+    const games = await prisma.game.findMany({
+      where: {
+        gameOwnerId: user.id
+      },
+      select: {
+        id: true,
+        name: true,
+        genre: true,
+        thumbnail: true,
+        metrics: true
+      }
+    })
 
     return NextResponse.json({
       success: true,
       user: {
         id: user.id,
-        gameOwnerId: user.gameOwnerId,
         email: user.email,
         name: user.name,
-        country: user.country,
-        discordId: user.discordId,
-        lastLogin: user.lastLogin,
-        emailVerified: user.emailVerified
+        gameOwnerId: user.id,
+        emailVerified: true,
+        lastLogin: new Date().toISOString()
       },
-      gamesCount: userGames.length,
-      games: userGames.map(game => ({
-        id: game.id,
-        name: game.name,
-        genre: game.genre,
-        thumbnail: game.thumbnail,
-        metrics: game.metrics
-      }))
+      games,
+      gamesCount: games.length
     })
   } catch (error) {
     console.error('Get user error:', error)

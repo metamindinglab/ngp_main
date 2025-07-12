@@ -5,20 +5,25 @@ import { addCorsHeaders, handleAuth, applyRateLimit, addRateLimitHeaders, handle
 
 // Helper function to transform database asset to UI format
 function transformDatabaseAssetToUI(dbAsset: any) {
+  // Ensure metadata is an object, not a string
+  const metadata = typeof dbAsset.metadata === 'string' ? 
+    JSON.parse(dbAsset.metadata) : 
+    (dbAsset.metadata || {});
+    
   return {
     id: dbAsset.id,
     name: dbAsset.name,
-    description: dbAsset.metadata?.description || '',
+    description: metadata.description || '',
     type: dbAsset.type || '',
     assetType: dbAsset.type || '',  // For backward compatibility
     robloxAssetId: dbAsset.robloxId || '',
-    thumbnail: dbAsset.metadata?.thumbnail || '',
-    tags: dbAsset.metadata?.tags || [],
+    thumbnail: metadata.thumbnail || '',
+    tags: metadata.tags || [],
     createdAt: dbAsset.createdAt?.toISOString() || '',
     updatedAt: dbAsset.updatedAt?.toISOString() || '',
     lastUpdated: dbAsset.updatedAt?.toISOString() || '',
     // Additional metadata fields
-    ...dbAsset.metadata
+    ...metadata
   };
 }
 
@@ -85,11 +90,13 @@ export async function POST(request: NextRequest) {
     
     // Transform UI data to database format
     const dbAssetData = {
+      id: assetData.id || `asset_${Date.now()}`,
       name: assetData.name,
       type: assetData.assetType || assetData.type,
       status: 'active',
       robloxId: assetData.robloxAssetId,
       creator: assetData.creator || null,
+      updatedAt: new Date(),
       metadata: {
         description: assetData.description,
         thumbnail: assetData.thumbnail || '',

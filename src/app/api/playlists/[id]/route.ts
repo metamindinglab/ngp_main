@@ -1,5 +1,3 @@
-"use client"
-
 import { NextResponse } from 'next/server'
 import { PrismaClient, Prisma } from '@prisma/client'
 import { randomUUID } from 'crypto'
@@ -25,61 +23,66 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const playlist = await prisma.$queryRaw`
+    const result = await prisma.$queryRaw`
       SELECT p.*, 
-        json_agg(DISTINCT jsonb_build_object(
-          'id', ps.id,
-          'playlistId', ps."playlistId",
-          'gameAdId', ps."gameAdId",
-          'startDate', ps."startDate",
-          'duration', ps.duration,
-          'status', ps.status,
-          'createdAt', ps."createdAt",
-          'updatedAt', ps."updatedAt",
-          'deployments', (
-            SELECT json_agg(jsonb_build_object(
-              'id', gd.id,
-              'gameId', gd."gameId",
-              'status', gd.status,
-              'createdAt', gd."createdAt",
-              'updatedAt', gd."updatedAt",
-              'game', (
+        COALESCE(
+          json_agg(
+            DISTINCT jsonb_build_object(
+              'id', ps.id,
+              'playlistId', ps."playlistId",
+              'gameAdId', ps."gameAdId",
+              'startDate', ps."startDate",
+              'duration', ps.duration,
+              'status', ps.status,
+              'createdAt', ps."createdAt",
+              'updatedAt', ps."updatedAt",
+              'deployments', (
+                SELECT json_agg(jsonb_build_object(
+                  'id', gd.id,
+                  'gameId', gd."gameId",
+                  'status', gd.status,
+                  'createdAt', gd."createdAt",
+                  'updatedAt', gd."updatedAt",
+                  'game', (
+                    SELECT jsonb_build_object(
+                      'id', g.id,
+                      'name', g.name,
+                      'description', g.description,
+                      'genre', g.genre,
+                      'robloxLink', g."robloxLink",
+                      'thumbnail', g.thumbnail
+                    )
+                    FROM "Game" g
+                    WHERE g.id = gd."gameId"
+                  )
+                ))
+                FROM "GameDeployment" gd
+                WHERE gd."scheduleId" = ps.id
+              ),
+              'gameAd', (
                 SELECT jsonb_build_object(
-                  'id', g.id,
-                  'name', g.name,
-                  'description', g.description,
-                  'genre', g.genre,
-                  'robloxLink', g."robloxLink",
-                  'thumbnail', g.thumbnail
+                  'id', ga.id,
+                  'name', ga.name,
+                  'type', ga.type
                 )
-                FROM "Game" g
-                WHERE g.id = gd."gameId"
+                FROM "GameAd" ga
+                WHERE ga.id = ps."gameAdId"
               )
-            ))
-            FROM "GameDeployment" gd
-            WHERE gd."scheduleId" = ps.id
-          ),
-          'gameAd', (
-            SELECT jsonb_build_object(
-              'id', ga.id,
-              'name', ga.name,
-              'type', ga.type,
-              'status', ga.status
             )
-            FROM "GameAd" ga
-            WHERE ga.id = ps."gameAdId"
-          )
-        )) as schedules
+          ) FILTER (WHERE ps.id IS NOT NULL),
+          '[]'::json
+        ) as schedules
       FROM "Playlist" p
       LEFT JOIN "PlaylistSchedule" ps ON ps."playlistId" = p.id
       WHERE p.id = ${params.id}
       GROUP BY p.id
-    `
+    ` as any[]
     
-    if (!playlist) {
+    if (!result || result.length === 0) {
       return NextResponse.json({ error: 'Playlist not found' }, { status: 404 })
     }
     
+    const playlist = result[0]
     return NextResponse.json(playlist)
   } catch (error) {
     console.error('Error reading playlist:', error)
@@ -185,49 +188,53 @@ export async function PUT(
       // Return the updated playlist with all its relations
       return await tx.$queryRaw`
         SELECT p.*, 
-          json_agg(DISTINCT jsonb_build_object(
-            'id', ps.id,
-            'playlistId', ps."playlistId",
-            'gameAdId', ps."gameAdId",
-            'startDate', ps."startDate",
-            'duration', ps.duration,
-            'status', ps.status,
-            'createdAt', ps."createdAt",
-            'updatedAt', ps."updatedAt",
-            'deployments', (
-              SELECT json_agg(jsonb_build_object(
-                'id', gd.id,
-                'gameId', gd."gameId",
-                'status', gd.status,
-                'createdAt', gd."createdAt",
-                'updatedAt', gd."updatedAt",
-                'game', (
+          COALESCE(
+            json_agg(
+              DISTINCT jsonb_build_object(
+                'id', ps.id,
+                'playlistId', ps."playlistId",
+                'gameAdId', ps."gameAdId",
+                'startDate', ps."startDate",
+                'duration', ps.duration,
+                'status', ps.status,
+                'createdAt', ps."createdAt",
+                'updatedAt', ps."updatedAt",
+                'deployments', (
+                  SELECT json_agg(jsonb_build_object(
+                    'id', gd.id,
+                    'gameId', gd."gameId",
+                    'status', gd.status,
+                    'createdAt', gd."createdAt",
+                    'updatedAt', gd."updatedAt",
+                    'game', (
+                      SELECT jsonb_build_object(
+                        'id', g.id,
+                        'name', g.name,
+                        'description', g.description,
+                        'genre', g.genre,
+                        'robloxLink', g."robloxLink",
+                        'thumbnail', g.thumbnail
+                      )
+                      FROM "Game" g
+                      WHERE g.id = gd."gameId"
+                    )
+                  ))
+                  FROM "GameDeployment" gd
+                  WHERE gd."scheduleId" = ps.id
+                ),
+                'gameAd', (
                   SELECT jsonb_build_object(
-                    'id', g.id,
-                    'name', g.name,
-                    'description', g.description,
-                    'genre', g.genre,
-                    'robloxLink', g."robloxLink",
-                    'thumbnail', g.thumbnail
+                    'id', ga.id,
+                    'name', ga.name,
+                    'type', ga.type
                   )
-                  FROM "Game" g
-                  WHERE g.id = gd."gameId"
+                  FROM "GameAd" ga
+                  WHERE ga.id = ps."gameAdId"
                 )
-              ))
-              FROM "GameDeployment" gd
-              WHERE gd."scheduleId" = ps.id
-            ),
-            'gameAd', (
-              SELECT jsonb_build_object(
-                'id', ga.id,
-                'name', ga.name,
-                'type', ga.type,
-                'status', ga.status
               )
-              FROM "GameAd" ga
-              WHERE ga.id = ps."gameAdId"
-            )
-          )) as schedules
+            ) FILTER (WHERE ps.id IS NOT NULL),
+            '[]'::json
+          ) as schedules
         FROM "Playlist" p
         LEFT JOIN "PlaylistSchedule" ps ON ps."playlistId" = p.id
         WHERE p.id = ${params.id}

@@ -1,5 +1,5 @@
-import fs from 'fs'
-import path from 'path'
+import { prisma } from '@/lib/prisma'
+import type { Prisma, Game } from '@prisma/client'
 
 export interface GameOwnerData {
   id: string
@@ -22,83 +22,119 @@ export interface ExtractedOwnerResult {
   }
 }
 
-export function extractGameOwners(): ExtractedOwnerResult {
-  const gamesDataPath = path.join(process.cwd(), 'data/games.json')
-  
-  if (!fs.existsSync(gamesDataPath)) {
-    throw new Error('games.json not found')
-  }
+type GameWithOwnerInfo = {
+  id: string
+  gameOwnerId: string
+  name: string
+}
 
-  const gamesData = JSON.parse(fs.readFileSync(gamesDataPath, 'utf8'))
-  const ownerMap = new Map<string, GameOwnerData>()
-  const incompleteMap = new Map<string, GameOwnerData>()
-  let ownerId = 1
+type OwnerInfo = {
+  id: string
+  email: string
+  name: string
+}
 
-  gamesData.games.forEach((game: any) => {
-    if (game.owner) {
-      const { name, email, country, discordId } = game.owner
-      
-      // Check if owner has complete data (at minimum: name and email)
+export async function extractGameOwners(): Promise<ExtractedOwnerResult> {
+  try {
+    // Get all games with their owners
+    const games = await prisma.game.findMany({
+      select: {
+        id: true,
+        gameOwnerId: true,
+        name: true
+      }
+    }) as GameWithOwnerInfo[]
+
+    // Get all owners
+    const owners = await prisma.$queryRaw`
+      SELECT id, email, name 
+      FROM "GameOwner"
+    ` as OwnerInfo[]
+
+    const ownerMap = new Map<string, GameOwnerData>()
+    const incompleteMap = new Map<string, GameOwnerData>()
+    let ownerId = 1
+
+    // First, create owner maps
+    owners.forEach((owner: OwnerInfo) => {
+      const { name, email } = owner
       if (email && email.trim() && name && name.trim()) {
-        // Complete owner
-        if (!ownerMap.has(email)) {
-          ownerMap.set(email, {
-            id: `owner_${ownerId.toString().padStart(3, '0')}`,
-            email: email.trim(),
-            name: name.trim(),
-            country: country?.trim() || '',
-            discordId: discordId?.trim() || '',
-            games: [],
-            status: 'complete'
-          })
-          ownerId++
-        }
-        ownerMap.get(email)!.games.push(game.id)
+        ownerMap.set(owner.id, {
+          id: owner.id,
+          email: email.trim(),
+          name: name.trim(),
+          country: '',
+          discordId: '',
+          games: [],
+          status: 'complete'
+        })
       } else if (name && name.trim()) {
-        // Incomplete owner (has name but no email)
         const key = name.trim()
         if (!incompleteMap.has(key)) {
           incompleteMap.set(key, {
             id: `incomplete_${ownerId.toString().padStart(3, '0')}`,
             email: '',
             name: name.trim(),
-            country: country?.trim() || '',
-            discordId: discordId?.trim() || '',
+            country: '',
+            discordId: '',
             games: [],
             status: 'incomplete'
           })
           ownerId++
         }
-        incompleteMap.get(key)!.games.push(game.id)
+      }
+    })
+
+    // Then, associate games with owners
+    games.forEach((game: GameWithOwnerInfo) => {
+      if (game.gameOwnerId) {
+        const owner = ownerMap.get(game.gameOwnerId)
+        if (owner) {
+          owner.games.push(game.id)
+        } else {
+          // If owner not found in complete owners, try incomplete owners
+          const incompleteOwner = Array.from(incompleteMap.values()).find(o => o.name === game.name)
+          if (incompleteOwner) {
+            incompleteOwner.games.push(game.id)
+          }
+        }
+      }
+    })
+
+    const validOwners = Array.from(ownerMap.values())
+    const incompleteOwners = Array.from(incompleteMap.values())
+    
+    return {
+      validOwners,
+      incompleteOwners,
+      stats: {
+        totalGames: games.length,
+        gamesWithOwners: validOwners.reduce((sum, owner) => sum + owner.games.length, 0),
+        gamesWithoutOwners: games.length - validOwners.reduce((sum, owner) => sum + owner.games.length, 0) - incompleteOwners.reduce((sum, owner) => sum + owner.games.length, 0),
+        uniqueOwners: validOwners.length
       }
     }
-  })
-
-  const validOwners = Array.from(ownerMap.values())
-  const incompleteOwners = Array.from(incompleteMap.values())
-  
-  return {
-    validOwners,
-    incompleteOwners,
-    stats: {
-      totalGames: gamesData.games.length,
-      gamesWithOwners: validOwners.reduce((sum, owner) => sum + owner.games.length, 0),
-      gamesWithoutOwners: gamesData.games.length - validOwners.reduce((sum, owner) => sum + owner.games.length, 0) - incompleteOwners.reduce((sum, owner) => sum + owner.games.length, 0),
-      uniqueOwners: validOwners.length
+  } catch (error) {
+    console.error('Error extracting game owners:', error)
+    return {
+      validOwners: [],
+      incompleteOwners: [],
+      stats: {
+        totalGames: 0,
+        gamesWithOwners: 0,
+        gamesWithoutOwners: 0,
+        uniqueOwners: 0
+      }
     }
   }
 }
 
-// Function to get games for a specific owner by gameOwnerId (using database)
-export async function getOwnerGamesByOwnerId(gameOwnerId: string): Promise<any[]> {
-  // Import prisma dynamically to avoid edge runtime issues
-  const { PrismaClient } = await import('@prisma/client')
-  const prisma = new PrismaClient()
-  
+// Function to get games for a specific owner by gameOwnerId
+export async function getOwnerGamesByOwnerId(gameOwnerId: string) {
   try {
     const games = await prisma.game.findMany({
       where: {
-        gameOwnerId: gameOwnerId
+        gameOwnerId
       }
     })
     
@@ -106,62 +142,57 @@ export async function getOwnerGamesByOwnerId(gameOwnerId: string): Promise<any[]
   } catch (error) {
     console.error('Error fetching games by gameOwnerId:', error)
     return []
-  } finally {
-    await prisma.$disconnect()
   }
 }
 
-// Function to get games for a specific owner by email (legacy - for migration)
-export function getOwnerGames(ownerEmail: string): any[] {
-  const gamesDataPath = path.join(process.cwd(), 'data/games.json')
-  const gamesData = JSON.parse(fs.readFileSync(gamesDataPath, 'utf8'))
-  
-  return gamesData.games.filter((game: any) => 
-    game.owner?.email && game.owner.email.trim().toLowerCase() === ownerEmail.toLowerCase()
-  )
-}
-
-// Function to migrate games to use gameOwnerId mapping
-export async function migrateGamesToOwnerIds(): Promise<void> {
-  const { PrismaClient } = await import('@prisma/client')
-  const prisma = new PrismaClient()
-  
+// Function to get games for a specific owner by email
+export async function getOwnerGames(ownerEmail: string) {
   try {
-    // Get all games that don't have gameOwnerId set
-    const gamesWithoutOwnerId = await prisma.game.findMany({
+    const owner = await prisma.$queryRaw`
+      SELECT id 
+      FROM "GameOwner" 
+      WHERE email = ${ownerEmail}
+    ` as { id: string }[]
+
+    if (!owner.length) return []
+
+    const games = await prisma.game.findMany({
       where: {
-        gameOwnerId: null
+        gameOwnerId: owner[0].id
       }
     })
     
-    // Get all game owner users to map emails to gameOwnerIds
-    const { jsonAuthService } = await import('@/lib/json-auth')
-    const users = await jsonAuthService.getAllUsers()
-    
-    for (const game of gamesWithoutOwnerId) {
-      const gameOwnerEmail = game.owner?.email
-      if (gameOwnerEmail) {
-        const user = users.find(u => u.email.toLowerCase() === gameOwnerEmail.toLowerCase())
-        if (user) {
-          await prisma.game.update({
-            where: { id: game.id },
-            data: { gameOwnerId: user.gameOwnerId }
-          })
-          console.log(`Mapped game ${game.name} to gameOwnerId ${user.gameOwnerId}`)
-        }
-      }
-    }
+    return games
   } catch (error) {
-    console.error('Error migrating games to gameOwnerIds:', error)
-  } finally {
-    await prisma.$disconnect()
+    console.error('Error fetching games by owner email:', error)
+    return []
   }
 }
 
 // Function to find owner by email
-export function findOwnerByEmail(email: string): GameOwnerData | null {
-  const result = extractGameOwners()
-  return result.validOwners.find(owner => 
-    owner.email.toLowerCase() === email.toLowerCase()
-  ) || null
+export async function findOwnerByEmail(email: string): Promise<GameOwnerData | null> {
+  try {
+    const owner = await prisma.$queryRaw`
+      SELECT o.id, o.email, o.name, g.id as game_id
+      FROM "GameOwner" o
+      LEFT JOIN "Game" g ON g."gameOwnerId" = o.id
+      WHERE o.email = ${email.toLowerCase()}
+    ` as (OwnerInfo & { game_id: string | null })[]
+
+    if (!owner.length) return null
+
+    const ownerInfo = owner[0]
+    return {
+      id: ownerInfo.id,
+      email: ownerInfo.email,
+      name: ownerInfo.name,
+      country: '',
+      discordId: '',
+      games: owner.map(o => o.game_id).filter((id): id is string => id !== null),
+      status: 'complete'
+    }
+  } catch (error) {
+    console.error('Error finding owner by email:', error)
+    return null
+  }
 } 

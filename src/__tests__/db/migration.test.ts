@@ -1,9 +1,8 @@
 /// <reference types="jest" />
-import { PrismaClient, Prisma } from '@prisma/client'
+import { Prisma } from '@prisma/client'
 import path from 'path'
 import fs from 'fs/promises'
-
-const prisma = new PrismaClient()
+import { prismaTestClient as prisma } from '@/lib/db/test-client'
 
 // Mock data
 const mockGame = {

@@ -17,6 +17,7 @@ import Image from 'next/image';
 import { MMLLogo } from "@/components/ui/mml-logo";
 import { Progress } from "@/components/ui/progress";
 import type { Game as RobloxGame } from '@/types/game';
+import { Spinner } from '@/components/ui/spinner';
 
 const RechartsComponent = dynamic(() => import('@/components/charts/performance-chart'), {
   ssr: false,
@@ -226,61 +227,41 @@ export default function GameAdPerformancePage({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [gamePerformance, setGamePerformance] = useState<GamePerformance[]>([]);
-  const [performanceTrends, setPerformanceTrends] = useState<any[]>([]);
   const mountedRef = useRef(true);
   const controllerRef = useRef<AbortController | null>(null);
   const fetchingRef = useRef(false);
 
   useEffect(() => {
-    // Reset mounted ref
     mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
+  useEffect(() => {
     async function loadPerformanceData() {
-      // If already fetching, don't start a new fetch
       if (fetchingRef.current) {
-        return;
-      }
-
-      // Create new controller only if we don't have one
-      if (!controllerRef.current) {
-        controllerRef.current = new AbortController();
+        if (controllerRef.current) {
+          controllerRef.current.abort();
+        }
       }
 
       fetchingRef.current = true;
-      setLoading(true);
+      controllerRef.current = new AbortController();
 
       try {
-        const response = await fetch(`/api/game-ad-performance?gameAdId=${params.id}`, {
-          signal: controllerRef.current?.signal
+        const response = await fetch(`/api/game-ad-performance/${params.id}`, {
+          signal: controllerRef.current.signal
         });
 
         if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+          throw new Error('Failed to fetch performance data');
         }
 
-        const data = await response.json();
-        
-        if (mountedRef.current) {
-          // Extract the first performance data entry since we're querying for a specific game ad
-          const performanceData = data.performanceData?.[0] || null;
-          
-          // Create a single day's data if no trends exist
-          const trends = performanceData?.performanceTrends?.daily || [];
-          const defaultTrend = trends.length === 0 ? [{
-            date: new Date().toLocaleDateString(),
-            impressions: performanceData?.metrics?.totalImpressions || 0,
-            engagements: performanceData?.metrics?.totalEngagements || 0,
-            engagementRate: performanceData?.metrics?.engagementRate || 0
-          }] : trends.map((day: any) => ({
-            date: new Date(day.date).toLocaleDateString(),
-            impressions: day.impressions || 0,
-            engagements: day.engagements || 0,
-            engagementRate: (day.engagementRate || 0) * 100 // Convert to percentage
-          }));
+        const performanceData = await response.json();
 
-          // Batch state updates
+        if (mountedRef.current) {
           setPerformance(performanceData);
-          setPerformanceTrends(defaultTrend);
           
           // Set game performance data
           if (performanceData?.gamePerformance && performanceData.gamePerformance.length > 0) {
@@ -288,9 +269,9 @@ export default function GameAdPerformancePage({
               gameName: game.gameName || 'Unknown Game',
               impressions: game.impressions || 0,
               engagements: game.engagements || 0,
-              engagementRate: (game.engagementRate || 0) * 100, // Convert to percentage
-              completionRate: (game.completionRate || 0) * 100, // Convert to percentage
-              conversionRate: (game.conversionRate || 0) * 100 // Convert to percentage
+              engagementRate: game.engagementRate || 0,
+              completionRate: game.completionRate || 0,
+              conversionRate: game.conversionRate || 0
             }));
             setGamePerformance(newGamePerformance);
           } else {
@@ -298,9 +279,9 @@ export default function GameAdPerformancePage({
               gameName: performanceData?.ad?.games?.[0]?.name || 'Unknown Game',
               impressions: performanceData?.metrics?.totalImpressions || 0,
               engagements: performanceData?.metrics?.totalEngagements || 0,
-              engagementRate: (performanceData?.metrics?.engagementRate || 0) * 100,
-              completionRate: (performanceData?.metrics?.completionRate || 0) * 100,
-              conversionRate: (performanceData?.metrics?.conversionRate || 0) * 100
+              engagementRate: performanceData?.metrics?.engagementRate || 0,
+              completionRate: performanceData?.metrics?.completionRate || 0,
+              conversionRate: performanceData?.metrics?.conversionRate || 0
             }]);
           }
           
@@ -311,7 +292,6 @@ export default function GameAdPerformancePage({
         if (mountedRef.current) {
           if (error instanceof Error) {
             if (error.name === 'AbortError') {
-              // Don't set error state for AbortError
               return;
             }
             console.error('Error fetching performance data:', error);
@@ -329,8 +309,6 @@ export default function GameAdPerformancePage({
     loadPerformanceData();
 
     return () => {
-      mountedRef.current = false;
-      // Only abort if we're actually fetching
       if (fetchingRef.current && controllerRef.current) {
         controllerRef.current.abort();
         controllerRef.current = null;
@@ -355,9 +333,9 @@ export default function GameAdPerformancePage({
       uniqueImpressions: metrics.uniqueImpressions ?? 0,
       totalEngagements: metrics.totalEngagements ?? 0,
       uniqueEngagements: metrics.uniqueEngagements ?? 0,
-      engagementRate: (metrics.engagementRate ?? 0) * 100, // Convert to percentage
-      completionRate: (metrics.completionRate ?? 0) * 100, // Convert to percentage
-      conversionRate: (metrics.conversionRate ?? 0) * 100 // Convert to percentage
+      engagementRate: metrics.engagementRate ?? 0,
+      completionRate: metrics.completionRate ?? 0,
+      conversionRate: metrics.conversionRate ?? 0
     };
   };
 
@@ -369,111 +347,69 @@ export default function GameAdPerformancePage({
 
   const formatPercent = (value: number | undefined | null): string => {
     if (typeof value !== 'number') return '0%';
-    return `${(value * 100).toFixed(1)}%`;
+    return `${value.toFixed(1)}%`;
   };
 
   // Ensure we have valid metrics even if performance data is null
   const metrics = validateMetrics(performance?.metrics);
 
-  // Add a wrapper div with a key to force proper mounting/unmounting
   return (
-    <div key={`performance-page-${params.id}`} className="container mx-auto p-6">
-      <Link href="/" className="self-start transform hover:scale-105 transition-transform">
-        <MMLLogo />
-      </Link>
-
+    <div className="container mx-auto py-6">
       {loading ? (
-        <LoadingState />
-      ) : error ? (
-        <div className="flex flex-col items-center justify-center h-[60vh]">
-          <p className="text-red-500 mb-4">{error}</p>
-          <Button onClick={() => window.location.reload()}>Try Again</Button>
+        <div className="flex justify-center items-center h-64">
+          <Spinner />
         </div>
+      ) : error ? (
+        <div className="text-center text-red-500">{error}</div>
       ) : (
         <div className="space-y-6">
-          <div className="flex items-center gap-4">
-            <Link href="/dashboard/game-ads/performance">
-              <Button variant="outline" size="icon">
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-            </Link>
-            <h1 className="text-2xl font-bold">Game Ad Performance</h1>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <MetricCard
-              title="Total Impressions"
-              value={formatNumber(metrics.totalImpressions)}
-              description="Total number of times the ad was shown"
-              color={CHART_COLORS.primary}
-            />
-            <MetricCard
-              title="Engagement Rate"
-              value={`${metrics.engagementRate.toFixed(1)}%`}
-              description="Percentage of viewers who interacted with the ad"
-              color={CHART_COLORS.secondary}
-            />
-            <MetricCard
-              title="Completion Rate"
-              value={`${metrics.completionRate.toFixed(1)}%`}
-              description="Percentage of viewers who watched the entire ad"
-              color={CHART_COLORS.accent}
-            />
-            <MetricCard
-              title="Conversion Rate"
-              value={`${metrics.conversionRate.toFixed(1)}%`}
-              description="Percentage of unique players who took specific actions after seeing the ad"
-              color={CHART_COLORS.warning}
-            />
-          </div>
-
-          <Tabs defaultValue="overview" className="space-y-4">
-            <TabsList className="bg-background border-b">
-              <TabsTrigger 
-                value="overview"
-                className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-primary"
-              >
-                Overview
-              </TabsTrigger>
-              <TabsTrigger 
-                value="demographics"
-                className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-primary"
-              >
-                Demographics
-              </TabsTrigger>
-              <TabsTrigger 
-                value="game-comparison"
-                className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-primary"
-              >
-                Game Comparison
-              </TabsTrigger>
+          <Tabs defaultValue="overview">
+            <TabsList>
+              <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="demographics">Demographics</TabsTrigger>
+              <TabsTrigger value="game-comparison">Game Comparison</TabsTrigger>
             </TabsList>
 
             <TabsContent value="overview">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Performance Overview</CardTitle>
-                  <CardDescription>Daily impressions and engagement trends</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="h-[400px]">
-                    <RechartsComponent 
-                      key={`chart-${params.id}`}
-                      data={performanceTrends} 
-                      colors={{
-                        impressions: CHART_COLORS.primary,
-                        engagements: CHART_COLORS.secondary,
-                        engagementRate: CHART_COLORS.accent
-                      }}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Total Impressions</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{formatNumber(metrics.totalImpressions)}</div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Engagement Rate</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{formatPercent(metrics.engagementRate)}</div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Completion Rate</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{formatPercent(metrics.completionRate)}</div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Conversion Rate</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{formatPercent(metrics.conversionRate)}</div>
+                  </CardContent>
+                </Card>
+              </div>
             </TabsContent>
 
             <TabsContent value="demographics">
               <div className="grid md:grid-cols-2 gap-4">
-                {Object.entries(performance?.demographics || {}).map(([key, data], index) => (
+                {Object.entries(performance?.demographics || {}).map(([key, data]) => (
                   <Card key={`demographic-${key}`}>
                     <CardHeader>
                       <CardTitle className="capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}</CardTitle>
@@ -520,4 +456,4 @@ export default function GameAdPerformancePage({
       )}
     </div>
   );
-} 
+}

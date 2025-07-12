@@ -22,6 +22,8 @@ const customJestConfig = {
     '!src/pages/_app.tsx',
     '!src/pages/_document.tsx',
   ],
+  // Add test environment configuration
+  setupFiles: ['<rootDir>/jest.env.js'],
 }
 
 // createJestConfig is exported this way to ensure that next/jest can load the Next.js config which is async

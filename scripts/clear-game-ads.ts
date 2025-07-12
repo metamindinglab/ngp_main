@@ -1,5 +1,11 @@
 import { PrismaClient } from '@prisma/client';
 
+// Environment check
+if (process.env.NODE_ENV === 'production') {
+  console.error('❌ This script cannot be run in production');
+  process.exit(1);
+}
+
 const prisma = new PrismaClient();
 
 async function main() {
