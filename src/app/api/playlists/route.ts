@@ -39,16 +39,6 @@ export async function GET(request: NextRequest) {
     const playlists = await prisma.playlist.findMany({
       orderBy: { createdAt: 'desc' },
       include: {
-        AssetPlaylists: {
-          include: {
-            Asset: true
-          }
-        },
-        GamePlaylists: {
-          include: {
-            Game: true
-          }
-        },
         schedules: {
           include: {
             gameAd: true,

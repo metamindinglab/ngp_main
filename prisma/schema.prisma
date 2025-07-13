@@ -78,11 +78,15 @@ model GameAd {
   createdAt                DateTime            @default(now())
   updatedAt                DateTime
   assets                   Json?
+  brandUserId              String?
   containers               AdContainer[]
+  BrandUser                BrandUser?          @relation(fields: [brandUserId], references: [id])
   Game_GameAd_gameIdToGame Game                @relation("GameAd_gameIdToGame", fields: [gameId], references: [id])
   performance              GameAdPerformance[]
   playlistSchedules        PlaylistSchedule[]
   games                    Game[]              @relation("GameToAds")
+
+  @@index([brandUserId])
 }
 
 model GameAdPerformance {
@@ -143,6 +147,44 @@ model PlatformAdmin {
   updatedAt DateTime
 }
 
+model BrandUser {
+  id                    String                  @id
+  email                 String                  @unique
+  name                  String
+  password              String
+  companyName           String?
+  companySize           String
+  jobTitle              String
+  country               String
+  industry              String?
+  subscriptionTier      String                  @default("free_trial")
+  subscriptionStatus    String                  @default("active")
+  subscriptionExpiresAt DateTime?
+  isActive              Boolean                 @default(true)
+  emailVerified         Boolean                 @default(false)
+  lastLogin             DateTime?
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime                @updatedAt
+  subscriptions         BrandUserSubscription[]
+  GameAd                GameAd[]
+  Playlist              Playlist[]
+}
+
+model BrandUserSubscription {
+  id          String    @id
+  brandUserId String
+  tier        String
+  status      String
+  startDate   DateTime
+  endDate     DateTime?
+  features    Json?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  brandUser   BrandUser @relation(fields: [brandUserId], references: [id], onDelete: Cascade)
+
+  @@index([brandUserId])
+}
+
 model Playlist {
   id          String             @id
   name        String
@@ -152,9 +194,13 @@ model Playlist {
   metadata    Json?
   createdAt   DateTime           @default(now())
   updatedAt   DateTime
+  brandUserId String?
+  BrandUser   BrandUser?         @relation(fields: [brandUserId], references: [id])
   schedules   PlaylistSchedule[]
   Asset       Asset[]            @relation("AssetPlaylists")
   Game        Game[]             @relation("GamePlaylists")
+
+  @@index([brandUserId])
 }
 
 model PlaylistSchedule {
@@ -245,16 +291,16 @@ enum AdContainerStatus {
 }
 
 enum MetricType {
-  d1Retention                 @map("d1_retention")
-  d7Retention                 @map("d7_retention")
-  d1Stickiness                @map("d1_stickiness")
-  d7Stickiness                @map("d7_stickiness")
-  dailyActiveUsers            @map("daily_active_users")
-  averagePlayTimeMinutes      @map("average_play_time_minutes")
-  averageSessionLengthMinutes @map("average_session_length_minutes")
-  monthlyActiveUsersByDay     @map("monthly_active_users_by_day")
-  demographicsGender          @map("demographics_gender")
-  demographicsCountry         @map("demographics_country")
-  demographicsLanguage        @map("demographics_language")
-  demographicsAgeGroup        @map("demographics_age_group")
+  d1_retention
+  d7_retention
+  d1_stickiness
+  d7_stickiness
+  daily_active_users
+  average_play_time_minutes
+  average_session_length_minutes
+  monthly_active_users_by_day
+  demographics_gender
+  demographics_country
+  demographics_language
+  demographics_age_group
 }

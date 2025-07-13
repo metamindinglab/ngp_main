@@ -1,23 +1,17 @@
 "use client"
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { GamesClient } from "@/components/games/games-client";
-import { Game } from "@/types/game";
-import { useToast } from "@/components/ui/use-toast";
 import { usePlatformAdminAuth } from '@/components/platform-admin/auth/auth-context';
 import { Loader2, ArrowLeft, Shield } from "lucide-react";
 import { Button } from '@/components/ui/button';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import Link from 'next/link';
+import { UserManagement } from '@/components/platform-admin/settings/user-management';
 
-export default function PlatformAdminGamesPage() {
+export default function PlatformAdminSettingsPage() {
   const { user, isLoading: authLoading } = usePlatformAdminAuth();
   const router = useRouter();
-  const [games, setGames] = useState<Game[]>([]);
-  const [loading, setLoading] = useState(true);
   const [showBackToMainDialog, setShowBackToMainDialog] = useState(false);
-  const { toast } = useToast();
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -30,33 +24,7 @@ export default function PlatformAdminGamesPage() {
     router.push('/platform-admin');
   };
 
-  const fetchGames = async () => {
-    try {
-      const response = await fetch('/api/games');
-      if (!response.ok) {
-        throw new Error('Failed to fetch games');
-      }
-      const data = await response.json();
-      setGames(data.games || []);
-    } catch (error) {
-      console.error('Error fetching games:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load games",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (user) {
-      fetchGames();
-    }
-  }, [user, toast]);
-
-  if (authLoading || loading) {
+  if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin" />
@@ -85,7 +53,7 @@ export default function PlatformAdminGamesPage() {
               </Button>
               <div className="flex items-center">
                 <Shield className="h-6 w-6 text-slate-600 mr-3" />
-                <h1 className="text-xl font-semibold text-gray-900">Games Manager</h1>
+                <h1 className="text-xl font-semibold text-gray-900">Platform Settings</h1>
               </div>
             </div>
             <div className="flex items-center space-x-4">
@@ -97,16 +65,22 @@ export default function PlatformAdminGamesPage() {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <GamesClient initialGames={games} onGameUpdated={fetchGames} />
+        <div className="mb-8">
+          <h2 className="text-3xl font-bold text-gray-900 mb-2">Platform Administration Settings</h2>
+          <p className="text-gray-600">Manage platform administrators and system configuration</p>
+        </div>
+
+        {/* User Management Section */}
+        <UserManagement />
       </div>
 
       {/* Back to Platform Admin Confirmation Dialog */}
       <AlertDialog open={showBackToMainDialog} onOpenChange={setShowBackToMainDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Leave Games Manager</AlertDialogTitle>
+            <AlertDialogTitle>Leave Settings</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to leave the Games Manager and return to the Platform Administration Portal?
+              Are you sure you want to leave the settings page and return to the Platform Administration Portal?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -119,4 +93,4 @@ export default function PlatformAdminGamesPage() {
       </AlertDialog>
     </div>
   );
-}
+} 

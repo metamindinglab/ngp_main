@@ -1,9 +1,10 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import { usePlatformAdminAuth } from '@/components/platform-admin/auth/auth-context'
 import { Shield, Gamepad2, Upload, ArrowLeft, LogOut, Settings } from 'lucide-react'
 import Link from 'next/link'
@@ -11,6 +12,8 @@ import Link from 'next/link'
 export function PlatformAdminDashboard() {
   const { user, logout, isLoading } = usePlatformAdminAuth()
   const router = useRouter()
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false)
+  const [showBackToMainDialog, setShowBackToMainDialog] = useState(false)
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -18,12 +21,14 @@ export function PlatformAdminDashboard() {
     }
   }, [user, isLoading, router])
 
-  const handleLogout = async () => {
+  const handleLogoutConfirm = async () => {
     await logout()
-    router.push('/platform-admin/login')
+    setShowLogoutDialog(false)
+    router.push('/dashboard') // Take user back to main dashboard after logout
   }
 
-  const handleBackToMain = () => {
+  const handleBackToMainConfirm = () => {
+    setShowBackToMainDialog(false)
     router.push('/dashboard')
   }
 
@@ -49,7 +54,7 @@ export function PlatformAdminDashboard() {
               <Button 
                 variant="ghost" 
                 className="flex items-center text-gray-600 hover:text-slate-600 transition-colors"
-                onClick={handleBackToMain}
+                onClick={() => setShowBackToMainDialog(true)}
               >
                 <ArrowLeft className="h-5 w-5 mr-2" />
                 <span className="text-sm">Back to Main Dashboard</span>
@@ -64,7 +69,7 @@ export function PlatformAdminDashboard() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={handleLogout}
+                onClick={() => setShowLogoutDialog(true)}
                 className="flex items-center"
               >
                 <LogOut className="h-4 w-4 mr-2" />
@@ -145,6 +150,42 @@ export function PlatformAdminDashboard() {
           </Link>
         </div>
       </main>
+
+      {/* Logout Confirmation Dialog */}
+      <AlertDialog open={showLogoutDialog} onOpenChange={setShowLogoutDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Logout</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to logout from the Platform Administration Portal? You will be redirected to the main dashboard.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleLogoutConfirm}>
+              Logout
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Back to Main Dashboard Confirmation Dialog */}
+      <AlertDialog open={showBackToMainDialog} onOpenChange={setShowBackToMainDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Leave Platform Administration</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to leave the Platform Administration Portal and return to the main dashboard?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleBackToMainConfirm}>
+              Go to Main Dashboard
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 } 
