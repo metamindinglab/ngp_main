@@ -226,16 +226,71 @@ print("💡 Create containers in the Game Owner Portal to get started")
 `
   }
 
+  const smartPositioningFunction = `
+-- Smart positioning function
+local function getSmartContainerPosition(preferredPosition, containerType)
+    local finalPosition = preferredPosition
+    
+    -- Find spawn locations
+    local spawnLocations = {}
+    for _, obj in pairs(workspace:GetChildren()) do
+        if obj:IsA("SpawnLocation") then
+            table.insert(spawnLocations, obj)
+        end
+    end
+    
+    -- Check for default spawn if no SpawnLocations found
+    if #spawnLocations == 0 then
+        local spawn = workspace:FindFirstChild("Spawn")
+        if spawn and spawn:IsA("Part") then
+            table.insert(spawnLocations, spawn)
+        end
+    end
+    
+    if #spawnLocations > 0 then
+        local mainSpawn = spawnLocations[1]
+        local spawnPos = mainSpawn.Position
+        
+        print("📍 Found spawn '" .. mainSpawn.Name .. "' at:", spawnPos.X, spawnPos.Y, spawnPos.Z)
+        
+        -- Position based on container type relative to spawn
+        if containerType == "DISPLAY" then
+            -- Place display containers in front of spawn (visible to players)
+            finalPosition = Vector3.new(spawnPos.X + 15, spawnPos.Y + 5, spawnPos.Z)
+            print("📺 Positioning DISPLAY container in front of spawn for visibility")
+        elseif containerType == "NPC" then
+            -- Place NPC containers near spawn but to the side
+            finalPosition = Vector3.new(spawnPos.X + 8, spawnPos.Y, spawnPos.Z + 8)
+            print("🤖 Positioning NPC container near spawn for interaction")
+        elseif containerType == "MINIGAME" then
+            -- Place minigame containers a bit further away
+            finalPosition = Vector3.new(spawnPos.X + 20, spawnPos.Y, spawnPos.Z + 10)
+            print("🎮 Positioning MINIGAME container away from spawn")
+        end
+        
+        print("🎯 Smart position:", finalPosition.X, finalPosition.Y, finalPosition.Z)
+        print("📏 Distance from spawn:", (finalPosition - spawnPos).Magnitude, "studs")
+    else
+        print("ℹ️ No spawn found, using configured position:", finalPosition.X, finalPosition.Y, finalPosition.Z)
+    end
+    
+    return finalPosition
+end
+`
+
   const containerCode = containers.map(container => {
     const safeName = container.name.replace(/[^a-zA-Z0-9]/g, '_')
     const { x, y, z } = container.position
     
     return `
 -- Create container: ${container.name}
+local fallbackPosition = Vector3.new(${x}, ${y}, ${z})
+local smartPosition = getSmartContainerPosition(fallbackPosition, "${container.type}")
+
 local ${safeName} = Instance.new("Part")
 ${safeName}.Name = "${container.id}"
 ${safeName}.Size = Vector3.new(${container.type === 'DISPLAY' ? '10, 5, 0.5' : container.type === 'NPC' ? '2, 6, 2' : '8, 8, 8'})
-${safeName}.Position = Vector3.new(${x}, ${y}, ${z})
+${safeName}.Position = smartPosition
 ${safeName}.Anchored = true
 ${safeName}.Material = Enum.Material.Neon
 ${safeName}.BrickColor = BrickColor.new("Bright blue")
@@ -300,6 +355,7 @@ print("📦 Container created:", "${container.name}", "at position:", ${safeName
   return `--[[
     MML Network Container Creation Script
     This script creates all containers registered for this game
+    Features smart positioning relative to spawn locations
     Run this once to set up all containers
 --]]
 
@@ -307,6 +363,8 @@ print("📦 Container created:", "${container.name}", "at position:", ${safeName
 game.Loaded:Wait()
 
 print("🏗️ Creating MML Network ad containers for this game...")
+
+${smartPositioningFunction}
 
 ${containerCode}
 

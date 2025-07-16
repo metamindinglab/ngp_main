@@ -194,6 +194,7 @@ function generateSingleContainerScript(container: any, isFirstDownload: boolean)
     ${isFirstDownload ? 'FIRST DOWNLOAD' : 'RE-DOWNLOAD DETECTED'}
     
     This script creates a single ad container in your game.
+    Features smart positioning relative to spawn locations.
     ${!isFirstDownload ? 'WARNING: This container may already exist in your game!' : ''}
 --]]
 
@@ -202,12 +203,62 @@ game.Loaded:Wait()
 
 local ContainerModel = require(script.Parent.ContainerModel)
 
+-- Smart positioning function
+local function getSmartContainerPosition(preferredPosition, containerType)
+    local finalPosition = preferredPosition
+    
+    -- Find spawn locations
+    local spawnLocations = {}
+    for _, obj in pairs(workspace:GetChildren()) do
+        if obj:IsA("SpawnLocation") then
+            table.insert(spawnLocations, obj)
+        end
+    end
+    
+    -- Check for default spawn if no SpawnLocations found
+    if #spawnLocations == 0 then
+        local spawn = workspace:FindFirstChild("Spawn")
+        if spawn and spawn:IsA("Part") then
+            table.insert(spawnLocations, spawn)
+        end
+    end
+    
+    if #spawnLocations > 0 then
+        local mainSpawn = spawnLocations[1]
+        local spawnPos = mainSpawn.Position
+        
+        print("📍 Found spawn '" .. mainSpawn.Name .. "' at:", spawnPos.X, spawnPos.Y, spawnPos.Z)
+        
+        -- Position based on container type relative to spawn
+        if containerType == "DISPLAY" then
+            -- Place display containers in front of spawn (visible to players)
+            finalPosition = Vector3.new(spawnPos.X + 15, spawnPos.Y + 5, spawnPos.Z)
+            print("📺 Positioning DISPLAY container in front of spawn for visibility")
+        elseif containerType == "NPC" then
+            -- Place NPC containers near spawn but to the side
+            finalPosition = Vector3.new(spawnPos.X + 8, spawnPos.Y, spawnPos.Z + 8)
+            print("🤖 Positioning NPC container near spawn for interaction")
+        elseif containerType == "MINIGAME" then
+            -- Place minigame containers a bit further away
+            finalPosition = Vector3.new(spawnPos.X + 20, spawnPos.Y, spawnPos.Z + 10)
+            print("🎮 Positioning MINIGAME container away from spawn")
+        end
+        
+        print("🎯 Smart position:", finalPosition.X, finalPosition.Y, finalPosition.Z)
+        print("📏 Distance from spawn:", (finalPosition - spawnPos).Magnitude, "studs")
+    else
+        print("ℹ️ No spawn found, using configured position:", finalPosition.X, finalPosition.Y, finalPosition.Z)
+    end
+    
+    return finalPosition
+end
+
 -- Container configuration
 local containerConfig = {
     id = "${container.id}",
     name = "${container.name}",
     type = "${container.type}",
-    position = Vector3.new(${x}, ${y}, ${z}),
+    position = Vector3.new(${x}, ${y}, ${z}),  -- Fallback position
     gameId = "${container.game.id}"
 }
 
@@ -224,6 +275,9 @@ if existingContainer then
         if input.KeyCode == Enum.KeyCode.Y then
             print("🔄 Replacing existing container...")
             existingContainer:Destroy()
+            -- Get smart position and create container
+            local smartPosition = getSmartContainerPosition(containerConfig.position, containerConfig.type)
+            containerConfig.position = smartPosition
             ContainerModel.createContainer(containerConfig)
         elseif input.KeyCode == Enum.KeyCode.N then
             print("❌ Cancelled container creation")
@@ -237,6 +291,10 @@ if existingContainer then
     print("💡 If you want to recreate it, delete the existing container first")
     return`}
 end
+
+-- Get smart position based on spawn location
+local smartPosition = getSmartContainerPosition(containerConfig.position, containerConfig.type)
+containerConfig.position = smartPosition
 
 -- Create the container
 local success, result = pcall(function()
