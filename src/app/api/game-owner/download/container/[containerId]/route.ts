@@ -144,7 +144,7 @@ async function generateContainerPackage(container: any, isFirstDownload: boolean
     
     // Generate container-specific script with duplicate prevention
     const containerScript = generateSingleContainerScript(container, isFirstDownload)
-    await writeFile(join(tempDir, 'ContainerSetup.lua'), containerScript)
+    await writeFile(join(tempDir, 'ContainerSetup.server.lua'), containerScript)
     
     // Generate container model
     const containerModel = generateContainerModel(container)
@@ -156,7 +156,7 @@ async function generateContainerPackage(container: any, isFirstDownload: boolean
       tree: {
         "$className": "Folder",
         "ContainerSetup": {
-          "$path": "ContainerSetup.lua"
+          "$path": "ContainerSetup.server.lua"
         },
         "ContainerModel": {
           "$path": "ContainerModel.lua"

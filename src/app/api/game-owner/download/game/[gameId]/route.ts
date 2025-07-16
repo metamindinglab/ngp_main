@@ -96,11 +96,11 @@ async function generateGamePackage(game: any) {
     
     // Generate game-specific integration script
     const integrationScript = generateGameIntegrationScript(game)
-    await writeFile(join(tempDir, 'MMLNetworkIntegration.lua'), integrationScript)
+    await writeFile(join(tempDir, 'MMLNetworkIntegration.server.lua'), integrationScript)
     
     // Generate container creation script for this game's containers
     const containerScript = generateGameContainerScript(game.adContainers)
-    await writeFile(join(tempDir, 'CreateContainers.lua'), containerScript)
+    await writeFile(join(tempDir, 'CreateContainers.server.lua'), containerScript)
     
     // Copy the base module
     const baseModulePath = join(process.cwd(), 'src', 'roblox', 'MMLGameNetwork.lua')
@@ -121,10 +121,10 @@ async function generateGamePackage(game: any) {
         "ServerScriptService": {
           "$className": "Folder",
           "MMLNetworkIntegration": {
-            "$path": "MMLNetworkIntegration.lua"
+            "$path": "MMLNetworkIntegration.server.lua"
           },
           "CreateContainers": {
-            "$path": "CreateContainers.lua"
+            "$path": "CreateContainers.server.lua"
           }
         }
       }
