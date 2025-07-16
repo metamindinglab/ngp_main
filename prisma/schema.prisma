@@ -135,6 +135,7 @@ model GameOwner {
   createdAt DateTime @default(now())
   updatedAt DateTime
   games     Game[]
+  containerDownloads ContainerDownload[]
 }
 
 model PlatformAdmin {
@@ -259,6 +260,7 @@ model AdContainer {
   currentAd   GameAd?           @relation(fields: [currentAdId], references: [id])
   game        Game              @relation(fields: [gameId], references: [id])
   engagements AdEngagement[]
+  downloads   ContainerDownload[]
 
   @@index([gameId])
   @@index([currentAdId])
@@ -276,6 +278,23 @@ model AdEngagement {
 
   @@index([containerId])
   @@index([adId])
+}
+
+model ContainerDownload {
+  id            String    @id @default(uuid())
+  containerId   String
+  gameOwnerId   String
+  downloadCount Int       @default(1)
+  lastDownloaded DateTime @default(now())
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  container     AdContainer @relation(fields: [containerId], references: [id], onDelete: Cascade)
+  gameOwner     GameOwner   @relation(fields: [gameOwnerId], references: [id], onDelete: Cascade)
+
+  @@unique([containerId, gameOwnerId], name: "containerId_gameOwnerId")
+  @@index([containerId])
+  @@index([gameOwnerId])
 }
 
 enum AdContainerType {

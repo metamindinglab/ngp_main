@@ -45,24 +45,60 @@ export async function GET(request: NextRequest) {
       where: {
         gameOwnerId: user.id
       },
-      select: {
-        id: true,
-        name: true,
-        description: true,
-        thumbnail: true,
-        gameOwnerId: true,
-        createdAt: true,
-        updatedAt: true,
-      },
+      include: {
+        media: {
+          select: {
+            id: true,
+            type: true,
+            title: true,
+            localPath: true,
+            thumbnailUrl: true
+          }
+        }
+      }
     })
 
-    // Transform the data to match the frontend interface
-    const transformedGames = games.map((game) => ({
-      ...game,
-      thumbnailUrl: game.thumbnail || '/placeholder.svg',
-    }))
+    // For each game, fetch the latest metrics
+    const gamesWithMetrics = await Promise.all(games.map(async (game) => {
+      // Fetch latest metrics for DAU, MAU, and D1 Retention using raw SQL
+      const [latestDAU, latestMAU, latestD1Retention] = await Promise.all([
+        prisma.$queryRaw<Array<{ value: number, date: Date }>>`
+          SELECT value, date
+          FROM "GameMetricData"
+          WHERE "gameId" = ${game.id} AND "metricType"::text = 'daily_active_users'
+          ORDER BY date DESC
+          LIMIT 1
+        `,
+        prisma.$queryRaw<Array<{ value: number, date: Date }>>`
+          SELECT value, date
+          FROM "GameMetricData"
+          WHERE "gameId" = ${game.id} AND "metricType"::text = 'monthly_active_users_by_day'
+          ORDER BY date DESC
+          LIMIT 1
+        `,
+        prisma.$queryRaw<Array<{ value: number, date: Date }>>`
+          SELECT value, date
+          FROM "GameMetricData"
+          WHERE "gameId" = ${game.id} AND "metricType"::text = 'd1_retention'
+          ORDER BY date DESC
+          LIMIT 1
+        `
+      ]);
 
-    return NextResponse.json({ success: true, games: transformedGames })
+      // Update the game object with latest metrics
+      return {
+        ...game,
+        metrics: {
+          dau: latestDAU[0]?.value || 0,
+          mau: latestMAU[0]?.value || 0,
+          day1Retention: latestD1Retention[0]?.value || 0
+        },
+        enabledTemplates: [],
+        assignedAds: []
+      };
+    }));
+
+    return NextResponse.json({ success: true, games: gamesWithMetrics })
   } catch (error) {
     console.error('Error fetching games:', error)
     return NextResponse.json(

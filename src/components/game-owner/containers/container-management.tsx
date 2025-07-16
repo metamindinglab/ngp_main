@@ -17,7 +17,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Copy, Settings, Trash } from 'lucide-react'
+import { Copy, Settings, Trash, Download } from 'lucide-react'
 import {
   Select,
   SelectContent,
@@ -194,6 +194,45 @@ container:Start()`
       title: 'Copied!',
       description: 'Integration code copied to clipboard',
     })
+  }
+
+  const handleDownloadContainer = async (containerId: string, containerName: string) => {
+    try {
+      const sessionToken = localStorage.getItem('gameOwnerSessionToken')
+      const response = await fetch(`/api/game-owner/download/container/${containerId}`, {
+        headers: {
+          'Authorization': `Bearer ${sessionToken}`
+        }
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to download container')
+      }
+
+      // Create blob and download
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `MMLContainer_${containerName.replace(/[^a-zA-Z0-9]/g, '_')}.rbxm`
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+
+      toast({
+        title: 'Success!',
+        description: `Container "${containerName}" downloaded successfully`,
+      })
+    } catch (error) {
+      console.error('Download error:', error)
+      toast({
+        title: 'Download Failed',
+        description: error instanceof Error ? error.message : 'Failed to download container',
+        variant: 'destructive',
+      })
+    }
   }
 
   return (
@@ -405,6 +444,15 @@ container:Start()`
                         <Settings className="h-4 w-4 mr-2" />
                         Configure
                       </Link>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDownloadContainer(container.id, container.name)}
+                      className="text-blue-600 hover:text-blue-700"
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      Download Container
                     </Button>
                     <Button
                       variant="outline"

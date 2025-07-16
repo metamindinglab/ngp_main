@@ -4,7 +4,6 @@ import { verify } from 'jsonwebtoken'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key'
 
-// GET single game
 export async function GET(
   request: NextRequest,
   { params }: { params: { gameId: string } }
@@ -45,11 +44,11 @@ export async function GET(
       )
     }
 
-    // Get the specific game and verify ownership
+    // Fetch the specific game
     const game = await prisma.game.findFirst({
       where: {
         id: params.gameId,
-        gameOwnerId: user.id
+        gameOwnerId: user.id // Ensure ownership
       },
       include: {
         media: {
@@ -71,35 +70,50 @@ export async function GET(
       )
     }
 
-    return NextResponse.json({
-      success: true,
-      game: {
-        id: game.id,
-        name: game.name,
-        description: game.description || '',
-        genre: game.genre || '',
-        robloxLink: game.robloxLink || '',
-        thumbnail: game.thumbnail || '',
-        metrics: game.metrics || { dau: 0, mau: 0, day1Retention: 0 },
-        owner: {
-          name: user.name || '',
-          email: user.email,
-          country: '',  // These fields are not in the database schema
-          discordId: '' // These fields are not in the database schema
-        },
-        media: game.media
+    // Fetch latest metrics for this game
+    const [latestDAU, latestMAU, latestD1Retention] = await Promise.all([
+      prisma.$queryRaw<Array<{ value: number, date: Date }>>`
+        SELECT value, date
+        FROM "GameMetricData"
+        WHERE "gameId" = ${game.id} AND "metricType"::text = 'daily_active_users'
+        ORDER BY date DESC
+        LIMIT 1
+      `,
+      prisma.$queryRaw<Array<{ value: number, date: Date }>>`
+        SELECT value, date
+        FROM "GameMetricData"
+        WHERE "gameId" = ${game.id} AND "metricType"::text = 'monthly_active_users_by_day'
+        ORDER BY date DESC
+        LIMIT 1
+      `,
+      prisma.$queryRaw<Array<{ value: number, date: Date }>>`
+        SELECT value, date
+        FROM "GameMetricData"
+        WHERE "gameId" = ${game.id} AND "metricType"::text = 'd1_retention'
+        ORDER BY date DESC
+        LIMIT 1
+      `
+    ]);
+
+    const gameWithMetrics = {
+      ...game,
+      metrics: {
+        dau: latestDAU[0]?.value || 0,
+        mau: latestMAU[0]?.value || 0,
+        day1Retention: latestD1Retention[0]?.value || 0
       }
-    })
+    };
+
+    return NextResponse.json({ success: true, game: gameWithMetrics })
   } catch (error) {
-    console.error('Get game error:', error)
+    console.error('Error fetching game:', error)
     return NextResponse.json(
-      { success: false, error: 'Failed to get game' },
+      { success: false, error: 'Internal server error' },
       { status: 500 }
     )
   }
 }
 
-// PUT (update) game
 export async function PUT(
   request: NextRequest,
   { params }: { params: { gameId: string } }
@@ -140,30 +154,14 @@ export async function PUT(
       )
     }
 
+    // Parse the request body
     const { name, description, genre, robloxLink, thumbnail } = await request.json()
-
-    // Verify the game exists and user owns it
-    const existingGame = await prisma.game.findFirst({
-      where: {
-        id: params.gameId,
-        gameOwnerId: user.id
-      },
-      include: {
-        media: true
-      }
-    })
-
-    if (!existingGame) {
-      return NextResponse.json(
-        { success: false, error: 'Game not found or access denied' },
-        { status: 404 }
-      )
-    }
 
     // Update the game
     const updatedGame = await prisma.game.update({
       where: {
-        id: params.gameId
+        id: params.gameId,
+        gameOwnerId: user.id // Ensure ownership
       },
       data: {
         name,
@@ -186,22 +184,11 @@ export async function PUT(
       }
     })
 
-    return NextResponse.json({
-      success: true,
-      game: {
-        id: updatedGame.id,
-        name: updatedGame.name,
-        description: updatedGame.description,
-        genre: updatedGame.genre,
-        robloxLink: updatedGame.robloxLink,
-        thumbnail: updatedGame.thumbnail,
-        media: updatedGame.media
-      }
-    })
+    return NextResponse.json({ success: true, game: updatedGame })
   } catch (error) {
-    console.error('Update game error:', error)
+    console.error('Error updating game:', error)
     return NextResponse.json(
-      { success: false, error: 'Failed to update game' },
+      { success: false, error: 'Internal server error' },
       { status: 500 }
     )
   }

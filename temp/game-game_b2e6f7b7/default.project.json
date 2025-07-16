@@ -1,0 +1,21 @@
+{
+  "name": "MMLNetwork_Magical_playground",
+  "tree": {
+    "$className": "Folder",
+    "ReplicatedStorage": {
+      "$className": "Folder",
+      "MMLGameNetwork": {
+        "$path": "MMLGameNetwork.lua"
+      }
+    },
+    "ServerScriptService": {
+      "$className": "Folder",
+      "MMLNetworkIntegration": {
+        "$path": "MMLNetworkIntegration.lua"
+      },
+      "CreateContainers": {
+        "$path": "CreateContainers.lua"
+      }
+    }
+  }
+}

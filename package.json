@@ -18,6 +18,7 @@
     "db:seed": "NODE_ENV=development ts-node scripts/seed.ts",
     "db:backup": "NODE_ENV=production ts-node scripts/backup-db.ts",
     "db:restore": "NODE_ENV=production ts-node scripts/restore-db.ts",
+    "build:roblox": "node scripts/build-roblox-module.js",
     "db:backup:auto": "NODE_ENV=production ts-node scripts/setup-automated-backups.ts"
   },
   "dependencies": {

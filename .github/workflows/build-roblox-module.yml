@@ -1,0 +1,73 @@
+name: Build Roblox Module
+
+on:
+  push:
+    branches: [ main ]
+    paths: 
+      - 'src/roblox/**'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'src/roblox/**'
+  workflow_dispatch:
+
+jobs:
+  build-module:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install Rojo
+      run: |
+        curl -L https://github.com/rojo-rbx/rojo/releases/latest/download/rojo-linux.zip -o rojo.zip
+        unzip rojo.zip
+        chmod +x rojo
+        sudo mv rojo /usr/local/bin/
+    
+    - name: Create Rojo project file
+      run: |
+        cat > roblox-module.project.json << 'EOF'
+        {
+          "name": "MMLGameNetwork",
+          "tree": {
+            "$className": "ModuleScript",
+            "$properties": {
+              "Name": "MMLGameNetwork"
+            },
+            "Source": {
+              "$path": "src/roblox/MMLGameNetwork.lua"
+            }
+          }
+        }
+        EOF
+    
+    - name: Build .rbxm file
+      run: |
+        rojo build roblox-module.project.json --output MMLGameNetwork.rbxm
+    
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: MMLGameNetwork-rbxm
+        path: MMLGameNetwork.rbxm
+        retention-days: 30
+    
+    - name: Create release on tag
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: softprops/action-gh-release@v1
+      with:
+        files: MMLGameNetwork.rbxm
+        body: |
+          ## MML Game Network Module
+          
+          ### Installation Instructions:
+          1. Download `MMLGameNetwork.rbxm`
+          2. In Roblox Studio, right-click on ReplicatedStorage
+          3. Select "Insert from File..."
+          4. Choose the downloaded file
+          
+          ### Usage:
+          See the [integration guide](https://github.com/${{ github.repository }}/blob/main/docs/game-integration-guide.md) for setup instructions.
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 

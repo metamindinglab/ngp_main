@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { useGameOwnerAuth } from '@/components/game-owner/auth/auth-context'
-import { Gamepad2, Users, TrendingUp, Key, Settings, LogOut, Eye, Copy, RefreshCw, ArrowLeft, ArrowDownToLine, Plus, Trash, LayoutTemplate } from 'lucide-react'
+import { Gamepad2, Users, TrendingUp, Key, Settings, LogOut, Eye, Copy, RefreshCw, ArrowLeft, ArrowDownToLine, Plus, Trash, LayoutTemplate, ChevronUp, ChevronDown, Download } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Game } from '@/types/game'
@@ -13,6 +13,7 @@ import { ContainerManagement } from '../containers/container-management'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { GameManager } from '../games/game-manager'
 import { AdBrowser } from '../ads/ad-browser'
+import { IntegrationGuide } from '../integration/integration-guide'
 import { useGameOwnerGames } from '@/hooks/use-game-owner-games'
 import {
   AlertDialog,
@@ -59,6 +60,7 @@ export function GameOwnerDashboard() {
     totalAssignedAds: 0,
   })
   const [showApiKeys, setShowApiKeys] = useState<{[key: string]: boolean}>({})
+  const [showIntegrationCode, setShowIntegrationCode] = useState<{[key: string]: boolean}>({})
   const [showLogoutDialog, setShowLogoutDialog] = useState(false)
   const { toast } = useToast()
 
@@ -132,17 +134,37 @@ export function GameOwnerDashboard() {
 
   const generateApiKey = async (gameId: string) => {
     try {
+      const sessionToken = localStorage.getItem('gameOwnerSessionToken')
       const response = await fetch(`/api/games/${gameId}`, {
-        method: 'POST'
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${sessionToken}`,
+          'Content-Type': 'application/json'
+        }
       })
       const data = await response.json()
 
       if (data.serverApiKey) {
-        // Refresh games to show new API key
-        // The hook will automatically refresh the games
+        // Refresh the games data by re-fetching
+        window.location.reload()
+        toast({
+          title: 'Success',
+          description: 'API key generated successfully',
+        })
+      } else {
+        toast({
+          title: 'Error',
+          description: data.error || 'Failed to generate API key',
+          variant: 'destructive',
+        })
       }
     } catch (error) {
       console.error('Error generating API key:', error)
+      toast({
+        title: 'Error',
+        description: 'Failed to generate API key',
+        variant: 'destructive',
+      })
     }
   }
 
@@ -152,6 +174,84 @@ export function GameOwnerDashboard() {
       title: 'Copied!',
       description: 'Integration code copied to clipboard',
     })
+  }
+
+  const handleDownloadContainer = async (containerId: string, containerName: string) => {
+    try {
+      const sessionToken = localStorage.getItem('gameOwnerSessionToken')
+      const response = await fetch(`/api/game-owner/download/container/${containerId}`, {
+        headers: {
+          'Authorization': `Bearer ${sessionToken}`
+        }
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to download container')
+      }
+
+      // Create blob and download
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `MMLContainer_${containerName.replace(/[^a-zA-Z0-9]/g, '_')}.rbxm`
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+
+      toast({
+        title: 'Success!',
+        description: `Container "${containerName}" downloaded successfully`,
+      })
+    } catch (error) {
+      console.error('Download error:', error)
+      toast({
+        title: 'Download Failed',
+        description: error instanceof Error ? error.message : 'Failed to download container',
+        variant: 'destructive',
+      })
+    }
+  }
+
+  const handleDownloadGame = async (gameId: string, gameName: string) => {
+    try {
+      const sessionToken = localStorage.getItem('gameOwnerSessionToken')
+      const response = await fetch(`/api/game-owner/download/game/${gameId}`, {
+        headers: {
+          'Authorization': `Bearer ${sessionToken}`
+        }
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to download game package')
+      }
+
+      // Create blob and download
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `MMLNetwork_${gameName.replace(/[^a-zA-Z0-9]/g, '_')}.rbxm`
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+
+      toast({
+        title: 'Success!',
+        description: `Game package for "${gameName}" downloaded successfully`,
+      })
+    } catch (error) {
+      console.error('Download error:', error)
+      toast({
+        title: 'Download Failed',
+        description: error instanceof Error ? error.message : 'Failed to download game package',
+        variant: 'destructive',
+      })
+    }
   }
 
   const getIntegrationCode = (container: Container) => {
@@ -282,6 +382,7 @@ container:Start()`
             <TabsList>
               <TabsTrigger value="games">Games</TabsTrigger>
               <TabsTrigger value="containers">Ad Containers</TabsTrigger>
+              <TabsTrigger value="integration">Integration Guide</TabsTrigger>
             </TabsList>
             <Button variant="outline" onClick={() => window.location.reload()}>
               <RefreshCw className="h-4 w-4 mr-2" />
@@ -292,12 +393,6 @@ container:Start()`
           <TabsContent value="games" className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold text-gray-900">Your Games</h2>
-              <Button variant="outline" asChild>
-                <Link href="/docs/MMLNetwork.rbxm" download>
-                  <ArrowDownToLine className="h-4 w-4 mr-2" />
-                  Download Module
-                </Link>
-              </Button>
             </div>
 
             {games.length === 0 ? (
@@ -379,7 +474,7 @@ container:Start()`
                         </div>
                         <div>
                           <div className="text-lg font-semibold text-purple-600">
-                            {game.metrics?.day1Retention || 0}%
+                            {((game.metrics?.day1Retention || 0) * 100).toFixed(1)}%
                           </div>
                           <div className="text-xs text-gray-600">D1 Retention</div>
                         </div>
@@ -412,6 +507,7 @@ container:Start()`
                                   ...prev,
                                   [game.id]: !prev[game.id]
                                 }))}
+                                title="Toggle visibility"
                               >
                                 <Eye className="h-4 w-4" />
                               </Button>
@@ -419,8 +515,18 @@ container:Start()`
                                 variant="outline"
                                 size="sm"
                                 onClick={() => copyApiKey(game.serverApiKey!)}
+                                title="Copy API key"
                               >
                                 <Copy className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => generateApiKey(game.id)}
+                                title="Regenerate API key"
+                                className="text-orange-600 hover:text-orange-700"
+                              >
+                                <RefreshCw className="h-4 w-4" />
                               </Button>
                             </div>
                           </div>
@@ -495,6 +601,17 @@ container:Start()`
                             Manage
                           </Button>
                         </Link>
+                        {game.serverApiKey && (
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleDownloadGame(game.id, game.name)}
+                            className="text-blue-600 hover:text-blue-700"
+                          >
+                            <Download className="h-4 w-4 mr-2" />
+                            Download Package
+                          </Button>
+                        )}
                       </div>
                     </CardContent>
                   </Card>
@@ -544,9 +661,15 @@ container:Start()`
                             <div className="mt-1">{container.type}</div>
                           </div>
                           <div>
-                            <div className="text-sm font-medium text-gray-500">Position</div>
-                            <div className="mt-1">
-                              {container.position.x}, {container.position.y}, {container.position.z}
+                            <div className="text-sm font-medium text-gray-500">Position (Auto-detected)</div>
+                            <div className="mt-1 text-gray-600">
+                              {container.position?.x !== undefined ? (
+                                `${container.position.x}, ${container.position.y}, ${container.position.z}`
+                              ) : (
+                                <span className="text-amber-600 text-sm">
+                                  Place container in game to detect position
+                                </span>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -562,25 +685,58 @@ container:Start()`
                           </div>
                         )}
                         <div className="space-y-2">
-                          <div className="text-sm font-medium text-gray-500">Integration Code</div>
-                          <div className="relative">
-                            <pre className="bg-gray-50 p-3 rounded-md text-sm font-mono overflow-x-auto whitespace-pre-wrap">
-                              {getIntegrationCode(container)}
-                            </pre>
+                          <div className="flex items-center justify-between">
+                            <div className="text-sm font-medium text-gray-500">Integration Code (Optional)</div>
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="absolute top-2 right-2"
-                              onClick={() => handleCopyCode(getIntegrationCode(container))}
+                              onClick={() => setShowIntegrationCode(prev => ({
+                                ...prev,
+                                [container.id]: !prev[container.id]
+                              }))}
                             >
-                              <Copy className="h-4 w-4" />
+                              {showIntegrationCode[container.id] ? (
+                                <>
+                                  <ChevronUp className="h-4 w-4 mr-1" />
+                                  Hide Code
+                                </>
+                              ) : (
+                                <>
+                                  <ChevronDown className="h-4 w-4 mr-1" />
+                                  Show Code
+                                </>
+                              )}
                             </Button>
                           </div>
+                          {showIntegrationCode[container.id] && (
+                            <div className="relative">
+                              <pre className="bg-gray-50 p-3 rounded-md text-sm font-mono overflow-x-auto whitespace-pre-wrap">
+                                {getIntegrationCode(container)}
+                              </pre>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="absolute top-2 right-2"
+                                onClick={() => handleCopyCode(getIntegrationCode(container))}
+                              >
+                                <Copy className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          )}
                         </div>
                         <div className="flex space-x-2">
                           <Button variant="outline" size="sm" onClick={() => router.push(`/game-owner/games/${container.game.id}/containers/${container.id}`)}>
                             <Settings className="h-4 w-4 mr-2" />
                             Configure
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => handleDownloadContainer(container.id, container.name)}
+                            className="text-blue-600 hover:text-blue-700"
+                          >
+                            <Download className="h-4 w-4 mr-2" />
+                            Download Container
                           </Button>
                           <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
                             <Trash className="h-4 w-4 mr-2" />
@@ -603,6 +759,18 @@ container:Start()`
                 </CardContent>
               </Card>
             )}
+          </TabsContent>
+
+          <TabsContent value="integration" className="space-y-6">
+            <IntegrationGuide 
+              gameApiKey={games.find(g => g.serverApiKey)?.serverApiKey}
+              containers={containers.map(c => ({
+                id: c.id,
+                name: c.name,
+                type: c.type,
+                position: c.position
+              }))}
+            />
           </TabsContent>
         </Tabs>
       </main>

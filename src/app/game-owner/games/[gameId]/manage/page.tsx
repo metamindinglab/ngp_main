@@ -24,6 +24,10 @@ interface GameData {
   genre: string
   robloxLink: string
   thumbnail: string
+  media?: any[] // Added for uploaded media files
+  robloxInfo?: { // Added for Roblox images
+    images: any[]
+  }
 }
 
 export default function GameManagePage() {
@@ -137,7 +141,7 @@ export default function GameManagePage() {
       <div className="container py-8">
         <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
           <p className="text-lg text-muted-foreground">Game not found</p>
-          <Button onClick={() => router.push('/game-owner/games')}>
+          <Button onClick={() => router.push('/game-owner')}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Games
           </Button>
@@ -150,7 +154,7 @@ export default function GameManagePage() {
     <div className="container py-8">
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center space-x-4">
-          <Button variant="outline" onClick={() => router.push('/game-owner/games')}>
+          <Button onClick={() => router.push('/game-owner')}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Games
           </Button>
@@ -241,19 +245,106 @@ export default function GameManagePage() {
             <CardHeader>
               <CardTitle>Media</CardTitle>
               <CardDescription>
-                Upload and manage your game's media files
+                Manage your game's media files and images
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
+              <div className="space-y-6">
+                {/* Manual Thumbnail URL */}
                 <div className="space-y-2">
                   <Label htmlFor="thumbnail">Thumbnail URL</Label>
                   <Input
                     id="thumbnail"
                     value={game.thumbnail}
                     onChange={(e) => handleInputChange('thumbnail', e.target.value)}
+                    placeholder="Enter thumbnail URL"
                   />
                 </div>
+
+                {/* Uploaded Media Files */}
+                {game.media && game.media.length > 0 && (
+                  <div className="space-y-4">
+                    <div className="border-t pt-4">
+                      <h4 className="font-semibold text-lg mb-2">Uploaded Media Files</h4>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Media files associated with your game
+                      </p>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {game.media.map((media) => (
+                          <div key={media.id} className="group rounded-lg border overflow-hidden bg-white hover:shadow-lg transition-all duration-300">
+                            {media.type === 'image' && media.localPath && (
+                              <div className="aspect-video overflow-hidden">
+                                <img
+                                  src={media.localPath}
+                                  alt={media.title || 'Game media'}
+                                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                  onError={(e) => {
+                                    (e.target as HTMLImageElement).src = '/placeholder.svg';
+                                  }}
+                                />
+                              </div>
+                            )}
+                            <div className="p-4">
+                              <h4 className="font-medium text-foreground">{media.title || 'Untitled'}</h4>
+                              <p className="text-sm text-muted-foreground capitalize">{media.type}</p>
+                              {media.localPath && (
+                                <p className="text-xs text-gray-500 mt-1 truncate">{media.localPath}</p>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Roblox Images (if available) */}
+                {game.robloxInfo?.images && game.robloxInfo.images.length > 0 && (
+                  <div className="space-y-4">
+                    <div className="border-t pt-4">
+                      <h4 className="font-semibold text-lg mb-2">Roblox Images</h4>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Images fetched from Roblox API
+                      </p>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {game.robloxInfo.images.map((image: any, index: number) => (
+                          <div key={image.id || index} className="group rounded-lg border overflow-hidden bg-white hover:shadow-lg transition-all duration-300">
+                            <div className="aspect-video bg-gray-100 flex items-center justify-center overflow-hidden">
+                              <img
+                                src={image.url}
+                                alt={image.title || 'Roblox image'}
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).src = '/placeholder.svg';
+                                }}
+                              />
+                            </div>
+                            <div className="p-4">
+                              <h4 className="font-medium text-sm text-gray-900">{image.title || `Image ${index + 1}`}</h4>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {image.type} • {image.state}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* No Media Message */}
+                {(!game.media || game.media.length === 0) && 
+                 (!game.robloxInfo?.images || game.robloxInfo.images.length === 0) && (
+                  <div className="text-center py-8 border-t">
+                    <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+                      <Upload className="w-8 h-8 text-gray-400" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">No Media Files</h3>
+                    <p className="text-muted-foreground mb-4">
+                      No media files have been uploaded for this game yet.
+                    </p>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
