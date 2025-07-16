@@ -42,3 +42,4 @@ next-env.d.ts
 # Vercel
 .vercel
 roblox-studio-mcp/
+temp/
