@@ -122,7 +122,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { name, type, description, assets, gameIds } = body
+    const { name, type, description, assets } = body
 
     // Validate required fields
     if (!name || !type) {
@@ -132,39 +132,28 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Create the game ad
+    // Validate assets based on template type
+    const assetValidation = validateTemplateAssets(type, assets)
+    if (!assetValidation.isValid) {
+      return NextResponse.json(
+        { error: `Asset validation failed: ${assetValidation.error}` },
+        { status: 400 }
+      )
+    }
+
+    // Create the game ad (independent of games - associations happen through playlists)
+    // We use a placeholder gameId to satisfy the schema constraint, but actual game associations are managed via playlists
     const gameAd = await (prisma as any).gameAd.create({
       data: {
         id: `gap_ad_${Date.now()}`,
-        gameId: gameIds && gameIds.length > 0 ? gameIds[0] : 'default_game',
+        gameId: 'game_001', // Placeholder - actual game associations happen through playlists
         name,
         type,
         assets: assets || [],
         brandUserId: auth.userId,
         updatedAt: new Date()
-      },
-      include: {
-        games: {
-          select: {
-            id: true,
-            name: true,
-            thumbnail: true
-          }
-        }
       }
     })
-
-    // Connect to additional games if provided
-    if (gameIds && gameIds.length > 1) {
-      await (prisma as any).gameAd.update({
-        where: { id: gameAd.id },
-        data: {
-          games: {
-            connect: gameIds.slice(1).map((id: string) => ({ id }))
-          }
-        }
-      })
-    }
 
     return NextResponse.json({
       success: true,
@@ -172,19 +161,19 @@ export async function POST(request: NextRequest) {
         id: gameAd.id,
         name: gameAd.name,
         type: gameAd.type,
-        status: 'draft',
-        impressions: 0,
+        status: 'draft', // Default status for new ads
+        impressions: 0, // Default metrics for new ads
         clicks: 0,
         ctr: 0,
-        createdAt: gameAd.createdAt.toISOString(),
-        updatedAt: gameAd.updatedAt.toISOString(),
-        games: gameAd.games,
-        assets: gameAd.assets
+        assets: gameAd.assets,
+        brandUserId: gameAd.brandUserId,
+        createdAt: gameAd.createdAt,
+        updatedAt: gameAd.updatedAt
       }
     })
   } catch (error) {
     console.error('Error creating GAP ad:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json({ error: 'Failed to create ad' }, { status: 500 })
   }
 }
 
@@ -205,4 +194,55 @@ function getAdStatus(ad: any, latestPerformance: any) {
   }
   
   return 'draft'
+} 
+
+// Helper function to validate template assets
+function validateTemplateAssets(adType: string, assets: any[]) {
+  if (!assets || !Array.isArray(assets)) {
+    return { isValid: false, error: 'Assets array is required' }
+  }
+
+  const assetTypes = assets.map(asset => asset.assetType)
+
+  switch (adType) {
+    case 'multimedia_display':
+      // Required: multiMediaSignage + (image OR video), Optional: audio
+      const hasSignage = assetTypes.includes('multiMediaSignage')
+      const hasImage = assetTypes.includes('image')
+      const hasVideo = assetTypes.includes('video')
+      
+      if (!hasSignage) {
+        return { isValid: false, error: 'Multimedia signage is required for display ads' }
+      }
+      if (!hasImage && !hasVideo) {
+        return { isValid: false, error: 'Either image or video content is required for display ads' }
+      }
+      if (hasImage && hasVideo) {
+        return { isValid: false, error: 'Cannot have both image and video content for display ads' }
+      }
+      return { isValid: true }
+
+    case 'dancing_npc':
+      // Required: kol_character, clothing_top, clothing_bottom, shoes, animation
+      // Optional: hat, item, audio
+      const requiredKolTypes = ['kol_character', 'clothing_top', 'clothing_bottom', 'shoes', 'animation']
+      const missingRequired = requiredKolTypes.filter(type => !assetTypes.includes(type))
+      
+      if (missingRequired.length > 0) {
+        return { isValid: false, error: `Missing required assets: ${missingRequired.join(', ')}` }
+      }
+      return { isValid: true }
+
+    case 'minigame_ad':
+      // Required: minigame
+      const hasMinigame = assetTypes.includes('minigame')
+      
+      if (!hasMinigame) {
+        return { isValid: false, error: 'Minigame asset is required for minigame ads' }
+      }
+      return { isValid: true }
+
+    default:
+      return { isValid: false, error: 'Unknown ad type' }
+  }
 } 

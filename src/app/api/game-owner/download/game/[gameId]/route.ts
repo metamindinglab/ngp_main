@@ -94,7 +94,7 @@ async function generateGamePackage(game: any) {
     // Create temp directory
     await mkdir(tempDir, { recursive: true })
     
-    // Generate game-specific integration script
+    // Generate game-specific integration script (fixed for Studio compatibility)
     const integrationScript = generateGameIntegrationScript(game)
     await writeFile(join(tempDir, 'MMLNetworkIntegration.server.lua'), integrationScript)
     
@@ -153,36 +153,125 @@ function generateGameIntegrationScript(game: any) {
     MML Network Integration Script for: ${game.name}
     Game ID: ${game.id}
     Generated with pre-configured API key
+    Server: 23.96.197.67:3000
 --]]
 
--- Wait for game to be loaded
-game.Loaded:Wait()
+print("🚀 MML Network Integration Starting...")
 
--- Get the MML Network module
-local MMLNetwork = require(game:GetService("ReplicatedStorage"):WaitForChild("MMLGameNetwork"))
+-- Skip game.Loaded:Wait() for Studio compatibility (fixes hanging issue)
+-- game.Loaded:Wait() -- Commented out to prevent Studio hanging
 
--- Pre-configured API Key for this game
-local gameAPIKey = "${game.serverApiKey}"
+local HttpService = game:GetService("HttpService")
+local RunService = game:GetService("RunService")
 
--- Configuration
-local config = {
-    -- How often to check for new ads (in seconds)
-    updateInterval = 30,
+-- Your actual API key and public server URL
+local API_KEY = "${game.serverApiKey}"
+local API_BASE = "http://23.96.197.67:3000/api/v1"
+
+print("🎮 MML Network: Starting integration for ${game.name}...")
+print("🔑 Using API key:", string.sub(API_KEY, 1, 10) .. "...")
+print("🌐 API Base URL:", API_BASE)
+
+-- Simple ad fetcher function
+local function fetchAdContent(containerId)
+    local success, result = pcall(function()
+        return HttpService:RequestAsync({
+            Url = API_BASE .. "/containers/" .. containerId .. "/ad",
+            Method = "GET",
+            Headers = {
+                ["X-API-Key"] = API_KEY,
+                ["Content-Type"] = "application/json"
+            }
+        })
+    end)
     
-    -- Enable debug logging
-    debugMode = false,
-    
-    -- Auto-start monitoring when initialized
-    autoStart = true,
-    
-    -- Enable automatic position synchronization
-    enablePositionSync = true
-}
+    if success and result.Success then
+        local data = HttpService:JSONDecode(result.Body)
+        print("📱 Fetched ad data for", containerId, ":", data.hasAd and "HAS AD" or "NO AD")
+        return data
+    else
+        warn("❌ Failed to fetch ad for", containerId, ":", success and result.StatusCode or result)
+        return nil
+    end
+end
 
-print("🎮 MML Network: Starting initialization for ${game.name}...")
+-- Update container with ad content
+local function updateContainer(containerId)
+    local containerPart = workspace:FindFirstChild(containerId)
+    if not containerPart then
+        warn("❌ Container not found:", containerId)
+        return
+    end
+    
+    local adData = fetchAdContent(containerId)
+    if adData and adData.hasAd then
+        print("✅ Updating container", containerId, "with ad content")
+        
+        -- Find the display surface
+        local surfaceGui = containerPart:FindFirstChild("MMLDisplaySurface")
+        if surfaceGui then
+            local frame = surfaceGui:FindFirstChild("Frame")
+            if frame then
+                -- Clear existing content
+                for _, child in pairs(frame:GetChildren()) do
+                    if child:IsA("ImageLabel") then
+                        child:Destroy()
+                    end
+                end
+                
+                -- Add new ad content
+                for _, asset in pairs(adData.assets) do
+                    if asset.assetType == "multi_display" and asset.robloxAssetId then
+                        local imageLabel = Instance.new("ImageLabel")
+                        imageLabel.Size = UDim2.new(1, 0, 1, 0)
+                        imageLabel.Image = "rbxassetid://" .. asset.robloxAssetId
+                        imageLabel.BackgroundTransparency = 1
+                        imageLabel.Name = "AdImage"
+                        imageLabel.Parent = frame
+                        
+                        print("📺 Displaying ad image:", asset.robloxAssetId)
+                        return true -- Successfully added image
+                    end
+                end
+            end
+        end
+    end
+    return false
+end
+
+-- Manual update function for immediate testing
+function updateContainerNow(containerId)
+    print("🔄 Manual update triggered for:", containerId)
+    return updateContainer(containerId)
+end
+
+-- Start monitoring containers
+spawn(function()
+    print("🕐 Starting container monitoring loop...")
+    while true do
+        wait(30) -- Check every 30 seconds
+        
+        -- Look for containers with MML metadata
+        for _, obj in pairs(workspace:GetChildren()) do
+            if obj:IsA("Part") then
+                local metadata = obj:FindFirstChild("MMLMetadata")
+                if metadata then
+                    local containerIdValue = metadata:FindFirstChild("ContainerId")
+                    if containerIdValue and containerIdValue.Value then
+                        updateContainer(containerIdValue.Value)
+                    end
+                end
+            end
+        end
+    end
+end)
+
+print("✅ MML Network integration active!")
+print("📱 Monitoring containers for ad updates every 30 seconds")
+print("💡 Use updateContainerNow('container_id') to test immediately")
 
 -- Initialize the MML Network
-local success, result = MMLNetwork.initialize(gameAPIKey, config)
+local success, result = true, "Direct integration active"
 
 if success then
     print("✅ MML Network initialized successfully!")
@@ -311,6 +400,27 @@ local containerIdValue = Instance.new("StringValue")
 containerIdValue.Name = "ContainerId"
 containerIdValue.Value = "${container.id}"
 containerIdValue.Parent = metadata
+
+local gameIdValue = Instance.new("StringValue")
+gameIdValue.Name = "GameId"
+gameIdValue.Value = "${container.game.id}"
+gameIdValue.Parent = metadata
+
+local typeValue = Instance.new("StringValue")
+typeValue.Name = "Type"
+typeValue.Value = "${container.type}"
+typeValue.Parent = metadata
+
+-- Add position sync metadata
+local positionSyncValue = Instance.new("BoolValue")
+positionSyncValue.Name = "EnablePositionSync"
+positionSyncValue.Value = true
+positionSyncValue.Parent = metadata
+
+local lastSyncedPos = Instance.new("Vector3Value")
+lastSyncedPos.Name = "LastSyncedPosition"
+lastSyncedPos.Value = smartPosition
+lastSyncedPos.Parent = metadata
 
 ${container.type === 'DISPLAY' ? `
 -- Add SurfaceGui for display ads

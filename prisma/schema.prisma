@@ -74,6 +74,7 @@ model GameAd {
   id                       String              @id
   gameId                   String
   name                     String
+  description              String?
   type                     String?
   createdAt                DateTime            @default(now())
   updatedAt                DateTime
@@ -135,7 +136,6 @@ model GameOwner {
   createdAt DateTime @default(now())
   updatedAt DateTime
   games     Game[]
-  containerDownloads ContainerDownload[]
 }
 
 model PlatformAdmin {
@@ -260,7 +260,6 @@ model AdContainer {
   currentAd   GameAd?           @relation(fields: [currentAdId], references: [id])
   game        Game              @relation(fields: [gameId], references: [id])
   engagements AdEngagement[]
-  downloads   ContainerDownload[]
 
   @@index([gameId])
   @@index([currentAdId])
@@ -281,18 +280,15 @@ model AdEngagement {
 }
 
 model ContainerDownload {
-  id            String    @id @default(uuid())
-  containerId   String
-  gameOwnerId   String
-  downloadCount Int       @default(1)
+  id             String   @id @default(dbgenerated("gen_random_uuid()"))
+  containerId    String
+  gameOwnerId    String
+  downloadCount  Int      @default(1)
   lastDownloaded DateTime @default(now())
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  
-  container     AdContainer @relation(fields: [containerId], references: [id], onDelete: Cascade)
-  gameOwner     GameOwner   @relation(fields: [gameOwnerId], references: [id], onDelete: Cascade)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @default(now()) @updatedAt
 
-  @@unique([containerId, gameOwnerId], name: "containerId_gameOwnerId")
+  @@unique([containerId, gameOwnerId], name: "containerId_gameOwnerId", map: "containerId_gameOwnerId")
   @@index([containerId])
   @@index([gameOwnerId])
 }

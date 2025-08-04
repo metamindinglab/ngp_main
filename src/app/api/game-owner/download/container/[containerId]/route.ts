@@ -198,8 +198,10 @@ function generateSingleContainerScript(container: any, isFirstDownload: boolean)
     ${!isFirstDownload ? 'WARNING: This container may already exist in your game!' : ''}
 --]]
 
--- Wait for game to be loaded
-game.Loaded:Wait()
+print("🚀 Container Setup Script Started: ${container.name}")
+
+-- Skip game.Loaded:Wait() for Studio compatibility (fixes hanging issue)
+-- game.Loaded:Wait() -- Commented out to prevent Studio hanging
 
 local ContainerModel = require(script.Parent.ContainerModel)
 
@@ -247,7 +249,10 @@ local function getSmartContainerPosition(preferredPosition, containerType)
         print("🎯 Smart position:", finalPosition.X, finalPosition.Y, finalPosition.Z)
         print("📏 Distance from spawn:", (finalPosition - spawnPos).Magnitude, "studs")
     else
-        print("ℹ️ No spawn found, using configured position:", finalPosition.X, finalPosition.Y, finalPosition.Z)
+        print("⚠️ No spawn points found in this game")
+        print("💡 Tip: Add a SpawnLocation part for automatic positioning")
+        print("📍 Using configured position:", finalPosition.X, finalPosition.Y, finalPosition.Z)
+        print("🔧 You can move the container after creation to your desired location")
     end
     
     return finalPosition
@@ -366,6 +371,17 @@ function ContainerModel.createContainer(config)
     typeValue.Value = config.type
     typeValue.Parent = metadata
     
+    -- Add position sync metadata
+    local positionSyncValue = Instance.new("BoolValue")
+    positionSyncValue.Name = "EnablePositionSync"
+    positionSyncValue.Value = true
+    positionSyncValue.Parent = metadata
+    
+    local lastSyncedPos = Instance.new("Vector3Value")
+    lastSyncedPos.Name = "LastSyncedPosition"
+    lastSyncedPos.Value = config.position
+    lastSyncedPos.Parent = metadata
+    
     -- Type-specific setup
     if config.type == "DISPLAY" then
         ContainerModel.setupDisplayContainer(containerPart)
@@ -374,6 +390,32 @@ function ContainerModel.createContainer(config)
     elseif config.type == "MINIGAME" then
         ContainerModel.setupMinigameContainer(containerPart)
     end
+    
+    -- Register container with MML Network (if available)
+    spawn(function()
+        wait(2) -- Give MML Network time to initialize
+        if _G.MMLNetwork and _G.MMLNetwork.CreateContainer then
+            local containerConfig = {
+                id = config.id,
+                model = containerPart,
+                type = config.type,
+                config = {
+                    enablePositionSync = true,
+                    enableAutoRotation = true,
+                    maxAdsToRotate = 5
+                }
+            }
+            
+            local success = pcall(function()
+                _G.MMLNetwork.CreateContainer(containerConfig)
+                print("📡 Container registered with MML Network for position sync")
+            end)
+            
+            if not success then
+                print("⚠️ MML Network not yet available - container will register when network initializes")
+            end
+        end
+    end)
     
     return containerPart
 end

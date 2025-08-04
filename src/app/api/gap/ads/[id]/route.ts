@@ -96,127 +96,103 @@ export async function GET(
 }
 
 // PUT - Update game ad
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const auth = await authenticateBrandUser(request)
     if (!auth.isValid) {
       return NextResponse.json({ error: auth.error }, { status: 401 })
     }
 
+    const { id: adId } = params
     const body = await request.json()
-    const { name, type, description, assets, gameIds } = body
+    const { name, description, status, type, assets } = body
 
-    // Check if ad exists and belongs to user
+    // Validate required fields (at least one field to update)
+    if (!name && !description && !status && !type && !assets) {
+      return NextResponse.json({ error: 'At least one field to update is required' }, { status: 400 })
+    }
+
+    // Check if ad exists and belongs to the user
     const existingAd = await (prisma as any).gameAd.findFirst({
       where: {
-        id: params.id,
+        id: adId,
         brandUserId: auth.userId
       }
     })
 
     if (!existingAd) {
-      return NextResponse.json({ error: 'Ad not found' }, { status: 404 })
+      return NextResponse.json({ error: 'Ad not found or access denied' }, { status: 404 })
     }
 
-    // Update the game ad
-    const gameAd = await (prisma as any).gameAd.update({
-      where: { id: params.id },
-      data: {
-        name: name || existingAd.name,
-        type: type || existingAd.type,
-        assets: assets || existingAd.assets,
-        updatedAt: new Date()
-      },
-      include: {
-        games: {
-          select: {
-            id: true,
-            name: true,
-            thumbnail: true
-          }
-        },
-        performance: {
-          orderBy: { date: 'desc' },
-          take: 1
-        }
-      }
+    // Build update data
+    const updateData: any = {
+      updatedAt: new Date()
+    }
+    if (name !== undefined) updateData.name = name
+    // if (description !== undefined) updateData.description = description  // Temporarily disabled - field doesn't exist in DB
+    if (status !== undefined) updateData.status = status
+    if (type !== undefined) updateData.type = type
+    if (assets !== undefined) updateData.assets = assets
+
+    // Update the ad
+    const updatedAd = await (prisma as any).gameAd.update({
+      where: { id: adId },
+      data: updateData
     })
-
-    // Update game connections if provided
-    if (gameIds && Array.isArray(gameIds)) {
-      await (prisma as any).gameAd.update({
-        where: { id: params.id },
-        data: {
-          games: {
-            set: gameIds.map((id: string) => ({ id }))
-          }
-        }
-      })
-    }
-
-    const latestPerformance = gameAd.performance[0]
-    const metrics = latestPerformance?.metrics || {}
 
     return NextResponse.json({
       success: true,
-      ad: {
-        id: gameAd.id,
-        name: gameAd.name,
-        type: gameAd.type,
-        status: getAdStatus(gameAd, latestPerformance),
-        impressions: metrics.impressions || 0,
-        clicks: metrics.clicks || 0,
-        ctr: metrics.clickThroughRate || 0,
-        createdAt: gameAd.createdAt.toISOString(),
-        updatedAt: gameAd.updatedAt.toISOString(),
-        games: gameAd.games,
-        assets: gameAd.assets
-      }
+      ad: updatedAd,
+      message: 'Ad updated successfully'
     })
+
   } catch (error) {
     console.error('Error updating GAP ad:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
   }
 }
 
 // DELETE - Delete game ad
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const auth = await authenticateBrandUser(request)
     if (!auth.isValid) {
       return NextResponse.json({ error: auth.error }, { status: 401 })
     }
 
-    // Check if ad exists and belongs to user
+    const { id: adId } = params
+
+    // Check if ad exists and belongs to the user
     const existingAd = await (prisma as any).gameAd.findFirst({
       where: {
-        id: params.id,
+        id: adId,
         brandUserId: auth.userId
       }
     })
 
     if (!existingAd) {
-      return NextResponse.json({ error: 'Ad not found' }, { status: 404 })
+      return NextResponse.json({ error: 'Ad not found or access denied' }, { status: 404 })
     }
 
-    // Delete the game ad
+    // Delete the ad
     await (prisma as any).gameAd.delete({
-      where: { id: params.id }
+      where: { id: adId }
     })
 
     return NextResponse.json({
       success: true,
       message: 'Ad deleted successfully'
     })
+
   } catch (error) {
     console.error('Error deleting GAP ad:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
   }
 }
 

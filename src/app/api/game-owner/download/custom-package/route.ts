@@ -185,19 +185,24 @@ function generateCustomIntegrationScript(games: any[], containers: any[]) {
   return `--[[
     MML Network Custom Integration Script
     Generated specifically for your games and containers
-    This script automatically initializes ALL your games and creates containers
+    Server: 23.96.197.67:3000
 --]]
 
--- Wait for game to be loaded
-game.Loaded:Wait()
+print("🚀 MML Network Custom Integration Starting...")
 
--- Get the MML Network module
-local MMLNetwork = require(game:GetService("ReplicatedStorage"):WaitForChild("MMLGameNetwork"))
+-- Skip game.Loaded:Wait() for Studio compatibility (fixes hanging issue)
+-- game.Loaded:Wait() -- Commented out to prevent Studio hanging
+
+local HttpService = game:GetService("HttpService")
+local RunService = game:GetService("RunService")
 
 -- Your API Keys (one for each game)
 local gameAPIKeys = {
 ${apiKeys}
 }
+
+-- Public server configuration
+local API_BASE = "http://23.96.197.67:3000/api/v1"
 
 -- Auto-detect current game and use appropriate API key
 local currentGameId = nil
@@ -219,17 +224,103 @@ if not currentAPIKey then
     return
 end
 
--- Configuration
-local config = {
-    updateInterval = 30,
-    debugMode = true, -- Enable debug mode for initial setup
-    autoStart = true
-}
-
 print("🎮 MML Network: Starting initialization for game:", currentGameId)
+print("🔑 Using API key:", string.sub(currentAPIKey, 1, 10) .. "...")
+print("🌐 API Base URL:", API_BASE)
+
+-- Simple ad fetcher function
+local function fetchAdContent(containerId)
+    local success, result = pcall(function()
+        return HttpService:RequestAsync({
+            Url = API_BASE .. "/containers/" .. containerId .. "/ad",
+            Method = "GET",
+            Headers = {
+                ["X-API-Key"] = currentAPIKey,
+                ["Content-Type"] = "application/json"
+            }
+        })
+    end)
+    
+    if success and result.Success then
+        local data = HttpService:JSONDecode(result.Body)
+        print("📱 Fetched ad data for", containerId, ":", data.hasAd and "HAS AD" or "NO AD")
+        return data
+    else
+        warn("❌ Failed to fetch ad for", containerId, ":", success and result.StatusCode or result)
+        return nil
+    end
+end
+
+-- Update container with ad content
+local function updateContainer(containerId)
+    local containerPart = workspace:FindFirstChild(containerId)
+    if not containerPart then
+        warn("❌ Container not found:", containerId)
+        return
+    end
+    
+    local adData = fetchAdContent(containerId)
+    if adData and adData.hasAd then
+        print("✅ Updating container", containerId, "with ad content")
+        
+        -- Find the display surface
+        local surfaceGui = containerPart:FindFirstChild("MMLDisplaySurface")
+        if surfaceGui then
+            local frame = surfaceGui:FindFirstChild("Frame")
+            if frame then
+                -- Clear existing content
+                for _, child in pairs(frame:GetChildren()) do
+                    if child:IsA("ImageLabel") then
+                        child:Destroy()
+                    end
+                end
+                
+                -- Add new ad content
+                for _, asset in pairs(adData.assets) do
+                    if asset.assetType == "multi_display" and asset.robloxAssetId then
+                        local imageLabel = Instance.new("ImageLabel")
+                        imageLabel.Size = UDim2.new(1, 0, 1, 0)
+                        imageLabel.Image = "rbxassetid://" .. asset.robloxAssetId
+                        imageLabel.BackgroundTransparency = 1
+                        imageLabel.Name = "AdImage"
+                        imageLabel.Parent = frame
+                        
+                        print("📺 Displaying ad image:", asset.robloxAssetId)
+                        return true -- Successfully added image
+                    end
+                end
+            end
+        end
+    end
+    return false
+end
+
+-- Start monitoring containers
+spawn(function()
+    print("🕐 Starting container monitoring loop...")
+    while true do
+        wait(30) -- Check every 30 seconds
+        
+        -- Look for containers with MML metadata
+        for _, obj in pairs(workspace:GetChildren()) do
+            if obj:IsA("Part") then
+                local metadata = obj:FindFirstChild("MMLMetadata")
+                if metadata then
+                    local containerIdValue = metadata:FindFirstChild("ContainerId")
+                    if containerIdValue and containerIdValue.Value then
+                        updateContainer(containerIdValue.Value)
+                    end
+                end
+            end
+        end
+    end
+end)
+
+print("✅ MML Network integration active!")
+print("📱 Monitoring containers for ad updates every 30 seconds")
 
 -- Initialize the MML Network
-local success, result = MMLNetwork.initialize(currentAPIKey, config)
+local success, result = true, "Direct integration active"
 
 if success then
     print("✅ MML Network initialized successfully!")

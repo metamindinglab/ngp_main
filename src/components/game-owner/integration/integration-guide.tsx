@@ -233,68 +233,115 @@ print("📦 Container ${container.name} created at position:", ${container.name.
         <TabsContent value="setup" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Step 1: Download and Import MML Network Module</CardTitle>
+              <CardTitle>Step 1: Download MML Network Integration Package</CardTitle>
+              <CardDescription>
+                Choose your integration method - Individual game package (recommended) or custom package for multiple games
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex flex-col gap-4">
-                <div className="flex gap-4">
-                  <Button asChild>
-                    <Link href="/api/game-owner/download/custom-package" download>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Individual Game Package */}
+                <div className="p-4 border rounded-lg bg-blue-50 border-blue-200">
+                  <h4 className="font-semibold text-blue-900 mb-2">🎮 Individual Game Package (Recommended)</h4>
+                  <p className="text-sm text-blue-700 mb-3">
+                    Download a package specifically configured for one of your games
+                  </p>
+                  <div className="space-y-2">
+                    <p className="text-xs text-blue-600">
+                      ✅ Pre-configured with your game's API key<br/>
+                      ✅ Includes container creation scripts<br/>
+                      ✅ Smart positioning system<br/>
+                      ✅ No manual configuration needed
+                    </p>
+                    <Button variant="outline" size="sm" className="w-full" disabled>
                       <Download className="h-4 w-4 mr-2" />
-                      Download Custom Package (Recommended)
-                    </Link>
-                  </Button>
-                  <Button variant="outline" asChild>
-                    <Link href="/api/download/roblox-module" download>
-                      <Download className="h-4 w-4 mr-2" />
-                      Download Generic Package
-                    </Link>
-                  </Button>
+                      Select Game Below
+                    </Button>
+                  </div>
                 </div>
-                <div className="text-sm text-gray-600">
-                  <p><strong>Custom Package:</strong> Pre-configured with YOUR API keys and container creation scripts</p>
-                  <p><strong>Generic Package:</strong> Requires manual configuration of API keys and container creation</p>
+
+                {/* Custom Package */}
+                <div className="p-4 border rounded-lg">
+                  <h4 className="font-semibold mb-2">📦 Custom Package (Multiple Games)</h4>
+                  <p className="text-sm text-gray-600 mb-3">
+                    Download a package that includes all your games and containers
+                  </p>
+                  <div className="space-y-2">
+                    <p className="text-xs text-gray-500">
+                      ⚡ All games in one package<br/>
+                      ⚡ All containers included<br/>
+                      ⚠️ Requires manual positioning<br/>
+                      ⚠️ May create duplicates
+                    </p>
+                    <Button asChild variant="outline" size="sm" className="w-full">
+                      <Link href="/api/game-owner/download/custom-package" download>
+                        <Download className="h-4 w-4 mr-2" />
+                        Download Custom Package
+                      </Link>
+                    </Button>
+                  </div>
                 </div>
-                <Button variant="outline" asChild>
-                  <Link href="/docs/integration-video" target="_blank">
-                    <ExternalLink className="h-4 w-4 mr-2" />
-                    Watch Video Tutorial
-                  </Link>
-                </Button>
               </div>
 
-              <div className="bg-blue-50 p-4 rounded-lg">
-                <h4 className="font-semibold mb-2">📥 Installation Steps:</h4>
-                <ol className="list-decimal list-inside space-y-2 text-sm">
-                  <li>Download the <code>MMLNetworkComplete.rbxm</code> file above</li>
+              <div className="bg-green-50 border border-green-200 p-4 rounded-lg">
+                <h4 className="font-semibold text-green-900 mb-2">📥 Modern Installation Steps (2024):</h4>
+                <ol className="list-decimal list-inside space-y-2 text-sm text-green-800">
+                  <li>Download your game-specific <code>.rbxm</code> file above</li>
                   <li>Open your game in Roblox Studio</li>
-                  <li>Right-click in the Explorer window → "Insert from File..."</li>
-                  <li>Select the downloaded <code>.rbxm</code> file</li>
-                  <li>A folder called "MMLNetworkComplete" will appear</li>
-                  <li><strong>Drag</strong> <code>MMLNetworkComplete/ReplicatedStorage/MMLGameNetwork</code> to your <code>ReplicatedStorage</code></li>
-                  <li><strong>Drag</strong> <code>MMLNetworkComplete/ServerScriptService/MMLNetworkIntegration</code> to your <code>ServerScriptService</code></li>
-                  <li><strong>Delete</strong> the temporary <code>MMLNetworkComplete</code> folder</li>
+                  <li>Right-click in the Explorer window → <strong>"Insert from File..."</strong></li>
+                  <li>Select the downloaded <code>MMLNetwork_[YourGame].rbxm</code> file</li>
+                  <li>A temporary folder (e.g., <code>MML_Network_[GameName]</code>) will appear in Explorer</li>
+                  <li><strong>🔄 Move Files to Correct Locations:</strong>
+                    <ul className="list-disc list-inside ml-4 mt-1 space-y-1">
+                      <li><strong>Drag</strong> <code>MMLGameNetwork</code> from temp folder → <code>ReplicatedStorage</code></li>
+                      <li><strong>Drag</strong> <code>MMLNetworkIntegration</code> from temp folder → <code>ServerScriptService</code></li>
+                      <li><strong>Drag</strong> <code>CreateContainers</code> from temp folder → <code>ServerScriptService</code></li>
+                    </ul>
+                  </li>
+                  <li><strong>🗑️ Delete</strong> the temporary folder after moving all files</li>
+                  <li><strong>✅ No manual configuration needed!</strong> The API key is pre-configured</li>
+                  <li>Test by pressing ▶️ Play - check output for "✅ MML Network initialized successfully!"</li>
                 </ol>
+              </div>
+
+              <div className="bg-red-50 border border-red-200 p-4 rounded-lg">
+                <h4 className="font-semibold text-red-900 mb-2">⚠️ CRITICAL: File Movement Required!</h4>
+                <p className="text-sm text-red-800 mb-2">
+                  The .rbxm import creates a temporary folder structure. You <strong>MUST</strong> move the files to the correct Roblox services or the integration will not work.
+                </p>
+                <div className="text-xs text-red-700 bg-red-100 p-2 rounded">
+                  <strong>❌ Common Mistake:</strong> Leaving files in the temporary folder<br/>
+                  <strong>✅ Correct:</strong> Moving files to ReplicatedStorage and ServerScriptService
+                </div>
+              </div>
+
+              <div className="bg-yellow-50 border border-yellow-200 p-3 rounded-lg">
+                <p className="text-sm text-yellow-800">
+                  <strong>💡 Pro Tip:</strong> Each game gets its own package to prevent configuration conflicts and ensure proper setup.
+                </p>
               </div>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader>
-              <CardTitle>Step 2: Configure Your API Key</CardTitle>
+              <CardTitle>Step 2: Ready to Test! 🚀</CardTitle>
+              <CardDescription>
+                The modern integration package is pre-configured and ready to use
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <Alert>
-                <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Important: Update Your API Key</AlertTitle>
+                <CheckCircle className="h-4 w-4" />
+                <AlertTitle>No Manual Configuration Required!</AlertTitle>
                 <AlertDescription>
-                  The integration script needs your game's API key to connect to MML Network.
+                  The individual game packages come pre-configured with your API keys and container scripts. Just import and test!
                 </AlertDescription>
               </Alert>
 
               <div className="space-y-3">
                 <div>
-                  <h4 className="font-semibold mb-2">🔑 Your Game API Key:</h4>
+                  <h4 className="font-semibold mb-2">🔑 Your Game API Key (Reference):</h4>
                   {gameApiKey ? (
                     <div className="flex items-center gap-2">
                       <code className="bg-gray-100 px-2 py-1 rounded text-sm flex-1">{gameApiKey}</code>
@@ -315,19 +362,35 @@ print("📦 Container ${container.name} created at position:", ${container.name.
                   )}
                 </div>
 
-                <div>
-                  <h4 className="font-semibold mb-2">📝 Update the Integration Script:</h4>
-                  <ol className="list-decimal list-inside space-y-1 text-sm">
-                    <li>Double-click <code>ServerScriptService/MMLNetworkIntegration</code> in Studio</li>
-                    <li>Find the line: <code>local gameAPIKey = "RBXG-REPLACE-WITH-YOUR-ACTUAL-API-KEY"</code></li>
-                    <li>Replace the placeholder with your actual API key above</li>
-                    <li>Save the script (Ctrl+S)</li>
+                <div className="bg-green-50 border border-green-200 p-4 rounded-lg">
+                  <h4 className="font-semibold text-green-900 mb-2">✅ What's Already Configured:</h4>
+                  <ul className="list-disc list-inside space-y-1 text-sm text-green-800">
+                    <li>API key is pre-configured in the integration script</li>
+                    <li>Container creation scripts include your containers</li>
+                    <li>Smart positioning system is enabled</li>
+                    <li>Automatic initialization on game start</li>
+                    <li>All MML Network modules properly linked</li>
+                  </ul>
+                </div>
+
+                <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
+                  <h4 className="font-semibold text-blue-900 mb-2">🔍 Verify Installation:</h4>
+                  <ol className="list-decimal list-inside space-y-1 text-sm text-blue-800">
+                    <li>Press ▶️ <strong>Play</strong> in Roblox Studio</li>
+                    <li>Check the <strong>Output</strong> window for:</li>
+                    <li className="ml-4">✅ "MML Network initialized successfully!"</li>
+                    <li className="ml-4">📊 "Found containers: [number]"</li>
+                    <li className="ml-4">🔄 "Container monitoring started"</li>
+                    <li>Look for container objects in your workspace with blue highlights</li>
                   </ol>
                 </div>
               </div>
 
               <div className="bg-gray-50 p-4 rounded-lg">
-                <h4 className="font-semibold mb-2">📋 Complete Script Preview:</h4>
+                <h4 className="font-semibold mb-2">📋 Integration Script (Auto-Generated):</h4>
+                <p className="text-sm text-gray-600 mb-2">
+                  This script is automatically generated and included in your download package:
+                </p>
                 <div className="relative">
                   <pre className="text-xs bg-white p-3 rounded border overflow-x-auto max-h-64">
                     {serverScriptCode}
@@ -361,25 +424,37 @@ print("📦 Container ${container.name} created at position:", ${container.name.
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-3">
-                  <div className="p-4 bg-blue-50 rounded-lg">
+                  <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
                     <h4 className="font-medium text-blue-900 mb-2">🆕 Individual Container Download (Recommended)</h4>
-                    <p className="text-sm text-blue-700">
-                      Download a specific .rbxm file for each container. No duplicates, easy positioning!
+                    <p className="text-sm text-blue-700 mb-3">
+                      Download plug-and-play .rbxm files for specific containers. Smart positioning and zero configuration!
                     </p>
                     <ol className="text-sm text-blue-700 mt-2 list-decimal list-inside space-y-1">
                       <li>Create container in Game Owner Portal</li>
-                      <li>Click "Download Container" button</li>
-                      <li>Import .rbxm file into Roblox Studio</li>
-                      <li>Move the container object to desired position</li>
-                      <li>Position automatically syncs to database!</li>
+                      <li>Click "Download Container" button next to each container</li>
+                      <li>Import <code>MMLContainer_[Name].rbxm</code> into Roblox Studio</li>
+                      <li>The container will auto-position relative to spawn points</li>
+                      <li>Move container if needed - position syncs automatically!</li>
+                      <li>Container becomes active immediately when ads are assigned</li>
                     </ol>
+                    <div className="mt-3 p-2 bg-blue-100 rounded">
+                      <p className="text-xs text-blue-800">
+                        <strong>✨ Features:</strong> Smart spawn detection, duplicate prevention, auto-positioning, type-specific setup
+                      </p>
+                    </div>
                   </div>
                   
-                  <div className="p-4 bg-gray-50 rounded-lg">
-                    <h4 className="font-medium text-gray-900 mb-2">📦 Bulk Download (Legacy)</h4>
-                    <p className="text-sm text-gray-600">
-                      Download all containers at once. May cause duplicates if run multiple times.
+                  <div className="p-4 bg-gray-50 rounded-lg border">
+                    <h4 className="font-medium text-gray-900 mb-2">📦 Game Package (Complete Setup)</h4>
+                    <p className="text-sm text-gray-600 mb-3">
+                      Download complete game integration with all containers included in one package.
                     </p>
+                    <div className="space-y-1 text-xs text-gray-600">
+                      <p>• All containers for a specific game</p>
+                      <p>• Pre-configured integration scripts</p>
+                      <p>• Bulk container creation</p>
+                      <p>• May require manual positioning adjustments</p>
+                    </div>
                   </div>
                 </div>
               </CardContent>
@@ -395,74 +470,119 @@ print("📦 Container ${container.name} created at position:", ${container.name.
               </Alert>
             ) : (
               <div className="space-y-6">
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <h4 className="font-semibold mb-2">🏗️ Container Creation Options:</h4>
-                  <p className="text-sm mb-3">You can create containers using either method:</p>
+                <div className="bg-green-50 border border-green-200 p-4 rounded-lg">
+                  <h4 className="font-semibold text-green-900 mb-2">🚀 Modern Container Setup (2024):</h4>
+                  <p className="text-sm text-green-800 mb-3">Individual container downloads with plug-and-play installation:</p>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                     <div>
-                      <strong>Option A: Manual Creation</strong>
-                      <ul className="list-disc list-inside mt-1 space-y-1">
-                        <li>Use the provided Lua code</li>
-                        <li>Customize appearance as needed</li>
-                        <li>Full control over design</li>
+                      <strong className="text-green-900">🎯 Recommended: Individual Downloads</strong>
+                      <ul className="list-disc list-inside mt-1 space-y-1 text-green-700">
+                        <li>Download each container's .rbxm file</li>
+                        <li>Import directly into Studio</li>
+                        <li>Auto-positioning and setup</li>
+                        <li>Zero manual configuration</li>
+                        <li>Smart spawn point detection</li>
                       </ul>
                     </div>
                     <div>
-                      <strong>Option B: Studio Insertion</strong>
-                      <ul className="list-disc list-inside mt-1 space-y-1">
-                        <li>Create Parts manually in Studio</li>
-                        <li>Name them with the Container ID</li>
-                        <li>Position as specified</li>
+                      <strong className="text-gray-700">📦 Alternative: Game Package</strong>
+                      <ul className="list-disc list-inside mt-1 space-y-1 text-gray-600">
+                        <li>Complete integration package</li>
+                        <li>All containers in one download</li>
+                        <li>Bulk creation scripts</li>
+                        <li>Manual positioning may be needed</li>
                       </ul>
                     </div>
+                  </div>
+                  <div className="mt-3 p-2 bg-green-100 rounded">
+                    <p className="text-xs text-green-800">
+                      <strong>💡 Tip:</strong> Use individual downloads for precise control and to avoid duplicates. Use game packages for quick setup of multiple containers.
+                    </p>
                   </div>
                 </div>
 
                 {containers.map((container, index) => (
-                  <Card key={container.id} className="border-l-4 border-l-blue-500">
+                  <Card key={container.id} className="border-l-4 border-l-green-500">
                     <CardHeader>
                       <div className="flex justify-between items-start">
                         <div>
-                          <CardTitle className="text-lg">{container.name}</CardTitle>
+                          <CardTitle className="text-lg flex items-center gap-2">
+                            {container.name}
+                            <Badge variant="secondary">{container.type}</Badge>
+                          </CardTitle>
                           <CardDescription>
-                            Type: {container.type} | Position: ({container.position.x}, {container.position.y}, {container.position.z})
+                            ID: {container.id} | Initial Position: ({container.position.x}, {container.position.y}, {container.position.z})
                           </CardDescription>
                         </div>
                         <Badge variant="outline">Container {index + 1}</Badge>
                       </div>
                     </CardHeader>
                     <CardContent>
-                      <div className="space-y-3">
-                        <div className="bg-yellow-50 p-3 rounded-lg">
-                          <p className="text-sm font-medium">📋 Container ID (Important!):</p>
-                          <code className="text-sm bg-white px-2 py-1 rounded mt-1 inline-block">{container.id}</code>
-                          <p className="text-xs text-gray-600 mt-1">
-                            The physical object must be named exactly this ID for MML Network to find it.
+                      <div className="space-y-4">
+                        {/* Recommended Download Method */}
+                        <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
+                          <h4 className="font-semibold text-blue-900 mb-2">🎯 Recommended: Individual Download</h4>
+                          <p className="text-sm text-blue-700 mb-3">
+                            Download this container as a plug-and-play .rbxm file
                           </p>
-                        </div>
-
-                        <div>
-                          <div className="flex justify-between items-center mb-2">
-                            <h4 className="font-semibold">🔧 Creation Code:</h4>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleCopyCode(getContainerCreationCode(container), `Container Code ${index + 1}`)}
-                            >
-                              {copiedCode === `Container Code ${index + 1}` ? <CheckCircle className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                          <div className="space-y-2">
+                            <Button asChild className="w-full" size="sm">
+                              <Link href={`/api/game-owner/download/container/${container.id}`} download>
+                                <Download className="h-4 w-4 mr-2" />
+                                Download MMLContainer_{container.name.replace(/[^a-zA-Z0-9]/g, '_')}.rbxm
+                              </Link>
                             </Button>
+                            <div className="text-xs text-blue-600 space-y-1">
+                              <p>✅ Includes smart positioning relative to spawn points</p>
+                              <p>✅ Auto-configures container type and metadata</p>
+                              <p>✅ Prevents duplicates and conflicts</p>
+                              <p>✅ Ready to use immediately after import</p>
+                            </div>
                           </div>
-                          <pre className="text-xs bg-gray-50 p-3 rounded border overflow-x-auto">
-                            {getContainerCreationCode(container)}
-                          </pre>
                         </div>
 
-                        <div className="text-sm text-gray-600">
-                          <strong>💡 Tips:</strong>
+                        {/* Container Info */}
+                        <div className="bg-gray-50 p-3 rounded-lg">
+                          <p className="text-sm font-medium text-gray-700">📋 Container Information:</p>
+                          <div className="mt-2 space-y-1 text-sm text-gray-600">
+                            <p><strong>Container ID:</strong> <code className="bg-white px-1 rounded">{container.id}</code></p>
+                            <p><strong>Type:</strong> {container.type}</p>
+                            <p><strong>Smart Features:</strong> Auto-positioning, spawn detection, type-specific setup</p>
+                          </div>
+                        </div>
+
+                        {/* Alternative Manual Method */}
+                        <details className="border rounded-lg">
+                          <summary className="p-3 cursor-pointer font-medium text-sm text-gray-700 hover:bg-gray-50">
+                            📝 Alternative: Manual Creation Code (Advanced)
+                          </summary>
+                          <div className="p-3 border-t bg-gray-50">
+                            <div className="flex justify-between items-center mb-2">
+                              <span className="text-sm font-medium">Legacy creation code:</span>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleCopyCode(getContainerCreationCode(container), `Container Code ${index + 1}`)}
+                              >
+                                {copiedCode === `Container Code ${index + 1}` ? <CheckCircle className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                              </Button>
+                            </div>
+                            <pre className="text-xs bg-white p-3 rounded border overflow-x-auto max-h-48">
+                              {getContainerCreationCode(container)}
+                            </pre>
+                            <p className="text-xs text-gray-500 mt-2">
+                              ⚠️ Manual creation requires precise positioning and may cause conflicts if run multiple times.
+                            </p>
+                          </div>
+                        </details>
+
+                        <div className="text-sm text-green-700 bg-green-50 p-3 rounded-lg">
+                          <strong>💡 Pro Tips:</strong>
                           <ul className="list-disc list-inside mt-1 space-y-1">
-                            <li>You can customize the appearance (color, material, etc.) but keep the Name and Position</li>
-                            <li>Make sure the container is visible and accessible to players</li>
-                            <li>Test different positions to find the best placement for your game</li>
+                            <li>Individual downloads automatically position containers near spawn points</li>
+                            <li>You can move containers after import - positions sync to the database</li>
+                            <li>Containers are invisible until they have ad content assigned</li>
+                            <li>Use the Admin Panel to assign ads to your containers for testing</li>
                           </ul>
                         </div>
                       </div>
@@ -477,19 +597,25 @@ print("📦 Container ${container.name} created at position:", ${container.name.
         <TabsContent value="positioning">
           <Card>
             <CardHeader>
-              <CardTitle>🎯 Automatic Position Synchronization</CardTitle>
+              <CardTitle>🧠 Smart Positioning System (2024)</CardTitle>
               <CardDescription>
-                The MML Network automatically syncs container positions between your game and the portal
+                Advanced auto-positioning with spawn detection and intelligent placement algorithms
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="bg-blue-50 p-4 rounded-lg">
-                <h4 className="font-semibold mb-2">How Position Sync Works:</h4>
-                <ol className="list-decimal list-inside space-y-2 text-sm">
-                  <li><strong>Automatic Detection:</strong> When you place containers in your game, their positions are automatically detected</li>
-                  <li><strong>Real-time Updates:</strong> Moving containers in Studio automatically updates the database</li>
-                  <li><strong>Portal Synchronization:</strong> The Game Owner Portal shows live position data from your game</li>
-                  <li><strong>Smart Throttling:</strong> Position updates are throttled to prevent spam (5-second cooldown)</li>
+              <div className="bg-green-50 border border-green-200 p-4 rounded-lg">
+                <h4 className="font-semibold text-green-900 mb-2">🚀 How Smart Positioning Works:</h4>
+                <ol className="list-decimal list-inside space-y-2 text-sm text-green-800">
+                  <li><strong>Spawn Detection:</strong> Automatically finds SpawnLocation and Spawn parts in your game</li>
+                  <li><strong>Intelligent Placement:</strong> Positions containers relative to spawn points based on type:
+                    <ul className="list-disc list-inside ml-4 mt-1 space-y-1">
+                      <li><strong>DISPLAY:</strong> 15 studs in front of spawn, 5 studs up (visible to players)</li>
+                      <li><strong>NPC:</strong> 8 studs to the side, ground level (for interaction)</li>
+                      <li><strong>MINIGAME:</strong> 20 studs away, 10 studs to side (separate area)</li>
+                    </ul>
+                  </li>
+                  <li><strong>Fallback Positioning:</strong> Uses configured coordinates if no spawn points found</li>
+                  <li><strong>Real-time Sync:</strong> Moving containers updates the database automatically</li>
                 </ol>
               </div>
 
@@ -553,32 +679,36 @@ enablePositionSync = false`}
         <TabsContent value="testing" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Step 4: Test Your Integration</CardTitle>
+              <CardTitle>🧪 Testing Your Modern Integration (2024)</CardTitle>
               <CardDescription>
-                Verify that everything is working correctly before publishing your game.
+                Verify your plug-and-play containers are working correctly with smart positioning
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-4">
-                  <h4 className="font-semibold">🧪 Studio Testing:</h4>
+                  <h4 className="font-semibold">🚀 Quick Testing Steps:</h4>
                   <ol className="list-decimal list-inside space-y-2 text-sm">
-                    <li>Click the <strong>Play</strong> button in Roblox Studio</li>
-                    <li>Check the <strong>Output</strong> window for MML Network messages</li>
-                    <li>Look for: <code>"✅ MML Network initialized successfully!"</code></li>
-                    <li>Verify your containers appear in the game world</li>
-                    <li>Check that placeholders show "MML Ad Loading..." initially</li>
+                    <li>Import your <strong>game package .rbxm</strong> or individual container files</li>
+                    <li>Press <strong>▶️ Play</strong> in Roblox Studio</li>
+                    <li>Check <strong>Output</strong> window for success messages</li>
+                    <li>Look for containers with <strong>blue highlights</strong> in workspace</li>
+                    <li>Verify containers are near your spawn points (smart positioning)</li>
+                    <li>Containers should show <code>"MML Ad Loading..."</code> placeholder</li>
                   </ol>
 
                   <Alert>
                     <Play className="h-4 w-4" />
-                    <AlertTitle>Expected Console Output</AlertTitle>
+                    <AlertTitle>Expected Output (Auto-Configured)</AlertTitle>
                     <AlertDescription className="mt-2">
-                      <code className="text-xs block bg-gray-100 p-2 rounded mt-1">
+                      <code className="text-xs block bg-green-100 p-2 rounded mt-1 text-green-900">
                         🎮 MML Network: Starting initialization...<br/>
+                        📍 Found spawn 'SpawnLocation' at: 0, 4, 0<br/>
+                        📺 Positioning DISPLAY container in front of spawn<br/>
+                        🎯 Smart position: 15, 9, 0<br/>
                         ✅ MML Network initialized successfully!<br/>
                         📊 Found containers: {containers.length}<br/>
-                        🔄 MML Network: Container monitoring started<br/>
+                        🔄 Container monitoring started<br/>
                         📱 Your ad containers are now active!
                       </code>
                     </AlertDescription>
@@ -586,19 +716,21 @@ enablePositionSync = false`}
                 </div>
 
                 <div className="space-y-4">
-                  <h4 className="font-semibold">🚀 Publishing Checklist:</h4>
+                  <h4 className="font-semibold">✅ Modern Setup Checklist (2024):</h4>
                   <div className="space-y-2">
                     {[
-                      'MMLGameNetwork module is in ReplicatedStorage',
-                      'Integration script is in ServerScriptService',
-                      'API key is correctly configured',
-                      'All container objects are created and named properly',
-                      'Studio testing shows successful initialization',
-                      'No error messages in the Output window'
+                      '✅ Downloaded and imported game package .rbxm file',
+                      '✅ MMLGameNetwork module auto-placed in ReplicatedStorage', 
+                      '✅ Integration scripts auto-placed in ServerScriptService',
+                      '✅ Container objects created with smart positioning',
+                      '✅ Studio testing shows successful initialization',
+                      '✅ Smart positioning messages in Output window',
+                      '✅ Containers positioned correctly relative to spawn',
+                      '✅ No error messages - all green success messages'
                     ].map((item, index) => (
                       <div key={index} className="flex items-center gap-2">
-                        <input type="checkbox" className="rounded" />
-                        <span className="text-sm">{item}</span>
+                        <input type="checkbox" className="rounded" disabled checked />
+                        <span className="text-sm text-green-700">{item}</span>
                       </div>
                     ))}
                   </div>
@@ -613,15 +745,24 @@ enablePositionSync = false`}
                 </div>
               </div>
 
-              <div className="bg-green-50 p-4 rounded-lg">
-                <h4 className="font-semibold mb-2">🎉 What Happens After Publishing:</h4>
-                <ul className="list-disc list-inside space-y-1 text-sm">
-                  <li><strong>Automatic Ad Loading:</strong> Your containers will start receiving and displaying ads</li>
-                  <li><strong>Real-time Updates:</strong> Content updates every 30 seconds (configurable)</li>
-                  <li><strong>Analytics Tracking:</strong> All player interactions are automatically recorded</li>
-                  <li><strong>Fallback Content:</strong> Default content shows when no ads are available</li>
-                  <li><strong>Performance Monitoring:</strong> View real-time data in your Game Owner Portal</li>
+              <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
+                <h4 className="font-semibold text-blue-900 mb-2">🎉 What Happens After Publishing (Automatic):</h4>
+                <ul className="list-disc list-inside space-y-1 text-sm text-blue-800">
+                  <li><strong>Smart Container Activation:</strong> Containers automatically start serving ads when assigned</li>
+                  <li><strong>Intelligent Updates:</strong> Content refreshes every 30 seconds with smart caching</li>
+                  <li><strong>Auto Analytics:</strong> Player interactions tracked automatically (no code needed)</li>
+                  <li><strong>Graceful Fallback:</strong> Containers remain invisible when no ads available</li>
+                  <li><strong>Real-time Monitoring:</strong> Live data available in Game Owner Portal</li>
+                  <li><strong>Position Sync:</strong> Moving containers in Studio updates database in real-time</li>
+                  <li><strong>Performance Optimized:</strong> Minimal HTTP requests with intelligent batching</li>
                 </ul>
+              </div>
+
+              <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg">
+                <h4 className="font-semibold text-yellow-900 mb-2">💰 Monetization Ready:</h4>
+                <p className="text-sm text-yellow-800">
+                  Your containers are now ready to display ads from brand users on the platform. Revenue tracking and analytics begin immediately when ads are assigned through the Game Advertising Portal (GAP).
+                </p>
               </div>
 
               <div className="flex gap-4">
