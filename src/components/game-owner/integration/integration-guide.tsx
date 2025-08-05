@@ -68,7 +68,14 @@ local success, result = MMLNetwork.initialize(gameAPIKey, config)
 
 if success then
     print("✅ MML Network initialized successfully!")
-    print("📊 Found containers:", result.containerCount or 0)
+    -- Count containers properly
+    local containerCount = 0
+    if _G.MMLNetwork and _G.MMLNetwork._containers then
+        for _ in pairs(_G.MMLNetwork._containers) do
+            containerCount = containerCount + 1
+        end
+    end
+    print("📊 Found containers:", containerCount)
     
     if config.autoStart then
         -- Start monitoring all containers
