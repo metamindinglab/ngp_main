@@ -99,13 +99,27 @@ async function generateGamePackage(game: any) {
     await writeFile(join(tempDir, 'MMLNetworkIntegration.server.lua'), integrationScript)
     
     // Generate container creation script for this game's containers
-    const containerScript = generateGameContainerScript(game.adContainers)
+    const containerScript = generateGameContainerScript(game.adContainers, game.id)
     await writeFile(join(tempDir, 'CreateContainers.server.lua'), containerScript)
     
-    // Copy the base module
-    const baseModulePath = join(process.cwd(), 'src', 'roblox', 'MMLGameNetwork.lua')
-    const baseModule = await readFile(baseModulePath, 'utf-8')
-    await writeFile(join(tempDir, 'MMLGameNetwork.lua'), baseModule)
+    // Copy all MML Network modules
+    const modules = [
+      'MMLGameNetwork.lua',
+      'MMLContainerManager.lua',
+      'MMLContainerStreamer.lua',
+      'MMLAssetStorage.lua',
+      'MMLRequestManager.lua'
+    ]
+    
+    for (const moduleName of modules) {
+      const modulePath = join(process.cwd(), 'src', 'roblox', moduleName)
+      try {
+        const moduleContent = await readFile(modulePath, 'utf-8')
+        await writeFile(join(tempDir, moduleName), moduleContent)
+      } catch (error) {
+        console.warn(`Warning: Could not find module ${moduleName}, skipping...`)
+      }
+    }
     
     // Create Rojo project for this specific game
     const rojoProject = {
@@ -116,6 +130,18 @@ async function generateGamePackage(game: any) {
           "$className": "Folder",
           "MMLGameNetwork": {
             "$path": "MMLGameNetwork.lua"
+          },
+          "MMLContainerManager": {
+            "$path": "MMLContainerManager.lua"
+          },
+          "MMLContainerStreamer": {
+            "$path": "MMLContainerStreamer.lua"
+          },
+          "MMLAssetStorage": {
+            "$path": "MMLAssetStorage.lua"
+          },
+          "MMLRequestManager": {
+            "$path": "MMLRequestManager.lua"
           }
         },
         "ServerScriptService": {
@@ -302,7 +328,7 @@ end)
 `
 }
 
-function generateGameContainerScript(containers: any[]) {
+function generateGameContainerScript(containers: any[], gameId: string) {
   if (!containers || containers.length === 0) {
     return `--[[
     MML Network Container Creation Script
@@ -403,7 +429,7 @@ containerIdValue.Parent = metadata
 
 local gameIdValue = Instance.new("StringValue")
 gameIdValue.Name = "GameId"
-gameIdValue.Value = "${container.game.id}"
+gameIdValue.Value = "${gameId}"
 gameIdValue.Parent = metadata
 
 local typeValue = Instance.new("StringValue")
