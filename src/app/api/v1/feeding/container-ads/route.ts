@@ -192,8 +192,52 @@ async function gameAdFeedingEngine(
   }
 }
 
-// Get available game ads from active playlists
+// Get available game ads from active playlists (FIXED: Use many-to-many relationship)
 async function getAvailableGameAds(gameId: string) {
+  console.log('🔍 Getting available ads for game:', gameId)
+  
+  // Use the many-to-many relationship via _GameToAds instead of direct gameId
+  const availableAds = await prisma.gameAd.findMany({
+    where: {
+      games: {
+        some: {
+          id: gameId
+        }
+      }
+    },
+    include: {
+      games: {
+        select: {
+          id: true,
+          name: true
+        }
+      },
+      playlistSchedules: {
+        where: {
+          status: 'active'
+        },
+        include: {
+          playlist: {
+            select: {
+              id: true,
+              name: true,
+              status: true
+            }
+          }
+        }
+      }
+    }
+  })
+  
+  console.log(`✅ Found ${availableAds.length} ads available for game ${gameId}`)
+  availableAds.forEach(ad => {
+    console.log(`  📦 Ad: ${ad.id} (${ad.name}) - Games: ${ad.games.map(g => g.id).join(', ')}`)
+  })
+  
+  return availableAds
+  
+  // OLD CODE: This was using direct gameId which limits ads to single games
+  /*
   const activeSchedules = await prisma.playlistSchedule.findMany({
     where: {
       status: 'active',

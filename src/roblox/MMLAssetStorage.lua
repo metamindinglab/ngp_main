@@ -203,8 +203,11 @@ function MMLAssetStorage.createAssetInstance(assetData, storageBasePosition, par
     local assetType = assetData.type
     local robloxAssetId = assetData.robloxAssetId
     
-    if assetType == "image" or assetType == "multiMediaSignage" then
+    if assetType == "image" then
         return createImageAsset(assetData, storageBasePosition, parentFolder)
+        
+    elseif assetType == "multiMediaSignage" then
+        return create3DModelAsset(assetData, storageBasePosition, parentFolder)
         
     elseif assetType == "video" then
         return createVideoAsset(assetData, storageBasePosition, parentFolder)
@@ -279,6 +282,66 @@ local function createImageAsset(assetData, storagePosition, parentFolder)
     part:SetAttribute("RobloxAssetId", assetData.robloxAssetId)
     
     return part
+end
+
+-- NEW: Create 3D model asset using InsertService
+local function create3DModelAsset(assetData, storagePosition, parentFolder)
+    if not assetData.robloxAssetId then
+        warn("❌ No Roblox Asset ID for 3D model asset:", assetData.id)
+        return nil
+    end
+    
+    local InsertService = game:GetService("InsertService")
+    
+    -- Load 3D model using InsertService
+    local success, model = pcall(function()
+        return InsertService:LoadAsset(tonumber(assetData.robloxAssetId))
+    end)
+    
+    if not success or not model then
+        warn("❌ Failed to load 3D model:", assetData.robloxAssetId, "Error:", tostring(model))
+        return nil
+    end
+    
+    -- Get the actual model from the returned folder
+    local actualModel = model:GetChildren()[1]
+    if actualModel then
+        actualModel.Name = "ModelAsset_" .. assetData.id
+        actualModel.Parent = parentFolder
+        
+        -- Position the model in storage
+        if actualModel.PrimaryPart then
+            actualModel:SetPrimaryPartCFrame(CFrame.new(storagePosition + Vector3.new(math.random(-30, 30), 5, math.random(-30, 30))))
+        else
+            -- Position first part if no primary part
+            local firstPart = actualModel:FindFirstChildOfClass("Part")
+            if firstPart then
+                firstPart.Position = storagePosition + Vector3.new(math.random(-30, 30), 5, math.random(-30, 30))
+            end
+        end
+        
+        -- Make model invisible in storage
+        for _, part in pairs(actualModel:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.Transparency = 1
+            end
+        end
+        
+        -- Store metadata
+        actualModel:SetAttribute("AssetId", assetData.id)
+        actualModel:SetAttribute("AssetType", assetData.type)
+        actualModel:SetAttribute("RobloxAssetId", assetData.robloxAssetId)
+        
+        -- Clean up the original model container
+        model:Destroy()
+        
+        print("✅ Pre-loaded 3D model:", assetData.id, "at storage position")
+        return actualModel
+    else
+        warn("❌ No model found in loaded asset:", assetData.robloxAssetId)
+        model:Destroy()
+        return nil
+    end
 end
 
 local function createVideoAsset(assetData, storagePosition, parentFolder)
