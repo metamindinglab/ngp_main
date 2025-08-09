@@ -235,37 +235,6 @@ async function getAvailableGameAds(gameId: string) {
   })
   
   return availableAds
-  
-  // OLD CODE: This was using direct gameId which limits ads to single games
-  /*
-  const activeSchedules = await prisma.playlistSchedule.findMany({
-    where: {
-      status: 'active',
-      startDate: {
-        lte: new Date()
-      },
-      deployments: {
-        some: {
-          gameId: gameId,
-          status: 'active'
-        }
-      }
-    },
-    include: {
-      gameAd: true
-    }
-  })
-
-  const gameAds = activeSchedules
-    .map(schedule => schedule.gameAd)
-    .filter(ad => ad !== null)
-
-  // Remove duplicates by ad ID
-  const uniqueAds = gameAds.filter((ad, index, self) => 
-    index === self.findIndex(a => a.id === ad.id)
-  )
-
-  return uniqueAds
 }
 
 // Check if ad is suitable for container type
