@@ -220,8 +220,7 @@ async function getAvailableGameAds(gameId: string) {
           playlist: {
             select: {
               id: true,
-              name: true,
-              status: true
+              name: true
             }
           }
         }
