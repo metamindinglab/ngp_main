@@ -131,25 +131,25 @@ export async function POST(request: NextRequest) {
 
     robloxFormData.append('request', JSON.stringify(requestData));
 
-    // Handle different asset types appropriately
-    if (assetType === 'animation') {
-      // For animations, preserve the original file type and extension
-      const animBlob = new Blob([buffer], { type: file.type });
-      robloxFormData.append('fileContent', animBlob, file.name);
-      robloxFormData.append('type', file.type);
-    } else {
-      const contentType = getContentType(getRobloxAssetType(assetType));
-      const blob = new Blob([buffer], { type: contentType });
-      robloxFormData.append('fileContent', blob, file.name);
-      robloxFormData.append('type', contentType);
-    }
+      // Handle different asset types appropriately
+  if (assetType === 'Animation') {
+    // For animations, preserve the original file type and extension
+    const animBlob = new Blob([buffer], { type: file.type });
+    robloxFormData.append('fileContent', animBlob, file.name);
+    robloxFormData.append('type', file.type);
+  } else {
+    const contentType = getContentType(getRobloxAssetType(assetType));
+    const blob = new Blob([buffer], { type: contentType });
+    robloxFormData.append('fileContent', blob, file.name);
+    robloxFormData.append('type', contentType);
+  }
 
     console.log('Creating new asset on Roblox:', {
       name,
       assetType,
       oldAssetId: oldAssetId || 'none',
       requestData,
-      contentType: assetType === 'animation' ? file.type : getContentType(getRobloxAssetType(assetType))
+      contentType: assetType === 'Animation' ? file.type : getContentType(getRobloxAssetType(assetType))
     });
 
     // Always create a new asset

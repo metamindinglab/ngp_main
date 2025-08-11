@@ -34,6 +34,8 @@ export interface GameAdTemplate {
 export interface GameAd {
   id: string;
   name: string;
+  // Added optional description to match usage in filters
+  description?: string;
   templateType: GameAdTemplateType;
   createdAt: string;
   updatedAt: string;
