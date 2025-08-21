@@ -3,6 +3,7 @@
 -- Manages containers with rotation, metrics, and feeding engine integration
 
 local MMLContainerManager = {}
+local MMLUtil = require(script.Parent.MMLUtil)
 
 -- Initialize a container with multi-ad support
 function MMLContainerManager.initializeContainer(containerId, containerModel, containerType)
@@ -413,7 +414,7 @@ function MMLContainerManager.getContainerSummary(containerId)
     return {
         id = containerId,
         type = container.type,
-        position = container.model and container.model.Position or Vector3.new(0, 0, 0),
+        position = container.model and MMLUtil.getInstancePosition(container.model) or Vector3.new(0, 0, 0),
         isVisible = container.visibility.isInCameraView,
         currentAdId = container.adRotation.currentAdId,
         availableAds = container.adRotation.availableAds,
@@ -505,7 +506,7 @@ function MMLContainerManager.initializeContainersFromWorkspace()
                 if enablePositionSync and enablePositionSync:IsA("BoolValue") and enablePositionSync.Value then
                     local container = _G.MMLNetwork._containers[containerId]
                     if container then
-                        container.lastSyncedPosition = obj.Position
+                        container.lastSyncedPosition = MMLUtil.getInstancePosition(obj)
                         print("📍 Position sync enabled for:", containerId)
                     end
                 end
@@ -540,7 +541,7 @@ function MMLContainerManager.startPositionMonitoring()
         
         for containerId, container in pairs(_G.MMLNetwork._containers) do
             if container.model and container.model.Parent then
-                local currentPosition = container.model.Position
+                local currentPosition = MMLUtil.getInstancePosition(container.model)
                 local lastPosition = container.lastSyncedPosition
                 
                 -- Check if position changed significantly (threshold: 0.5 studs)
@@ -586,9 +587,10 @@ function MMLContainerManager.syncAllPositions()
     for containerId, container in pairs(_G.MMLNetwork._containers) do
         if container.model and container.model.Parent then
             if _G.MMLNetwork.syncContainerPosition then
-                local success = _G.MMLNetwork.syncContainerPosition(containerId, container.model.Position)
+                local pos = MMLUtil.getInstancePosition(container.model)
+                local success = _G.MMLNetwork.syncContainerPosition(containerId, pos)
                 if success then
-                    container.lastSyncedPosition = container.model.Position
+                    container.lastSyncedPosition = pos
                     synced = synced + 1
                 end
             end

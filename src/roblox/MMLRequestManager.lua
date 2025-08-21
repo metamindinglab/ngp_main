@@ -28,10 +28,19 @@ local requestBatches = {
     impressions = {
         queue = {},
         lastBatch = 0,
-        interval = 60,         -- 60 seconds
-        batchSize = 50
+        interval = 5,          -- send quickly for testing
+        batchSize = 1          -- flush each event chunk
     }
 }
+
+-- Resolve the MML game id used by server APIs
+local function getMmlGameId()
+    if _G.MMLNetwork and _G.MMLNetwork._config and _G.MMLNetwork._config.gameId then
+        return _G.MMLNetwork._config.gameId
+    end
+    -- Fallback: Roblox numeric GameId is not the same as MML's string id; prefer configured id
+    return tostring(game.GameId)
+end
 
 -- 1. Fetch all available game ads (every 5 minutes)
 function MMLRequestManager.fetchGameAds()
@@ -50,11 +59,10 @@ function MMLRequestManager.fetchGameAds()
     spawn(function()
         local success, result = pcall(function()
             return HttpService:RequestAsync({
-                Url = _G.MMLNetwork._config.baseUrl .. "/v1/games/" .. game.GameId .. "/ads/available",
+                Url = _G.MMLNetwork._config.baseUrl .. "/games/" .. getMmlGameId() .. "/ads/available",
                 Method = "GET",
                 Headers = {
-                    ["X-API-Key"] = _G.MMLNetwork._config.apiKey,
-                    ["Content-Type"] = "application/json"
+                    ["X-API-Key"] = _G.MMLNetwork._config.apiKey
                 }
             })
         end)
@@ -101,14 +109,14 @@ function MMLRequestManager.fetchContainerAssignments()
     spawn(function()
         local success, result = pcall(function()
             return HttpService:RequestAsync({
-                Url = _G.MMLNetwork._config.baseUrl .. "/v1/feeding/container-ads",
+                Url = _G.MMLNetwork._config.baseUrl .. "/feeding/container-ads",
                 Method = "POST",
                 Headers = {
                     ["X-API-Key"] = _G.MMLNetwork._config.apiKey,
                     ["Content-Type"] = "application/json"
                 },
                 Body = HttpService:JSONEncode({
-                    gameId = tostring(game.GameId),
+                    gameId = getMmlGameId(),
                     containers = containers,
                     playerContext = playerContext,
                     currentAssignments = getCurrentAssignments()
@@ -139,6 +147,12 @@ function MMLRequestManager.fetchContainerAssignments()
                   
         else
             warn("❌ Failed to fetch container assignments:", result and result.StatusMessage or "Unknown error")
+            if result then
+                warn("Status:", result.StatusCode)
+                if result.Body then
+                    warn("Body:", string.sub(result.Body, 1, 200))
+                end
+            end
         end
     end)
     
@@ -182,7 +196,7 @@ function MMLRequestManager.processPlayerEligibilityBatch()
     spawn(function()
         local success, result = pcall(function()
             return HttpService:RequestAsync({
-                Url = _G.MMLNetwork._config.baseUrl .. "/v1/ads/player-eligibility-batch",
+                Url = _G.MMLNetwork._config.baseUrl .. "/ads/player-eligibility-batch",
                 Method = "POST",
                 Headers = {
                     ["X-API-Key"] = _G.MMLNetwork._config.apiKey,
@@ -257,31 +271,42 @@ function MMLRequestManager.sendImpressionBatch()
     batch.lastBatch = tick()
     
     spawn(function()
+        local payload = {
+            impressions = impressionsToSend,
+            batchId = HttpService:GenerateGUID(),
+            gameSession = game:GetAttribute("SessionId") or HttpService:GenerateGUID(),
+            serverTimestamp = tick()
+        }
         local success, result = pcall(function()
             return HttpService:RequestAsync({
-                Url = _G.MMLNetwork._config.baseUrl .. "/v1/impressions/batch",
+                Url = _G.MMLNetwork._config.baseUrl .. "/impressions/batch",
                 Method = "POST", 
                 Headers = {
                     ["X-API-Key"] = _G.MMLNetwork._config.apiKey,
                     ["Content-Type"] = "application/json"
                 },
-                Body = HttpService:JSONEncode({
-                    impressions = impressionsToSend,
-                    batchId = HttpService:GenerateGUID(),
-                    gameSession = game:GetAttribute("SessionId") or HttpService:GenerateGUID(),
-                    serverTimestamp = tick()
-                })
+                Body = HttpService:JSONEncode(payload)
             })
         end)
-        
         if success and result.Success then
-            print("📤 Sent batch of", #impressionsToSend, "impressions")
+            print("📤 Sent batch of", #impressionsToSend, "events to GameAdPerformance")
+            if result.Body then
+                local ok, parsed = pcall(function() return HttpService:JSONDecode(result.Body) end)
+                if ok and parsed and parsed.processed then
+                    print("✅ Server processed:", parsed.processed, "upserts:", parsed.upserts)
+                end
+            end
         else
             warn("❌ Failed to send impression batch:", result and result.StatusMessage or "Unknown error")
-            -- Re-queue for retry (with limit to prevent infinite growth)
+            if result then
+                warn("Status:", result.StatusCode)
+                if result.Body then
+                    warn("Body:", string.sub(result.Body, 1, 200))
+                end
+            end
             if #requestBatches.impressions.queue < 200 then
-                for _, impression in pairs(impressionsToSend) do
-                    table.insert(requestBatches.impressions.queue, impression)
+                for _, ev in pairs(impressionsToSend) do
+                    table.insert(requestBatches.impressions.queue, ev)
                 end
             end
         end

@@ -7,6 +7,7 @@ local MMLContainerStreamer = {}
 local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
+local MMLUtil = require(script.Parent.MMLUtil)
 
 -- Movement configuration
 local MOVEMENT_CONFIG = {
@@ -28,7 +29,7 @@ function MMLContainerStreamer.isContainerInView(container)
         return false, nil, math.huge
     end
     
-    local containerPosition = container.model.Position
+    local containerPosition = MMLUtil.getInstancePosition(container.model)
     local viewBuffer = MOVEMENT_CONFIG.visibilityBuffer
     
     for _, player in pairs(Players:GetPlayers()) do
@@ -85,8 +86,8 @@ function MMLContainerStreamer.moveAssetsToContainer(containerId, adId)
     preloadedAd.lastUsed = tick()
     
     -- Calculate target positions for each asset
-    local containerPosition = container.model.Position
-    local containerCFrame = container.model.CFrame
+    local containerPosition = MMLUtil.getInstancePosition(container.model)
+    local containerCFrame = MMLUtil.getInstanceCFrame(container.model) or CFrame.new(containerPosition)
     
     local movePromises = {}
     local movedAssets = {}

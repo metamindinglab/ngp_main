@@ -12,7 +12,7 @@ local MMLNetwork = require(game:GetService("ReplicatedStorage"):WaitForChild("MM
 
 -- ⚠️ IMPORTANT: REPLACE THIS WITH YOUR ACTUAL API KEY
 -- Get your API key from the Game Owner Portal: https://your-portal-url.com
-local gameAPIKey = "RBXG-REPLACE-WITH-YOUR-ACTUAL-API-KEY"
+local gameAPIKey = "RBXG-c41d03e00c05539f613a4e242f187dd3c712b823dcfc841b"
 
 -- Configuration
 local config = {
@@ -20,7 +20,7 @@ local config = {
     updateInterval = 30,
     
     -- Enable debug logging
-    debugMode = false,
+    debugMode = true,
     
     -- Auto-start monitoring when initialized
     autoStart = true,
@@ -28,13 +28,17 @@ local config = {
     -- Enable automatic position synchronization
     -- When containers are moved in Studio, their positions will be automatically
     -- updated in the MML Network database
-    enablePositionSync = true
+    enablePositionSync = true,
+    -- Ensure the client speaks to the correct API server
+    baseUrl = "http://23.96.197.67:3000/api/v1",
+    -- Explicit MML Game ID used by server APIs
+    gameId = "game_90648d31"
 }
 
 print("🎮 MML Network: Starting initialization...")
 
 -- Initialize the MML Network
-local success, result = MMLNetwork.initialize(gameAPIKey, config)
+local success, result = MMLNetwork.Initialize({ apiKey = gameAPIKey, baseUrl = config.baseUrl, debugMode = config.debugMode, enablePositionSync = config.enablePositionSync, updateInterval = config.updateInterval, gameId = config.gameId })
 
 if success then
     print("✅ MML Network initialized successfully!")

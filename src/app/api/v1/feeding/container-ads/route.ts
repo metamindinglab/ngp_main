@@ -8,6 +8,9 @@ const ContainerRequestSchema = z.object({
   containers: z.array(z.object({
     id: z.string(),
     type: z.enum(['DISPLAY', 'NPC', 'MINIGAME']),
+    // legacy: no longer required; targeting is done server-side
+    playlistId: z.string().optional(),
+    scheduleId: z.string().optional(),
     position: z.object({
       x: z.number(),
       y: z.number(), 
@@ -47,6 +50,8 @@ const ContainerRequestSchema = z.object({
   })).optional()
 })
 
+export const dynamic = 'force-dynamic'
+
 export async function POST(request: NextRequest) {
   try {
     // Validate API key
@@ -75,9 +80,16 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const validatedData = ContainerRequestSchema.parse(body)
 
-    // Run Game Ad Feeding Engine
+    console.log(`[DEBUG] Processing request for game ${game.id} with ${validatedData.containers.length} containers`);
+
+    // Warn if client-sent gameId mismatches API-key resolved game
+    if (validatedData.gameId && validatedData.gameId !== game.id) {
+      console.warn(`[WARN] Body gameId ${validatedData.gameId} mismatches API key game ${game.id}. Using ${game.id}.`)
+    }
+
+    // Run Game Ad Feeding Engine using server-resolved game.id
     const feedingResult = await gameAdFeedingEngine(
-      validatedData.gameId,
+      game.id,
       validatedData.containers,
       validatedData.playerContext,
       validatedData.currentAssignments
@@ -96,7 +108,7 @@ export async function POST(request: NextRequest) {
       }
     })
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('❌ Feeding engine error:', error)
     
     if (error instanceof z.ZodError) {
@@ -107,7 +119,8 @@ export async function POST(request: NextRequest) {
     }
     
     return NextResponse.json({ 
-      error: 'Internal server error' 
+      error: 'Internal server error',
+      message: error?.message || String(error)
     }, { status: 500 })
   }
 }
@@ -127,56 +140,63 @@ async function gameAdFeedingEngine(
   const schedule: Record<string, any> = {}
   
   try {
-    // Get available game ads for this game via active playlists
+    // Get available game ads using active schedules/time window for this game
     const availableAds = await getAvailableGameAds(gameId)
+    console.log(`[DEBUG] Available ads for game ${gameId}: ${availableAds.map(ad => ad.id).join(', ')}`);
     console.log('📦 Available ads:', availableAds.length)
 
     // Process each container
     for (const container of containers) {
       const containerId = container.id
       const containerType = container.type
-      
-      console.log(`🔄 Processing container ${containerId} (${containerType})`)
-      
-      // Filter ads suitable for this container type
-      const suitableAds = availableAds.filter(ad => 
-        isAdSuitableForContainer(ad, containerType)
-      )
-      
-      console.log(`✅ Suitable ads for ${containerId}:`, suitableAds.length)
-      
-      if (suitableAds.length > 0) {
-        // Apply feeding algorithm
-        const assignedAds = await applyFeedingAlgorithm(
-          containerId,
-          containerType,
-          suitableAds,
-          container,
-          currentAssignments?.[containerId],
-          playerContext
-        )
-        
-        assignments[containerId] = assignedAds.map(ad => ad.id)
-        
-        // Create rotation schedule
-        schedule[containerId] = {
-          rotationInterval: calculateRotationInterval(container, assignedAds),
-          strategy: determineRotationStrategy(container, assignedAds),
-          priorities: assignedAds.map((ad, index) => ({
-            adId: ad.id,
-            weight: ad.weight || 1,
-            priority: ad.priority || (index + 1),
-            expectedImpressions: ad.expectedImpressions || 10
-          }))
+      console.log(`[DEBUG] Processing container ${container.id} (${container.type})`);
+
+      try {
+        // Filter ads suitable for this container type (targeting is server-side by game)
+        const suitableAds = availableAds.filter(ad => isAdSuitableForContainer(ad, containerType))
+        console.log(`[DEBUG] Suitable ads for ${container.id}: ${suitableAds.map(ad => ad.id).join(', ')}`);
+        console.log(`✅ Suitable ads for ${containerId}:`, suitableAds.length)
+
+        if (suitableAds.length > 0) {
+          // Apply feeding algorithm
+          const assignedAds = await applyFeedingAlgorithm(
+            containerId,
+            containerType,
+            suitableAds,
+            container,
+            currentAssignments?.[containerId],
+            playerContext
+          )
+
+          assignments[containerId] = assignedAds.map(ad => ad.id)
+
+          // Create rotation schedule
+          schedule[containerId] = {
+            rotationInterval: calculateRotationInterval(container, assignedAds),
+            strategy: determineRotationStrategy(container, assignedAds),
+            priorities: assignedAds.map((ad, index) => ({
+              adId: ad.id,
+              weight: ad.weight || 1,
+              priority: ad.priority || (index + 1),
+              expectedImpressions: ad.expectedImpressions || 10
+            }))
+          }
+
+          console.log(`📅 Assigned ${assignedAds.length} ads to ${containerId}`)
+          console.log(`[DEBUG] Assigned ads to ${container.id}: ${assignedAds.map(ad => ad.id).join(', ')}`);
+        } else {
+          assignments[containerId] = []
+          schedule[containerId] = null
+          console.log(`⚠️ No suitable ads for ${containerId}`)
         }
-        
-        console.log(`📅 Assigned ${assignedAds.length} ads to ${containerId}`)
-      } else {
+      } catch (err) {
+        console.error(`❌ Error processing container ${containerId}:`, err)
         assignments[containerId] = []
         schedule[containerId] = null
-        console.log(`⚠️ No suitable ads for ${containerId}`)
       }
     }
+
+    console.log(`[DEBUG] Feeding complete - Assignments: ${JSON.stringify(assignments)}`);
 
     return {
       assignments,
@@ -192,48 +212,34 @@ async function gameAdFeedingEngine(
   }
 }
 
-// Get available game ads from active playlists (FIXED: Use many-to-many relationship)
+// Get available game ads using active schedules/time window and game targeting
 async function getAvailableGameAds(gameId: string) {
   console.log('🔍 Getting available ads for game:', gameId)
-  
-  // Use the many-to-many relationship via _GameToAds instead of direct gameId
-  const availableAds = await prisma.gameAd.findMany({
-    where: {
-      games: {
-        some: {
-          id: gameId
-        }
-      }
-    },
-    include: {
-      games: {
-        select: {
-          id: true,
-          name: true
-        }
+  const now = new Date()
+  try {
+    const ads = await prisma.gameAd.findMany({
+      where: {
+        games: { some: { id: gameId } },
+        playlistSchedules: { some: { OR: [{ status: 'ACTIVE' }, { status: 'active' }], startDate: { lte: now } } }
       },
-      playlistSchedules: {
-        where: {
-          status: 'active'
-        },
-        include: {
-          playlist: {
-            select: {
-              id: true,
-              name: true
-            }
-          }
-        }
+      include: {
+        playlistSchedules: true
       }
-    }
-  })
-  
-  console.log(`✅ Found ${availableAds.length} ads available for game ${gameId}`)
-  availableAds.forEach(ad => {
-    console.log(`  📦 Ad: ${ad.id} (${ad.name}) - Games: ${ad.games.map(g => g.id).join(', ')}`)
-  })
-  
-  return availableAds
+    })
+    // Post-filter end window in JS
+    const filtered = ads.filter(ad => {
+      return ad.playlistSchedules?.some(ps => {
+        // Interpret duration as DAYS
+        const end = new Date(ps.startDate); end.setUTCDate(end.getUTCDate() + (ps.duration || 0))
+        return String(ps.status).toLowerCase() === 'active' && now >= new Date(ps.startDate) && now < end
+      })
+    })
+    console.log(`✅ Found ${filtered.length} ads available for game ${gameId}`)
+    return filtered
+  } catch (err) {
+    console.error('❌ Error fetching available ads:', err)
+    return []
+  }
 }
 
 // Check if ad is suitable for container type

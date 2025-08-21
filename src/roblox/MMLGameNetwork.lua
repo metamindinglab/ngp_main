@@ -14,6 +14,8 @@ local MMLAssetStorage = require(script.MMLAssetStorage)
 local MMLContainerManager = require(script.MMLContainerManager)
 local MMLContainerStreamer = require(script.MMLContainerStreamer)
 local MMLRequestManager = require(script.MMLRequestManager)
+local MMLImpressionTracker = require(script.MMLImpressionTracker)
+local MMLUtil = require(script.MMLUtil)
 
 local MMLNetwork = {
   _initialized = false,
@@ -28,6 +30,8 @@ local MMLNetwork = {
     enableAssetPreloading = true,
     enableFeedingEngine = true,
     debugMode = false,
+    -- Explicit MML game identifier (e.g. "game_90648d31"); if not set, code may fallback to Roblox game.GameId in some places
+    gameId = nil,
     
     -- Asset management
     maxPreloadedAds = 50,
@@ -45,6 +49,7 @@ local MMLNetwork = {
 
 -- Make MMLNetwork globally accessible for modules
 _G.MMLNetwork = MMLNetwork
+_G.MMLImpressionTracker = MMLImpressionTracker
 
 -- Initialize the enhanced network module
 function MMLNetwork.Initialize(config)
@@ -155,7 +160,7 @@ function MMLNetwork.GetContainerContent(containerId)
         adId = container.adRotation.currentAdId,
         adType = container.type,
         assets = preloadedAd.assets,
-        position = container.model.Position,
+        position = MMLUtil.getInstancePosition(container.model),
         isVisible = container.visibility.shouldBeVisible
       }
     end
@@ -166,7 +171,7 @@ function MMLNetwork.GetContainerContent(containerId)
     adId = nil,
     adType = container.type,
     assets = {},
-    position = container.model.Position,
+    position = MMLUtil.getInstancePosition(container.model),
     isVisible = false
   }
 end
@@ -357,7 +362,7 @@ function MMLNetwork.SyncContainerPosition(containerId)
   
   local container = MMLNetwork._containers[containerId]
   if container.model and container.model.Parent then
-    return MMLNetwork.syncContainerPosition(containerId, container.model.Position)
+    return MMLNetwork.syncContainerPosition(containerId, MMLUtil.getInstancePosition(container.model))
   end
   
   return false
