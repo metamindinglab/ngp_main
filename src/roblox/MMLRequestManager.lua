@@ -386,7 +386,7 @@ function MMLRequestManager.initialize()
     -- Start periodic container assignment fetching
     spawn(function()
         while _G.MMLNetwork do
-            wait(60) -- Wait 1 minute before first fetch
+            -- Warm start: fetch immediately, then on interval
             MMLRequestManager.fetchContainerAssignments()
             wait(requestBatches.containerAssignments.interval)
         end
@@ -403,6 +403,7 @@ function MMLRequestManager.initialize()
             end
             
             if #requestBatches.impressions.queue > 0 then
+                print("[MML][Impression] Pending queue:", #requestBatches.impressions.queue)
                 MMLRequestManager.sendImpressionBatch()
             end
         end

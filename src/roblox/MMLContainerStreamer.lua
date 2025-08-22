@@ -33,21 +33,25 @@ function MMLContainerStreamer.isContainerInView(container)
     local viewBuffer = MOVEMENT_CONFIG.visibilityBuffer
     
     for _, player in pairs(Players:GetPlayers()) do
-        if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+        local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+        if hrp then
             local camera = workspace.CurrentCamera
             
-            -- Calculate distance to container
-            local distance = (camera.CFrame.Position - containerPosition).Magnitude
-            
-            -- Check if within reasonable viewing distance
-            if distance <= 100 + viewBuffer then
-                -- Check if within camera frustum (simplified)
-                local cameraLookVector = camera.CFrame.LookVector
-                local directionToContainer = (containerPosition - camera.CFrame.Position).Unit
-                local dotProduct = cameraLookVector:Dot(directionToContainer)
-                
-                -- If roughly facing the container (wider angle for pre-loading)
-                if dotProduct > -0.3 then  -- About 107 degree FOV
+            if camera then
+                -- Client-side or Studio context with camera available
+                local distance = (camera.CFrame.Position - containerPosition).Magnitude
+                if distance <= 100 + viewBuffer then
+                    local cameraLookVector = camera.CFrame.LookVector
+                    local directionToContainer = (containerPosition - camera.CFrame.Position).Unit
+                    local dotProduct = cameraLookVector:Dot(directionToContainer)
+                    if dotProduct > -0.3 then
+                        return true, player, distance
+                    end
+                end
+            else
+                -- Server-side fallback: proximity-only based on player HRP
+                local distance = (hrp.Position - containerPosition).Magnitude
+                if distance <= 60 + viewBuffer then -- tighter threshold server-side
                     return true, player, distance
                 end
             end
@@ -384,12 +388,14 @@ function MMLContainerStreamer.startMonitoring()
                 -- Container came into view
                 local assignedAdId = getAssignedAdForContainer(containerId)
                 if assignedAdId then
+                    print("[MML][Stream] Container in view:", containerId, "ad:", assignedAdId)
                     MMLContainerStreamer.moveAssetsToContainer(containerId, assignedAdId)
                 end
                 
             elseif not isInView and wasInView then
                 -- Container went out of view
                 if container.adRotation.currentAdId then
+                    print("[MML][Stream] Container out of view:", containerId)
                     MMLContainerStreamer.moveAssetsToStorage(containerId)
                 end
             end
