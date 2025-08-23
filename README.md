@@ -1,3 +1,17 @@
+## Roblox Integration (v2)
+
+### Download builds
+- Bootstrap (server-only): GET `/api/v1/builds/bootstrap` with `X-API-Key`, or request a token via POST `/api/v1/builds/token` and use `?token=...`.
+- Container (per signage): GET `/api/v1/builds/container?containerId=...&preset=portrait|landscape&mount=ground|wall` (token or API key).
+
+### Install
+1. Import Bootstrap.rbxmx and place the `MML` folder under `ServerScriptService`.
+2. Import Container.rbxmx models into `Workspace`.
+3. Run Test → Start (Local Server). Expect 200s for feeding and impressions.
+
+### Duplicate/Version guard
+- Server registry `ServerStorage.MML.Registry` prevents duplicate bootstrap/container installs and supports upgrades by version.
+
 # New Gen Pulse System
 
 A comprehensive asset management system for Roblox games, featuring modules for managing assets, games, game ads, playlists, and performance tracking.

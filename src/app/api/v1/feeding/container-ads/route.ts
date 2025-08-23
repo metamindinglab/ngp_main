@@ -78,6 +78,44 @@ export async function POST(request: NextRequest) {
 
     // Validate request body
     const body = await request.json()
+
+    // Normalize payload shapes from Roblox (arrays can serialize unexpectedly)
+    if (body && Array.isArray(body.containers)) {
+      body.containers = body.containers.map((c: any) => {
+        const metrics = c?.metrics ?? {}
+        const raw = metrics.impressionsByAd
+
+        // Ensure impressionsByAd is a record<string, number>
+        let impressions: Record<string, number> = {}
+        if (Array.isArray(raw)) {
+          // Convert array -> record with numeric string keys
+          for (let i = 0; i < raw.length; i++) {
+            impressions[String(i)] = Number(raw[i]) || 0
+          }
+        } else if (raw && typeof raw === 'object') {
+          for (const [k, v] of Object.entries(raw)) {
+            impressions[String(k)] = Number(v as any) || 0
+          }
+        } else {
+          impressions = {}
+        }
+
+        const position = c?.position && typeof c.position === 'object'
+          ? c.position
+          : { x: 0, y: 0, z: 0 }
+
+        return {
+          ...c,
+          position,
+          metrics: { ...metrics, impressionsByAd: impressions }
+        }
+      })
+    }
+
+    if (!body.currentAssignments || Array.isArray(body.currentAssignments)) {
+      body.currentAssignments = {}
+    }
+
     const validatedData = ContainerRequestSchema.parse(body)
 
     console.log(`[DEBUG] Processing request for game ${game.id} with ${validatedData.containers.length} containers`);

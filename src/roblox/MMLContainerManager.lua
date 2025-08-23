@@ -531,9 +531,13 @@ function MMLContainerManager.startPositionMonitoring()
     end
     
     local RunService = game:GetService("RunService")
+    if not RunService:IsServer() then
+        -- Only the server should sync positions
+        return
+    end
     
     positionMonitor = RunService.Heartbeat:Connect(function()
-        if not _G.MMLNetwork or not _G.MMLNetwork._containers then
+        if type(_G.MMLNetwork) ~= "table" or type(_G.MMLNetwork._containers) ~= "table" then
             return
         end
         

@@ -367,13 +367,18 @@ end
 
 -- Monitor containers for visibility changes
 function MMLContainerStreamer.startMonitoring()
+    local RunService = game:GetService("RunService")
+    if not RunService:IsServer() then
+        -- Client context: avoid server-side monitoring loops
+        return
+    end
     if visibilityMonitor then
         warn("⚠️ Container monitoring already started")
         return
     end
     
     visibilityMonitor = RunService.Heartbeat:Connect(function()
-        if not _G.MMLNetwork or not _G.MMLNetwork._containers then
+        if type(_G.MMLNetwork) ~= "table" or type(_G.MMLNetwork._containers) ~= "table" then
             return
         end
         
