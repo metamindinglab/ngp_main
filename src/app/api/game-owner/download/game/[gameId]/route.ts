@@ -136,17 +136,16 @@ async function generateGamePackage(game: any) {
           "$className": "Folder",
           "ReplicatedStorage": {
             "$className": "Folder",
-            "MMLGameNetwork": { "$path": "MMLGameNetwork.lua" }
+            "MMLGameNetwork": { "$path": "MMLGameNetwork.lua" },
+            "MMLAssetStorage": { "$path": "MMLAssetStorage.lua" },
+            "MMLContainerManager": { "$path": "MMLContainerManager.lua" },
+            "MMLContainerStreamer": { "$path": "MMLContainerStreamer.lua" },
+            "MMLRequestManager": { "$path": "MMLRequestManager.lua" },
+            "MMLImpressionTracker": { "$path": "MMLImpressionTracker.lua" },
+            "MMLUtil": { "$path": "MMLUtil.lua" }
           },
           "ServerScriptService": {
             "$className": "Folder",
-            "MMLContainerManager": { "$path": "MMLContainerManager.lua" },
-            "MMLContainerStreamer": { "$path": "MMLContainerStreamer.lua" },
-            "MMLAssetStorage": { "$path": "MMLAssetStorage.lua" },
-            "MMLRequestManager": { "$path": "MMLRequestManager.lua" },
-            "MMLUtil": { "$path": "MMLUtil.lua" },
-            // Optional extras if present
-            "MMLImpressionTracker": { "$path": "MMLImpressionTracker.lua" },
             "MMLNetworkIntegration": { "$path": "MMLNetworkIntegration.server.lua" },
             "Optional_CreateContainers": { "$path": "CreateContainers.server.lua" }
           },

@@ -8,14 +8,37 @@
 
 local HttpService = game:GetService("HttpService")
 local RunService = game:GetService("RunService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
--- Import our new modules
-local MMLAssetStorage = require(script.MMLAssetStorage)
-local MMLContainerManager = require(script.MMLContainerManager)
-local MMLContainerStreamer = require(script.MMLContainerStreamer)
-local MMLRequestManager = require(script.MMLRequestManager)
-local MMLImpressionTracker = require(script.MMLImpressionTracker)
-local MMLUtil = require(script.MMLUtil)
+-- Import our new modules (robust to placement: as children of this module or as siblings in ReplicatedStorage)
+local function resolveModule(moduleName)
+  -- Prefer child ModuleScript
+  local child = script:FindFirstChild(moduleName)
+  if child then
+    return child
+  end
+  -- Fallback to ReplicatedStorage sibling
+  local sibling = ReplicatedStorage:FindFirstChild(moduleName)
+  if sibling then
+    return sibling
+  end
+  return nil
+end
+
+local function safeRequire(moduleName)
+  local mod = resolveModule(moduleName)
+  if not mod then
+    error("[MML] Missing module: " .. moduleName)
+  end
+  return require(mod)
+end
+
+local MMLAssetStorage = safeRequire("MMLAssetStorage")
+local MMLContainerManager = safeRequire("MMLContainerManager")
+local MMLContainerStreamer = safeRequire("MMLContainerStreamer")
+local MMLRequestManager = safeRequire("MMLRequestManager")
+local MMLImpressionTracker = safeRequire("MMLImpressionTracker")
+local MMLUtil = safeRequire("MMLUtil")
 
 local MMLNetwork = {
   _initialized = false,
