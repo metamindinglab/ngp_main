@@ -6,6 +6,7 @@ local MMLRequestManager = {}
 
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
 
 -- Request batching system
 local requestBatches = {
@@ -62,6 +63,11 @@ function MMLRequestManager.fetchGameAds()
         warn("❌ MMLNetwork not initialized")
         return {}
     end
+    -- Guard: server-only HTTP
+    if not RunService:IsServer() then
+        warn("⚠️ fetchGameAds called on client; skipping (server handles HTTP)")
+        return _G.MMLNetwork._requestCache and (_G.MMLNetwork._requestCache.gameAds or {}) or {}
+    end
     
     local currentTime = tick()
     local batch = requestBatches.gameAds
@@ -106,6 +112,11 @@ end
 function MMLRequestManager.fetchContainerAssignments()
     if not _G.MMLNetwork or not _G.MMLNetwork._config then
         warn("❌ MMLNetwork not initialized")
+        return false
+    end
+    -- Guard: server-only HTTP
+    if not RunService:IsServer() then
+        warn("⚠️ fetchContainerAssignments called on client; skipping (server handles HTTP)")
         return false
     end
     
