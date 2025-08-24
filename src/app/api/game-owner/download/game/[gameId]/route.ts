@@ -238,11 +238,26 @@ local function fetchAdContent(containerId)
 end
 
 -- Update container with ad content
+local function findContainerPartById(targetId)
+    for _, obj in pairs(workspace:GetChildren()) do
+        if obj:IsA("BasePart") then
+            local meta = obj:FindFirstChild("MMLMetadata")
+            if meta then
+                local idVal = meta:FindFirstChild("ContainerId")
+                if idVal and tostring(idVal.Value) == tostring(targetId) then
+                    return obj
+                end
+            end
+        end
+    end
+    return nil
+end
+
 local function updateContainer(containerId)
-    local containerPart = workspace:FindFirstChild(containerId)
+    local containerPart = findContainerPartById(containerId)
     if not containerPart then
-        warn("❌ Container not found:", containerId)
-        return
+        warn("❌ Container not found by metadata:", containerId)
+        return false
     end
     
     local adData = fetchAdContent(containerId)
@@ -255,6 +270,9 @@ local function updateContainer(containerId)
             surfaceGui = Instance.new("SurfaceGui")
             surfaceGui.Name = "MMLDisplaySurface"
             surfaceGui.Face = Enum.NormalId.Front
+            surfaceGui.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
+            surfaceGui.CanvasSize = Vector2.new(1024, 576)
+            surfaceGui.AlwaysOnTop = true
             surfaceGui.Parent = containerPart
         end
         local frame = surfaceGui:FindFirstChild("Frame")
@@ -280,6 +298,7 @@ local function updateContainer(containerId)
                 imageLabel.Image = "rbxassetid://" .. asset.robloxAssetId
                 imageLabel.BackgroundTransparency = 1
                 imageLabel.Name = "AdImage"
+                imageLabel.ScaleType = Enum.ScaleType.Fit
                 imageLabel.Parent = frame
                 print("📺 Displaying ad image:", asset.robloxAssetId)
                 return true

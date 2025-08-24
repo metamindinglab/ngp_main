@@ -179,7 +179,7 @@ async function generateContainerPackage(container: any, isFirstDownload: boolean
                 },
                 "MMLDisplaySurface": isDisplay and {
                   "$className": "SurfaceGui",
-                  "$properties": { "Face": "Front" },
+                  "$properties": { "Face": "Front", "SizingMode": "PixelsPerStud", "CanvasSize": { "X": 1024, "Y": 576 }, "AlwaysOnTop": true },
                   "Frame": {
                     "$className": "Frame",
                     "$properties": { "Size": { "Scale": 1, "Offset": 0 }, "BackgroundTransparency": 1 }
