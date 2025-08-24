@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
 import { writeFile, readFile, mkdir } from 'fs/promises'
 import { join } from 'path'
 import { exec } from 'child_process'
