@@ -1,19 +1,60 @@
 import { NextResponse } from 'next/server'
-import { promises as fs } from 'fs'
-import path from 'path'
-import { GameAd } from '@/types/gameAd'
+import { getGameAdById, updateGameAd, deleteGameAd } from '@/lib/db/gameAds'
+import { Prisma } from '@prisma/client'
+import { z } from 'zod'
+import type { GameAd, Asset as GameAdAsset, AssetType, GameAdTemplateType } from '@/types/gameAd'
+import { AcceptedGameAdTypes, normalizeGameAdType } from '@/lib/ads/type-normalization'
+import type { GameAdPerformanceMetrics } from '@/types/gameAdPerformance'
+import { prisma } from '@/lib/prisma'
 
-const DATA_FILE = path.join(process.cwd(), 'data', 'game-ads.json')
+const validAssetTypes = [
+  'kol_character', 'hat', 'clothing', 'item', 'shoes', 
+  'animation', 'audio', 'multi_display'
+] as const
 
-// Load game ads from file
-async function loadGameAds(): Promise<GameAd[]> {
-  const data = await fs.readFile(DATA_FILE, 'utf-8')
-  return JSON.parse(data).gameAds
+// Validation schema for updating a game ad
+const GameAdUpdateSchema = z.object({
+  name: z.string().min(1, 'Name is required'),
+  type: z.enum(AcceptedGameAdTypes as unknown as [string, ...string[]]),
+  description: z.string().optional(),
+  gameIds: z.array(z.string()).optional(),
+  assets: z.array(z.object({
+    assetType: z.enum(validAssetTypes),
+    assetId: z.string().min(1, 'Asset ID is required'),
+    robloxAssetId: z.string().min(1, 'Roblox Asset ID is required')
+  })).refine((assets) => {
+    // For dancing_npc template, only kol_character is required
+    if (assets.some(asset => asset.assetType === 'kol_character')) {
+      return true;
+    }
+    // For other templates, require at least one asset
+    return assets.length > 0;
+  }, {
+    message: 'At least one asset is required. For Dancing NPC Ad, KOL character is required.'
+  }).optional()
+})
+
+// Type guard for GameAdAsset
+function isGameAdAsset(obj: unknown): obj is GameAdAsset {
+  if (!obj || typeof obj !== 'object') return false
+  const asset = obj as Record<string, unknown>
+  return (
+    typeof asset.assetType === 'string' &&
+    validAssetTypes.includes(asset.assetType as AssetType) &&
+    typeof asset.assetId === 'string' &&
+    typeof asset.robloxAssetId === 'string'
+  )
 }
 
-// Save game ads to file
-async function saveGameAds(gameAds: GameAd[]) {
-  await fs.writeFile(DATA_FILE, JSON.stringify({ gameAds }, null, 2))
+// Type guard for GameAdPerformanceMetrics
+function isGameAdPerformanceMetrics(obj: unknown): obj is GameAdPerformanceMetrics {
+  if (!obj || typeof obj !== 'object') return false
+  const metrics = obj as Record<string, unknown>
+  return (
+    typeof metrics.totalImpressions === 'number' &&
+    typeof metrics.totalEngagements === 'number' &&
+    typeof metrics.conversionRate === 'number'
+  )
 }
 
 export async function GET(
@@ -21,17 +62,31 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const gameAds = await loadGameAds()
-    const gameAd = gameAds.find(ad => ad.id === params.id)
-
-    if (!gameAd) {
+    const ad = await getGameAdById(params.id)
+    if (!ad) {
       return NextResponse.json(
         { error: 'Game ad not found' },
         { status: 404 }
       )
     }
 
-    return NextResponse.json(gameAd)
+    // Cast to access JSON fields
+    const dbAd = ad as unknown as { assets: unknown; performance: Array<{ metrics: unknown }> }
+    const assets = dbAd.assets
+
+    // Map DB fields to API response shape
+    return NextResponse.json({
+      id: ad.id,
+      name: ad.name,
+      description: (ad as any).description ?? null,
+      type: ad.type,
+      assets: Array.isArray(assets) && assets.every(isGameAdAsset) ? assets : [],
+      createdAt: ad.createdAt.toISOString(),
+      updatedAt: ad.updatedAt.toISOString(),
+      games: ad.games,
+      performance: ad.performance,
+      containers: ad.containers
+    })
   } catch (error) {
     console.error('Error loading game ad:', error)
     return NextResponse.json(
@@ -46,52 +101,96 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    const gameAd = await request.json()
-    
-    // Validate required fields
-    if (!gameAd.name || !gameAd.templateType || !gameAd.assets?.length) {
+    const body = await request.json()
+
+    // Validate request body
+    const validationResult = GameAdUpdateSchema.safeParse(body)
+    if (!validationResult.success) {
       return NextResponse.json(
-        { error: 'Missing required fields' },
+        { error: 'Validation failed', details: validationResult.error.errors },
         { status: 400 }
       )
     }
 
-    // Validate that all assets have required fields
-    for (const asset of gameAd.assets) {
-      if (!asset.assetType || !asset.assetId || !asset.robloxAssetId) {
-        return NextResponse.json(
-          { error: 'Missing required asset fields' },
-          { status: 400 }
-        )
+    const gameAd = validationResult.data
+
+    // Check if game ad exists
+    const existing = await prisma.gameAd.findUnique({
+      where: { id: params.id },
+      include: {
+        games: true
       }
-    }
+    })
 
-    // Load existing game ads
-    const gameAds = await loadGameAds()
-    const index = gameAds.findIndex(ad => ad.id === params.id)
-
-    if (index === -1) {
+    if (!existing) {
       return NextResponse.json(
         { error: 'Game ad not found' },
         { status: 404 }
       )
     }
 
-    // Update timestamps
-    gameAd.updatedAt = new Date().toISOString()
-    gameAd.createdAt = gameAds[index].createdAt
+    // Optional: validate assets compatibility if provided
+    if (Array.isArray(gameAd.assets) && gameAd.assets.length > 0) {
+      const canonicalAdType = normalizeGameAdType(gameAd.type)
+      const assetIds = gameAd.assets.map((a: any) => a.assetId)
+      const dbAssets = await prisma.asset.findMany({ where: { id: { in: assetIds } }, select: { id: true, canonicalType: true } })
+      const hasCompatible = dbAssets.some(a => {
+        const c = String(a.canonicalType || '')
+        if (canonicalAdType === 'DISPLAY') return c.startsWith('DISPLAY.')
+        if (canonicalAdType === 'NPC') return c === 'NPC.character_model' || c === 'NPC.animation'
+        if (canonicalAdType === 'MINIGAME') return c === 'MINIGAME.minigame_model'
+        return false
+      })
+      if (!hasCompatible) {
+        return NextResponse.json(
+          { error: 'Incompatible assets for ad type', details: { type: canonicalAdType, assets: assetIds } },
+          { status: 400 }
+        )
+      }
+    }
 
-    // Update the game ad
-    gameAds[index] = gameAd
+    // Update game ad using Prisma client
+    const updated = await prisma.gameAd.update({
+      where: { id: params.id },
+      data: {
+        name: gameAd.name,
+        type: normalizeGameAdType(gameAd.type),
+        description: gameAd.description ?? undefined,
+        assets: gameAd.assets,
+        updatedAt: new Date(),
+        games: gameAd.gameIds ? {
+          set: gameAd.gameIds.map(id => ({ id }))
+        } : undefined
+      },
+      include: {
+        games: {
+          select: {
+            id: true,
+            name: true,
+            thumbnail: true
+          }
+        },
+        performance: true,
+        containers: true
+      }
+    })
 
-    // Save to file
-    await saveGameAds(gameAds)
-
-    return NextResponse.json(gameAd)
+    return NextResponse.json({
+      id: updated.id,
+      name: updated.name,
+      description: (updated as any).description ?? null,
+      type: updated.type,
+      assets: Array.isArray(updated.assets) && updated.assets.every(isGameAdAsset) ? updated.assets : [],
+      createdAt: updated.createdAt.toISOString(),
+      updatedAt: updated.updatedAt.toISOString(),
+      games: updated.games,
+      performance: updated.performance,
+      containers: updated.containers
+    })
   } catch (error) {
     console.error('Error updating game ad:', error)
     return NextResponse.json(
-      { error: 'Failed to update game ad' },
+      { error: 'Internal server error' },
       { status: 500 }
     )
   }
@@ -102,27 +201,28 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const gameAds = await loadGameAds()
-    const index = gameAds.findIndex(ad => ad.id === params.id)
+    // Check if game ad exists
+    const existing = await prisma.gameAd.findUnique({
+      where: { id: params.id }
+    })
 
-    if (index === -1) {
+    if (!existing) {
       return NextResponse.json(
         { error: 'Game ad not found' },
         { status: 404 }
       )
     }
 
-    // Remove the game ad
-    gameAds.splice(index, 1)
+    // Delete game ad using Prisma client
+    await prisma.gameAd.delete({
+      where: { id: params.id }
+    })
 
-    // Save to file
-    await saveGameAds(gameAds)
-
-    return NextResponse.json({ success: true })
+    return new Response(null, { status: 204 })
   } catch (error) {
-    console.error('Error deleting game ad:', error)
+    console.error('Error in DELETE /api/game-ads/[id]:', error)
     return NextResponse.json(
-      { error: 'Failed to delete game ad' },
+      { error: 'Internal server error' },
       { status: 500 }
     )
   }

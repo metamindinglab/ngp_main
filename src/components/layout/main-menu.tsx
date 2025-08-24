@@ -5,8 +5,6 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import {
-  Box,
-  Gamepad2,
   Megaphone,
   PlaySquare,
   BarChart2,
@@ -20,18 +18,6 @@ interface MenuItem {
 }
 
 const menuItems: MenuItem[] = [
-  {
-    title: 'Assets Manager',
-    description: 'Manage all your assets in one place',
-    href: '/dashboard/assets',
-    icon: <Box className="h-6 w-6" />,
-  },
-  {
-    title: 'Games Manager',
-    description: 'Manage your games and their settings',
-    href: '/dashboard/games',
-    icon: <Gamepad2 className="h-6 w-6" />,
-  },
   {
     title: 'Game Ads Manager',
     description: 'Create and manage game advertisements',

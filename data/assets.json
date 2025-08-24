@@ -67,10 +67,10 @@
       "id": "c1",
       "name": "White & Black Stitches Cozy Hoodie",
       "description": "The white & black variant of the Eternos Digital STITCHES cozy hoodie series.",
-      "assetType": "clothing",
+      "assetType": "Model",
       "robloxAssetId": "16478590766",
       "createdAt": "2024-03-01",
-      "updatedAt": "2025-03-21T13:38:28.284Z",
+      "updatedAt": "2025-06-24T05:45:19.603Z",
       "tags": [
         "nike",
         "hoodie",
@@ -93,7 +93,9 @@
         "M",
         "L",
         "XL"
-      ]
+      ],
+      "type": "Clothing",
+      "lastUpdated": "2025-06-24T05:45:18.182Z"
     },
     {
       "id": "mg1",
@@ -563,7 +565,7 @@
       "name": "Large Classic Billboard",
       "description": "Large Classic Billboard",
       "assetType": "multi_display",
-      "robloxAssetId": "13158731202",
+      "robloxAssetId": "87526574011188",
       "createdAt": "2024-03-01",
       "updatedAt": "2025-03-21T15:50:27.126Z",
       "tags": [
@@ -897,5 +899,5 @@
       "updatedAt": "2025-04-09T15:55:15.472Z"
     }
   ],
-  "lastUpdated": "2025-04-27T23:55:56.153Z"
+  "lastUpdated": "2025-06-24T05:45:19.603Z"
 }

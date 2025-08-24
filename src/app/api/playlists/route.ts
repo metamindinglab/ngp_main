@@ -1,83 +1,174 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { readFile, writeFile, mkdir } from 'fs/promises'
-import { join } from 'path'
+import { PrismaClient, Prisma } from '@prisma/client'
+import { addCorsHeaders, handleAuth, applyRateLimit, addRateLimitHeaders, handleOptions } from '../middleware'
+import { randomUUID } from 'crypto'
 
-interface Playlist {
-  id: string
-  name: string
-  description: string
-  games: string[]
-  createdAt: string
-  updatedAt: string
+const prisma = new PrismaClient()
+
+// Handle OPTIONS requests for CORS preflight
+export async function OPTIONS() {
+  return handleOptions()
 }
 
-interface PlaylistsDatabase {
-  version: string
-  lastUpdated: string
-  playlists: Playlist[]
-}
-
-const playlistsPath = join(process.cwd(), 'data/playlists.json')
-
-// Initialize data file if it doesn't exist
-async function initDataFile() {
+export async function GET(request: NextRequest) {
   try {
-    await readFile(playlistsPath, 'utf8')
-  } catch {
-    // Create data directory if it doesn't exist
-    await mkdir(join(process.cwd(), 'data'), { recursive: true })
-    // Create initial data file
-    const initialData: PlaylistsDatabase = {
-      version: '1.0',
-      lastUpdated: new Date().toISOString(),
-      playlists: []
+    // Check if this is an authenticated request from a Roblox game
+    const apiKey = request.headers.get('X-API-Key') || request.headers.get('Authorization')?.replace('Bearer ', '')
+    
+    if (apiKey) {
+      // Handle authentication for external Roblox games
+      const auth = await handleAuth(request)
+      if (!auth.isValid) {
+        const response = NextResponse.json({ error: auth.error }, { status: 401 })
+        return addCorsHeaders(response)
+      }
+
+      // Apply rate limiting for authenticated requests
+      const rateLimit = applyRateLimit(apiKey)
+      
+      if (!rateLimit.allowed) {
+        const response = NextResponse.json(
+          { error: 'Rate limit exceeded', resetTime: rateLimit.resetTime },
+          { status: 429 }
+        )
+        addRateLimitHeaders(response, rateLimit)
+        return addCorsHeaders(response)
+      }
     }
-    await writeFile(playlistsPath, JSON.stringify(initialData, null, 2))
-  }
-}
 
-export async function GET() {
-  try {
-    await initDataFile()
-    const content = await readFile(playlistsPath, 'utf8')
-    const data: PlaylistsDatabase = JSON.parse(content)
-    return NextResponse.json({ playlists: data.playlists })
+    const playlists = await prisma.playlist.findMany({
+      orderBy: { createdAt: 'desc' },
+      include: {
+        schedules: {
+          include: {
+            gameAd: true,
+            deployments: {
+              include: {
+                game: true
+              }
+            }
+          }
+        }
+      }
+    })
+    
+    const response = NextResponse.json({ 
+      success: true,
+      playlists 
+    })
+
+    // Add rate limit headers if this was an authenticated request
+    if (apiKey) {
+      const rateLimit = applyRateLimit(apiKey)
+      addRateLimitHeaders(response, rateLimit)
+    }
+
+    return addCorsHeaders(response)
   } catch (error) {
     console.error('Error reading playlists:', error)
-    return NextResponse.json(
+    const response = NextResponse.json(
       { error: 'Failed to read playlists' },
       { status: 500 }
     )
+    return addCorsHeaders(response)
   }
 }
 
-export async function POST(request: NextRequest) {
-  try {
-    await initDataFile()
-    const playlist = await request.json()
-    const content = await readFile(playlistsPath, 'utf8')
-    const data: PlaylistsDatabase = JSON.parse(content)
-    
-    // Generate next playlist ID
-    const existingIds = data.playlists.map((playlist: Playlist): number => parseInt(playlist.id.replace('playlist_', '')) || 0)
-    const nextId = Math.max(...existingIds, 0) + 1
-    const playlistId = `playlist_${nextId.toString().padStart(3, '0')}`
-    
-    const newPlaylist: Playlist = {
-      id: playlistId,
-      name: playlist.name,
-      description: playlist.description,
-      games: playlist.games || [],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    }
+interface PlaylistScheduleInput {
+  gameAdId: string
+  startDate: string
+  duration: number
+  selectedGames: string[]
+}
 
-    data.playlists.push(newPlaylist)
-    data.lastUpdated = new Date().toISOString()
+interface PlaylistInput {
+  name: string
+  description?: string | null
+  type?: string
+  createdBy?: string | null
+  metadata?: any
+  schedules: PlaylistScheduleInput[]
+}
+
+export async function POST(request: Request) {
+  try {
+    const body = await request.json() as PlaylistInput
+    const playlistId = randomUUID()
     
-    await writeFile(playlistsPath, JSON.stringify(data, null, 2))
+    // Create playlist with schedules and deployments using a transaction
+    const playlist = await prisma.$transaction(async (tx) => {
+      // Create the playlist first
+      const newPlaylist = await tx.playlist.create({
+        data: {
+          id: playlistId,
+          name: body.name,
+          description: body.description || null,
+          type: body.type || 'standard',
+          createdBy: body.createdBy || null,
+          metadata: body.metadata || {},
+          updatedAt: new Date()
+        }
+      })
+
+      // Create schedules and deployments
+      if (body.schedules.length > 0) {
+        for (const schedule of body.schedules) {
+          const scheduleId = randomUUID()
+          await tx.$executeRaw`
+            INSERT INTO "PlaylistSchedule" (
+              id, "playlistId", "gameAdId", "startDate", duration, "endDate", status, "createdAt", "updatedAt"
+            ) VALUES (
+              ${scheduleId}, ${playlistId}, ${schedule.gameAdId}, ${new Date(schedule.startDate)}, 
+              ${schedule.duration}, ${new Date(new Date(schedule.startDate).getTime() + (Number(schedule.duration || 0) * 24 * 60 * 60 * 1000))}, 'SCHEDULED', NOW(), NOW()
+            )
+          `
+
+          // Create deployments for new schedule
+          for (const gameId of schedule.selectedGames) {
+            const deploymentId = randomUUID()
+            await tx.$executeRaw`
+              INSERT INTO "GameDeployment" (
+                id, "scheduleId", "gameId", status, "createdAt", "updatedAt"
+              ) VALUES (
+                ${deploymentId}, ${scheduleId}, ${gameId}, 'PENDING', NOW(), NOW()
+              )
+            `
+          }
+        }
+      }
+
+      // Return the complete playlist with schedules and deployments
+      return await tx.$queryRaw`
+        SELECT p.*, 
+          json_agg(DISTINCT jsonb_build_object(
+            'id', ps.id,
+            'playlistId', ps."playlistId",
+            'gameAdId', ps."gameAdId",
+            'startDate', ps."startDate",
+            'duration', ps.duration,
+            'status', ps.status,
+            'createdAt', ps."createdAt",
+            'updatedAt', ps."updatedAt",
+            'deployments', (
+              SELECT json_agg(jsonb_build_object(
+                'id', gd.id,
+                'gameId', gd."gameId",
+                'status', gd.status,
+                'createdAt', gd."createdAt",
+                'updatedAt', gd."updatedAt"
+              ))
+              FROM "GameDeployment" gd
+              WHERE gd."scheduleId" = ps.id
+            )
+          )) as schedules
+        FROM "Playlist" p
+        LEFT JOIN "PlaylistSchedule" ps ON ps."playlistId" = p.id
+        WHERE p.id = ${playlistId}
+        GROUP BY p.id
+      `
+    })
     
-    return NextResponse.json({ success: true, playlist: newPlaylist })
+    return NextResponse.json(playlist)
   } catch (error) {
     console.error('Error creating playlist:', error)
     return NextResponse.json(
@@ -89,30 +180,28 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
-    await initDataFile()
     const { id, ...updates } = await request.json()
-    const content = await readFile(playlistsPath, 'utf8')
-    const data: PlaylistsDatabase = JSON.parse(content)
     
-    const playlistIndex = data.playlists.findIndex((playlist: Playlist): boolean => playlist.id === id)
-    if (playlistIndex === -1) {
+    if (!id) {
       return NextResponse.json(
-        { error: 'Playlist not found' },
-        { status: 404 }
+        { error: 'Playlist ID is required' },
+        { status: 400 }
       )
     }
     
-    data.playlists[playlistIndex] = {
-      ...data.playlists[playlistIndex],
-      ...updates,
-      id, // Preserve the original ID
-      updatedAt: new Date().toISOString()
-    }
-    data.lastUpdated = new Date().toISOString()
+    const playlist = await prisma.playlist.update({
+      where: { id },
+      data: {
+        name: updates.name,
+        description: updates.description,
+        type: updates.type,
+        createdBy: updates.createdBy,
+        metadata: updates.metadata || {},
+        updatedAt: new Date()
+      }
+    })
     
-    await writeFile(playlistsPath, JSON.stringify(data, null, 2))
-    
-    return NextResponse.json({ success: true, playlist: data.playlists[playlistIndex] })
+    return NextResponse.json({ success: true, playlist })
   } catch (error) {
     console.error('Error updating playlist:', error)
     return NextResponse.json(
@@ -124,7 +213,6 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    await initDataFile()
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
     
@@ -135,21 +223,9 @@ export async function DELETE(request: NextRequest) {
       )
     }
     
-    const content = await readFile(playlistsPath, 'utf8')
-    const data: PlaylistsDatabase = JSON.parse(content)
-    
-    const playlistIndex = data.playlists.findIndex((playlist: Playlist): boolean => playlist.id === id)
-    if (playlistIndex === -1) {
-      return NextResponse.json(
-        { error: 'Playlist not found' },
-        { status: 404 }
-      )
-    }
-    
-    data.playlists.splice(playlistIndex, 1)
-    data.lastUpdated = new Date().toISOString()
-    
-    await writeFile(playlistsPath, JSON.stringify(data, null, 2))
+    await prisma.playlist.delete({
+      where: { id }
+    })
     
     return NextResponse.json({ success: true })
   } catch (error) {

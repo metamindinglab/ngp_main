@@ -45,7 +45,7 @@ export function PlaylistManager() {
         
         // Use cached data if it's less than 30 seconds old
         if (cachedData && cachedTimestamp && (now - parseInt(cachedTimestamp)) < 30000) {
-          setPlaylists(JSON.parse(cachedData));
+          setPlaylists(JSON.parse(cachedData) || []);
           return;
         }
 
@@ -53,12 +53,13 @@ export function PlaylistManager() {
         const data = await response.json()
         
         // Cache the data
-        sessionStorage.setItem('playlistsData', JSON.stringify(data.playlists));
+        sessionStorage.setItem('playlistsData', JSON.stringify(data.playlists || []));
         sessionStorage.setItem('playlistsDataTimestamp', now.toString());
         
-        setPlaylists(data.playlists)
+        setPlaylists(data.playlists || [])
       } catch (error) {
         console.error('Error loading playlists:', error)
+        setPlaylists([])
       }
     }
 
@@ -77,7 +78,7 @@ export function PlaylistManager() {
     if (confirm('Are you sure you want to delete this playlist?')) {
       try {
         await fetch(`/api/playlists/${playlistId}`, { method: 'DELETE' })
-        setPlaylists(playlists.filter(playlist => playlist.id !== playlistId))
+        setPlaylists(playlists => (playlists || []).filter(playlist => playlist.id !== playlistId))
       } catch (error) {
         console.error('Error deleting playlist:', error)
       }
@@ -95,8 +96,8 @@ export function PlaylistManager() {
     }
   }
 
-  const filteredPlaylists = playlists.filter(playlist => 
-    playlist.name.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredPlaylists = (playlists || []).filter(playlist => 
+    (playlist.name || '').toLowerCase().includes(searchTerm.toLowerCase())
   )
 
   return (
@@ -132,18 +133,18 @@ export function PlaylistManager() {
             <Card 
               key={playlist.id}
               className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border-l-4"
-              style={{ borderLeftColor: playlist.status === 'active' ? COLORS.secondary : COLORS.muted }}
+              style={{ borderLeftColor: COLORS.muted }}
             >
               <CardHeader>
                 <div className="flex justify-between items-start">
                   <div>
                     <CardTitle className="text-lg font-semibold group-hover:text-primary transition-colors">
-                      {playlist.name}
+                      {playlist.name || 'Unnamed Playlist'}
                     </CardTitle>
-                    <CardDescription>{playlist.description}</CardDescription>
+                    <CardDescription>{playlist.description || 'No description'}</CardDescription>
                   </div>
-                  <div className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(playlist.status)} transition-all duration-300 group-hover:scale-105`}>
-                    {playlist.status}
+                  <div className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor('inactive')} transition-all duration-300 group-hover:scale-105`}>
+                    {playlist.schedules?.length > 0 ? 'active' : 'inactive'}
                   </div>
                 </div>
               </CardHeader>
@@ -151,19 +152,23 @@ export function PlaylistManager() {
                 <div className="space-y-2 text-sm">
                   <div className="flex items-center justify-between p-2 rounded hover:bg-gray-50 transition-colors">
                     <span className="text-gray-600 font-medium">Created:</span>
-                    <span className="text-gray-900">{formatDistanceToNow(new Date(playlist.createdAt))} ago</span>
+                    <span className="text-gray-900">
+                      {playlist.createdAt ? `${formatDistanceToNow(new Date(playlist.createdAt))} ago` : 'Unknown'}
+                    </span>
                   </div>
                   <div className="flex items-center justify-between p-2 rounded hover:bg-gray-50 transition-colors">
                     <span className="text-gray-600 font-medium">Last updated:</span>
-                    <span className="text-gray-900">{formatDistanceToNow(new Date(playlist.updatedAt))} ago</span>
+                    <span className="text-gray-900">
+                      {playlist.updatedAt ? `${formatDistanceToNow(new Date(playlist.updatedAt))} ago` : 'Unknown'}
+                    </span>
                   </div>
                   <div className="flex items-center justify-between p-2 rounded hover:bg-gray-50 transition-colors">
                     <span className="text-gray-600 font-medium">Scheduled ads:</span>
-                    <span className="text-gray-900">{playlist.schedules.length}</span>
+                    <span className="text-gray-900">{(playlist.schedules || []).length}</span>
                   </div>
                   <div className="flex items-center justify-between p-2 rounded hover:bg-gray-50 transition-colors">
                     <span className="text-gray-600 font-medium">Game deployments:</span>
-                    <span className="text-gray-900">{playlist.deployments.length}</span>
+                    <span className="text-gray-900">{(playlist.schedules || []).reduce((total, schedule) => total + (schedule.deployments || []).length, 0)}</span>
                   </div>
                 </div>
               </CardContent>
@@ -211,23 +216,29 @@ export function PlaylistManager() {
               })
 
               if (!response.ok) {
-                throw new Error('Failed to save playlist')
+                const errorData = await response.json().catch(() => ({}))
+                throw new Error(errorData.error || `Failed to save playlist (${response.status})`)
               }
 
               const savedPlaylist = await response.json()
               
               if (selectedPlaylist) {
                 setPlaylists(playlists => 
-                  playlists.map(p => p.id === selectedPlaylist.id ? savedPlaylist : p)
+                  (playlists || []).map(p => p.id === selectedPlaylist.id ? savedPlaylist : p)
                 )
               } else {
-                setPlaylists(playlists => [...playlists, savedPlaylist])
+                setPlaylists(playlists => [...(playlists || []), savedPlaylist])
               }
+              
+              // Clear cache to force refresh
+              sessionStorage.removeItem('playlistsData')
+              sessionStorage.removeItem('playlistsDataTimestamp')
               
               setIsDialogOpen(false)
               setSelectedPlaylist(null)
             } catch (error) {
               console.error('Error saving playlist:', error)
+              throw error // Re-throw to let the dialog handle it
             }
           }}
         />

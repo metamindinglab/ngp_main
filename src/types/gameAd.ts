@@ -1,3 +1,7 @@
+import type { Game } from './game'
+import type { GameAdPerformance } from './gameAdPerformance'
+import type { GameAdContainer } from './gameAdContainer'
+
 export type AssetType = 'kol_character' | 'hat' | 'clothing' | 'item' | 'audio' | 'animation' | 'shoes' | 'multi_display';
 
 // Asset in the assets.json database
@@ -6,6 +10,7 @@ export interface AssetData {
   name: string
   description?: string
   assetType: AssetType
+  type?: AssetType  // For backward compatibility
   robloxAssetId: string
   previewUrl?: string
   properties?: Record<string, any>
@@ -32,12 +37,15 @@ export interface GameAdTemplate {
 }
 
 export interface GameAd {
-  id: string;
-  name: string;
-  templateType: GameAdTemplateType;
-  createdAt: string;
-  updatedAt: string;
-  assets: Asset[];
+  id: string
+  name: string
+  type: GameAdTemplateType
+  assets: Asset[]
+  createdAt: Date | string
+  updatedAt: Date | string
+  games: Game[]
+  performance: GameAdPerformance[]
+  containers: GameAdContainer[]
 }
 
 export const GAME_AD_TEMPLATES: GameAdTemplate[] = [

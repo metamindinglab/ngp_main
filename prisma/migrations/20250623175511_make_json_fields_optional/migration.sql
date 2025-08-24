@@ -1,0 +1,28 @@
+-- AlterTable
+ALTER TABLE "Asset" ALTER COLUMN "creator" DROP NOT NULL,
+ALTER COLUMN "metadata" DROP NOT NULL,
+ALTER COLUMN "versions" DROP NOT NULL,
+ALTER COLUMN "relationships" DROP NOT NULL;
+
+-- AlterTable
+ALTER TABLE "Game" ALTER COLUMN "robloxLink" DROP NOT NULL,
+ALTER COLUMN "thumbnail" DROP NOT NULL,
+ALTER COLUMN "metrics" DROP NOT NULL,
+ALTER COLUMN "dates" DROP NOT NULL,
+ALTER COLUMN "owner" DROP NOT NULL;
+
+-- AlterTable
+ALTER TABLE "GameAd" ALTER COLUMN "schedule" DROP NOT NULL,
+ALTER COLUMN "targeting" DROP NOT NULL,
+ALTER COLUMN "metrics" DROP NOT NULL;
+
+-- AlterTable
+ALTER TABLE "GameAdPerformance" ALTER COLUMN "metrics" DROP NOT NULL,
+ALTER COLUMN "demographics" DROP NOT NULL,
+ALTER COLUMN "engagements" DROP NOT NULL,
+ALTER COLUMN "playerDetails" DROP NOT NULL,
+ALTER COLUMN "timeDistribution" DROP NOT NULL,
+ALTER COLUMN "performanceTrends" DROP NOT NULL;
+
+-- AlterTable
+ALTER TABLE "Playlist" ALTER COLUMN "metadata" DROP NOT NULL;

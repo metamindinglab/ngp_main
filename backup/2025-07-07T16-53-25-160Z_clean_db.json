@@ -1,0 +1,941 @@
+{
+  "timestamp": "2025-07-07T16:53:25.244Z",
+  "data": {
+    "gameOwners": [
+      {
+        "id": "9be282ab-42b0-4e1d-a9fa-c8facfea9470",
+        "email": "info@metamindinglab.com",
+        "name": "Ardy Lee",
+        "password": "$2b$10$40q4MFcQgl5RtvywSfyIAeMcjp6O5s51jMMJRB83x0.YbPZR2Gkje",
+        "createdAt": "2025-06-25T16:31:54.663Z",
+        "updatedAt": "2025-07-01T13:18:51.360Z"
+      },
+      {
+        "id": "9d8257c5-b7ef-437d-95cc-e4cb8cb0201a",
+        "email": "contact@dreamcraftstudios.com",
+        "name": "DreamCraft Studios",
+        "password": "$2b$10$mXRlGdYhiF3LJFU8vUtQk.KOzi3SY3gPCaljlc.34uiF.S1ah5GYi",
+        "createdAt": "2025-06-26T02:13:56.658Z",
+        "updatedAt": "2025-06-26T02:13:56.658Z"
+      },
+      {
+        "id": "dd698dec-8b90-4dd3-86b4-cd7d3d12f675",
+        "email": "support@gamerrobot.com",
+        "name": "Gamer Robot Inc",
+        "password": "$2b$10$mf1I4SEfSfleCEjkvcaX7./hZPGOBMu0LjOrdSIrMX3QiK5/0XOlu",
+        "createdAt": "2025-06-26T02:13:56.746Z",
+        "updatedAt": "2025-06-26T02:13:56.746Z"
+      },
+      {
+        "id": "5c95f626-dc17-42db-b2f8-18ca07ec03dc",
+        "email": "contact@stylisstudios.com",
+        "name": "StyLiS Studios",
+        "password": "$2b$10$JMeRtL./9uim8WRhPOrCdOkxAicXvZ746kvZAFA.EwDl/16F9kHW6",
+        "createdAt": "2025-06-26T02:13:56.833Z",
+        "updatedAt": "2025-06-26T02:13:56.833Z"
+      },
+      {
+        "id": "3e3829e3-a41b-40de-ab4c-85f71515c73e",
+        "email": "info@paradoxstudios.net",
+        "name": "ParadoxStudios",
+        "password": "$2b$10$6AqZ6kZscqnM.zbtRidZPeCmKMs/EZRGgNJpxLs.uCpfgkZwVMaf.",
+        "createdAt": "2025-06-26T02:13:56.920Z",
+        "updatedAt": "2025-06-26T02:13:56.920Z"
+      }
+    ],
+    "games": [
+      {
+        "id": "game_005",
+        "name": "Escape to Freedom [FULL GAME!]",
+        "description": "An utterly unique escape game which will challenge your ability to handle a potentially disastrous situation. The journey to freedom will not only test your survival skills but will provide a taste of a life-changing experience.\n\nObjective: Complete the game safely and quickly, figure out challenges along the journey by noting instructions and status information.  Why not work with your friends in the multiplayer mode stages. \n\n🏆 Aim high at the leaderboard or just play for fun.....the choice is yours. To achieve an even higher score, just replay different parts of the game. \n\n🎮 💻 📱 Play Escape to Freedom on any device!\n\n💰 Join and verify on our Discordserver!\n\n⚙️ Feedback/questions/complaints? Let us know on our socials! \n\nCreated by MetaMinding Lab in association with Amnesty International.  Credit to Skilled Studio. \n\n⚠️ WARNING: The game contains upsetting imagery and themes related to war and refugee experiences that may be distressing. Parental guidance is advised. \n",
+        "genre": "All",
+        "robloxLink": "https://www.roblox.com/games/13796067174",
+        "thumbnail": "/media/game_005/1742794313661-ETF-V3.webp",
+        "metrics": {
+          "dau": 0,
+          "mau": 0,
+          "day1Retention": 0,
+          "topGeographicPlayers": []
+        },
+        "dates": {
+          "created": "2023-06-19T03:48:29.263Z",
+          "mgnJoined": "2025-03-22T17:56:38.521Z",
+          "lastUpdated": "2025-03-24T07:10:04.129Z",
+          "lastRobloxSync": "2025-03-22T17:56:38.521Z"
+        },
+        "owner": {
+          "name": "",
+          "email": "",
+          "country": "",
+          "discordId": ""
+        },
+        "createdAt": "2025-07-02T13:03:03.424Z",
+        "updatedAt": "2025-07-02T13:03:03.424Z",
+        "gameOwnerId": null,
+        "robloxAuthorization": {
+          "type": "api_key",
+          "apiKey": "5o02SKlLRUmKXr4cVQL3rjSDKkNKsxK5qnab2pPWHAHv0r27ZXlKaGJHY2lPaUpTVXpJMU5pSXNJbXRwWkNJNkluTnBaeTB5TURJeExUQTNMVEV6VkRFNE9qVXhPalE1V2lJc0luUjVjQ0k2SWtwWFZDSjkuZXlKaVlYTmxRWEJwUzJWNUlqb2lOVzh3TWxOTGJFeFNWVzFMV0hJMFkxWlJURE55YWxORVMydE9TM040U3pWeGJtRmlNbkJRVjBoQlNIWXdjakkzSWl3aWIzZHVaWEpKWkNJNklqTXlOVEk0TWpjeUlpd2lZWFZrSWpvaVVtOWliRzk0U1c1MFpYSnVZV3dpTENKcGMzTWlPaUpEYkc5MVpFRjFkR2hsYm5ScFkyRjBhVzl1VTJWeWRtbGpaU0lzSW1WNGNDSTZNVGMwTWpZeU9ERXpOaXdpYVdGMElqb3hOelF5TmpJME5UTTJMQ0p1WW1ZaU9qRTNOREkyTWpRMU16WjkuTkV6TW5TcHVkTlRNWC1sMEdlY01uNnpiZFhaSFg2OGV1Y1N2ZG1kZjRFSGZ5THFsRkNHX0Y2VWpYQkJJWHNkY1dIc3BuRjRkcFVTZk45ZjM3a0xUejQtdFFVRWduZjhhMFlZdzFiSW56VnNIelNpcm83V1NwSXBBc25VM1g0RGFDR24yTUstdklZZUduSk5Kdmdlekxvc1BQSzZjZl8ybU02RlBTYkFBdmVmN3ZzbU9BdjRZbWpFMk5PQ2hORFVhaG1nS1l6cFFaRkQ1dXlVSUxiR0ZfQnFqS01jWVpuYzJkLXNwUXBnWDh2Wk9JRG1ZN2VEVjJ3NWJnSVJwUGxPQTlsR3MxSnN6VzZoR0VoLUFndVBsRW9LY0FYTEFPZC13ajVHeG9CcENwV0tfU01fVVNtbnpfeXlFX0Z3ZnlCc2E0NVNZS2x4azVrT1hZRVpfYzdxRFJ3",
+          "status": "unverified"
+        },
+        "serverApiKey": null,
+        "serverApiKeyCreatedAt": null,
+        "serverApiKeyStatus": null
+      },
+      {
+        "id": "game_001",
+        "name": "Adopt Me!",
+        "description": "Adopt pets, trade items, and build your dream home in this enchanting role-playing experience!",
+        "genre": "Role-Playing",
+        "robloxLink": "https://www.roblox.com/games/920587237/Adopt-Me",
+        "thumbnail": "/games/adopt-me.png",
+        "metrics": {
+          "dau": 250000,
+          "mau": 4500000,
+          "day1Retention": 45.2,
+          "topGeographicPlayers": [
+            {
+              "country": "United States",
+              "percentage": 35.5
+            },
+            {
+              "country": "Brazil",
+              "percentage": 15.2
+            },
+            {
+              "country": "United Kingdom",
+              "percentage": 12.8
+            },
+            {
+              "country": "Canada",
+              "percentage": 8.5
+            },
+            {
+              "country": "Germany",
+              "percentage": 6.2
+            }
+          ]
+        },
+        "dates": {
+          "created": "2017-07-14T00:00:00Z",
+          "mgnJoined": "2023-01-15T00:00:00Z",
+          "lastUpdated": "2024-03-15T00:00:00Z"
+        },
+        "owner": {
+          "name": "DreamCraft Studios",
+          "email": "contact@dreamcraftstudios.com",
+          "country": "United States",
+          "discordId": "dreamcraft#1234"
+        },
+        "createdAt": "2025-07-02T13:03:03.330Z",
+        "updatedAt": "2025-07-02T13:03:03.330Z",
+        "gameOwnerId": "9d8257c5-b7ef-437d-95cc-e4cb8cb0201a",
+        "robloxAuthorization": {},
+        "serverApiKey": null,
+        "serverApiKeyCreatedAt": null,
+        "serverApiKeyStatus": null
+      },
+      {
+        "id": "game_002",
+        "name": "Blox Fruits",
+        "description": "Become the strongest warrior in this One Piece inspired fighting game! Train, battle, and collect rare fruits to gain powerful abilities.",
+        "genre": "Fighting",
+        "robloxLink": "https://www.roblox.com/games/2753915549/Blox-Fruits",
+        "thumbnail": "/games/blox-fruits.png",
+        "metrics": {
+          "dau": 180000,
+          "mau": 3200000,
+          "day1Retention": 42.8,
+          "topGeographicPlayers": [
+            {
+              "country": "Philippines",
+              "percentage": 28.5
+            },
+            {
+              "country": "United States",
+              "percentage": 22.3
+            },
+            {
+              "country": "Indonesia",
+              "percentage": 15.7
+            },
+            {
+              "country": "Thailand",
+              "percentage": 10.2
+            },
+            {
+              "country": "Brazil",
+              "percentage": 8.9
+            }
+          ]
+        },
+        "dates": {
+          "created": "2019-01-25T00:00:00Z",
+          "mgnJoined": "2023-03-20T00:00:00Z",
+          "lastUpdated": "2024-03-18T00:00:00Z"
+        },
+        "owner": {
+          "name": "Gamer Robot Inc",
+          "email": "support@gamerrobot.com",
+          "country": "Canada",
+          "discordId": "gamerrobot#5678"
+        },
+        "createdAt": "2025-07-02T13:03:03.403Z",
+        "updatedAt": "2025-07-02T13:03:03.403Z",
+        "gameOwnerId": "dd698dec-8b90-4dd3-86b4-cd7d3d12f675",
+        "robloxAuthorization": {},
+        "serverApiKey": null,
+        "serverApiKeyCreatedAt": null,
+        "serverApiKeyStatus": null
+      },
+      {
+        "id": "game_003",
+        "name": "Phantom Forces",
+        "description": "Experience intense tactical combat in this modern military FPS! Choose your loadout, join a team, and compete in various game modes.",
+        "genre": "First-Person Shooter",
+        "robloxLink": "https://www.roblox.com/games/292439477/Phantom-Forces",
+        "thumbnail": "/games/phantom-forces.png",
+        "metrics": {
+          "dau": 120000,
+          "mau": 2800000,
+          "day1Retention": 38.5,
+          "topGeographicPlayers": [
+            {
+              "country": "United States",
+              "percentage": 32.1
+            },
+            {
+              "country": "Russia",
+              "percentage": 18.4
+            },
+            {
+              "country": "Germany",
+              "percentage": 12.6
+            },
+            {
+              "country": "United Kingdom",
+              "percentage": 9.8
+            },
+            {
+              "country": "France",
+              "percentage": 7.5
+            }
+          ]
+        },
+        "dates": {
+          "created": "2015-09-10T00:00:00Z",
+          "mgnJoined": "2023-06-01T00:00:00Z",
+          "lastUpdated": "2024-03-12T00:00:00Z"
+        },
+        "owner": {
+          "name": "StyLiS Studios",
+          "email": "contact@stylisstudios.com",
+          "country": "United States",
+          "discordId": "stylis#9012"
+        },
+        "createdAt": "2025-07-02T13:03:03.408Z",
+        "updatedAt": "2025-07-02T13:03:03.408Z",
+        "gameOwnerId": "5c95f626-dc17-42db-b2f8-18ca07ec03dc",
+        "robloxAuthorization": {},
+        "serverApiKey": null,
+        "serverApiKeyCreatedAt": null,
+        "serverApiKeyStatus": null
+      },
+      {
+        "id": "game_004",
+        "name": "Tower Defense Simulator",
+        "description": "Team up with friends to defend against waves of enemies! Place towers strategically and upgrade them to overcome challenging missions.",
+        "genre": "Strategy",
+        "robloxLink": "https://www.roblox.com/games/3260590327/Tower-Defense-Simulator",
+        "thumbnail": "/games/tower-defense-simulator.png",
+        "metrics": {
+          "dau": 95000,
+          "mau": 1800000,
+          "day1Retention": 41.3,
+          "topGeographicPlayers": [
+            {
+              "country": "United States",
+              "percentage": 28.9
+            },
+            {
+              "country": "Brazil",
+              "percentage": 16.7
+            },
+            {
+              "country": "Mexico",
+              "percentage": 13.4
+            },
+            {
+              "country": "Canada",
+              "percentage": 11.2
+            },
+            {
+              "country": "Argentina",
+              "percentage": 8.1
+            }
+          ]
+        },
+        "dates": {
+          "created": "2019-06-05T00:00:00Z",
+          "mgnJoined": "2023-09-10T00:00:00Z",
+          "lastUpdated": "2024-03-19T00:00:00Z"
+        },
+        "owner": {
+          "name": "ParadoxStudios",
+          "email": "info@paradoxstudios.net",
+          "country": "Australia",
+          "discordId": "paradox#3456"
+        },
+        "createdAt": "2025-07-02T13:03:03.419Z",
+        "updatedAt": "2025-07-02T13:03:03.419Z",
+        "gameOwnerId": "3e3829e3-a41b-40de-ab4c-85f71515c73e",
+        "robloxAuthorization": {},
+        "serverApiKey": null,
+        "serverApiKeyCreatedAt": null,
+        "serverApiKeyStatus": null
+      },
+      {
+        "id": "game_006",
+        "name": "Metaminding Demo #2",
+        "description": "MML Demo game",
+        "genre": "DEMO",
+        "robloxLink": "",
+        "thumbnail": "",
+        "metrics": {
+          "dau": 0,
+          "mau": 0,
+          "day1Retention": 0
+        },
+        "dates": {},
+        "owner": {
+          "name": "MetaMinding Lab",
+          "email": "info@metamindinglab.com",
+          "country": "Hong Kong"
+        },
+        "createdAt": "2025-07-02T13:03:03.451Z",
+        "updatedAt": "2025-07-02T13:03:03.451Z",
+        "gameOwnerId": "9be282ab-42b0-4e1d-a9fa-c8facfea9470",
+        "robloxAuthorization": {},
+        "serverApiKey": null,
+        "serverApiKeyCreatedAt": null,
+        "serverApiKeyStatus": null
+      }
+    ],
+    "assets": [
+      {
+        "id": "k1",
+        "name": "TechTrix",
+        "type": "kol_character",
+        "status": "active",
+        "robloxId": "12345671",
+        "creator": null,
+        "metadata": "{\"description\":\"Tech-savvy gaming influencer with a vibrant personality\",\"tags\":[\"gaming\",\"tech\",\"influencer\"],\"characterType\":\"Streamer\",\"appearance\":{\"gender\":\"Female\",\"style\":[\"Streetwear\",\"Tech-wear\",\"Urban\"],\"hairStyle\":\"Neon Purple Bob Cut\",\"hairColor\":\"Purple\",\"height\":\"Medium\",\"features\":[\"RGB Glasses\",\"Holographic Accessories\",\"Tech Tattoos\"]},\"personality\":[\"Energetic\",\"Tech-Savvy\",\"Trendy\"],\"defaultAnimations\":[\"Victory Dance\",\"Gaming Pose\",\"Energetic Wave\"],\"suitableFor\":{\"brands\":[\"Gaming Peripherals\",\"Energy Drinks\",\"Tech Gadgets\"],\"products\":[\"Gaming Chairs\",\"Headphones\",\"Custom PC Builds\"],\"gameTypes\":[\"Esports Arenas\",\"Gaming Cafes\",\"Tech Conventions\"]},\"marketingCapabilities\":[\"Brand Integration\",\"Live Game Reviews\",\"Tech Unboxing\"]}",
+        "versions": null,
+        "relationships": null,
+        "createdAt": "2024-03-01T00:00:00.000Z",
+        "updatedAt": "2024-03-20T00:00:00.000Z"
+      },
+      {
+        "id": "c1",
+        "name": "White & Black Stitches Cozy Hoodie",
+        "type": "Model",
+        "status": "active",
+        "robloxId": "16478590766",
+        "creator": null,
+        "metadata": "{\"description\":\"The white & black variant of the Eternos Digital STITCHES cozy hoodie series.\",\"tags\":[\"nike\",\"hoodie\",\"casual\"],\"image\":\"/customization/outfits/Nike-hoodie.png\",\"previewImage\":\"/customization/outfits/Nike-hoodie-preview.png\",\"compatibility\":[\"Gamer\",\"Athlete\",\"Lifestyle\",\"Artist\",\"Fashion\"],\"brands\":[\"Nike\"],\"size\":[\"S\",\"M\",\"L\",\"XL\"],\"itemType\":\"Clothing\",\"lastUpdated\":\"2025-06-24T05:45:18.182Z\"}",
+        "versions": null,
+        "relationships": null,
+        "createdAt": "2024-03-01T00:00:00.000Z",
+        "updatedAt": "2025-06-24T05:45:19.603Z"
+      },
+      {
+        "id": "mg1",
+        "name": "Wheel Of Luck",
+        "type": "minigame",
+        "status": "active",
+        "robloxId": "112978636478580",
+        "creator": null,
+        "metadata": "{\"description\":\"Embark on a journey of luck and excitement with our exclusive Wheel of Fortune Spinner with your brand logo! This eye catching game accessory brings the thrill of spinning for prizes right to your avatar, good branding exposure.\",\"tags\":[\"game\",\"interactive\",\"wheel\"],\"marketingCapabilities\":[\"Brand Awareness\",\"Product Showcase\",\"Lead Generation\"],\"difficulty\":\"Easy\",\"maxPlayers\":1,\"gameplayDuration\":\"45 seconds\",\"customizableElements\":[{\"id\":\"wheel-bg\",\"name\":\"Wheel Background\",\"type\":\"image\",\"description\":\"Background image behind the wheel\"}]}",
+        "versions": null,
+        "relationships": null,
+        "createdAt": "2024-03-01T00:00:00.000Z",
+        "updatedAt": "2025-03-29T04:49:39.129Z"
+      },
+      {
+        "id": "h1",
+        "name": "White 94 Baseball Cap",
+        "type": "hat",
+        "status": "active",
+        "robloxId": "17881926945",
+        "creator": null,
+        "metadata": "{\"description\":\"More UGC: https://www.roblox.com/catalog?Category=1&CreatorName=Rey%20x%20Noob&CreatorType=Group&salesTypeFilter=1\\n\",\"tags\":[\"supreme\",\"cap\",\"streetwear\"],\"image\":\"/customization/hats/supreme-cap.png\",\"compatibility\":[\"Lifestyle\",\"Fashion\"],\"brands\":[\"Supreme\"]}",
+        "versions": null,
+        "relationships": null,
+        "createdAt": "2024-03-01T00:00:00.000Z",
+        "updatedAt": "2025-03-21T14:53:38.210Z"
+      },
+      {
+        "id": "a1",
+        "name": "Frosty Flair - Tommy Hilfiger",
+        "type": "animation",
+        "status": "active",
+        "robloxId": "10214406616",
+        "creator": null,
+        "metadata": "{\"description\":\"Celebratory dance animation for victory moments\",\"tags\":[\"dance\",\"celebration\"],\"compatibility\":[\"All\"],\"duration\":\"3.5 seconds\",\"category\":\"emote\",\"previewUrl\":\"/animations/victory-dance-preview.mp4\"}",
+        "versions": null,
+        "relationships": null,
+        "createdAt": "2024-03-01T00:00:00.000Z",
+        "updatedAt": "2025-03-21T15:54:01.720Z"
+      },
+      {
+        "id": "img1",
+        "name": "Brand Logo Collection",
+        "type": "image",
+        "status": "active",
+        "robloxId": "12345676",
+        "creator": null,
+        "metadata": "{\"description\":\"High-resolution brand logos for in-game displays\",\"tags\":[\"logos\",\"branding\",\"marketing\"],\"url\":\"/images/brand-logos.png\",\"dimensions\":{\"width\":1920,\"height\":1080},\"fileFormat\":\"png\",\"fileSize\":2048}",
+        "versions": null,
+        "relationships": null,
+        "createdAt": "2024-03-01T00:00:00.000Z",
+        "updatedAt": "2024-03-20T00:00:00.000Z"
+      },
+      {
+        "id": "aud1",
+        "name": "Victory Fanfare",
+        "type": "audio",
+        "status": "active",
+        "robloxId": "12345677",
+        "creator": null,
+        "metadata": "{\"description\":\"Triumphant music for victory moments\",\"tags\":[\"music\",\"victory\",\"fanfare\"],\"duration\":\"5.5 seconds\",\"url\":\"/audio/victory-fanfare.mp3\",\"fileFormat\":\"mp3\",\"fileSize\":1024}",
+        "versions": null,
+        "relationships": null,
+        "createdAt": "2024-03-01T00:00:00.000Z",
+        "updatedAt": "2024-03-20T00:00:00.000Z"
+      },
+      {
+        "id": "vid1",
+        "name": "Brand Introduction",
+        "type": "video",
+        "status": "active",
+        "robloxId": "12345678",
+        "creator": null,
+        "metadata": "{\"description\":\"Video introduction for brand partnership\",\"tags\":[\"brand\",\"intro\",\"marketing\"],\"duration\":\"30 seconds\",\"url\":\"/videos/brand-intro.mp4\",\"dimensions\":{\"width\":1920,\"height\":1080},\"fileFormat\":\"mp4\",\"fileSize\":15360}",
+        "versions": null,
+        "relationships": null,
+        "createdAt": "2024-03-01T00:00:00.000Z",
+        "updatedAt": "2024-03-20T00:00:00.000Z"
+      },
+      {
+        "id": "s1",
+        "name": "Dr. Boots",
+        "type": "shoes",
+        "status": "active",
+        "robloxId": "93915499446569",
+        "creator": null,
+        "metadata": "{\"description\":\"Dr. Marten Boot (Black)\",\"tags\":[\"boots\",\"dr-martens\",\"fashion\"],\"image\":\"/customization/outfits/DrMartenBoots.png\",\"compatibility\":[\"Artist\",\"Fashion\"],\"brands\":[\"Dr. Martens\"],\"size\":[\"UK6\",\"UK7\",\"UK8\",\"UK9\",\"UK10\"]}",
+        "versions": null,
+        "relationships": null,
+        "createdAt": "2024-03-01T00:00:00.000Z",
+        "updatedAt": "2025-03-21T14:57:36.763Z"
+      },
+      {
+        "id": "k2",
+        "name": "SportStar",
+        "type": "kol_character",
+        "status": "active",
+        "robloxId": "12345681",
+        "creator": null,
+        "metadata": "{\"description\":\"Professional athlete influencer focused on sports and fitness\",\"tags\":[\"sports\",\"fitness\",\"athlete\"],\"characterType\":\"Athlete\",\"appearance\":{\"gender\":\"Male\",\"style\":[\"Athletic\",\"Sporty\",\"Modern\"],\"hairStyle\":\"Fade Cut\",\"hairColor\":\"Black\",\"height\":\"Tall\",\"features\":[\"Athletic Build\",\"Sports Accessories\",\"Team Jersey\"]},\"personality\":[\"Competitive\",\"Motivational\",\"Team Player\"],\"defaultAnimations\":[\"Sports Celebration\",\"Training Routine\",\"Victory Pose\"],\"suitableFor\":{\"brands\":[\"Sports Apparel\",\"Fitness Equipment\",\"Health Supplements\"],\"products\":[\"Athletic Shoes\",\"Sports Gear\",\"Energy Bars\"],\"gameTypes\":[\"Sports Games\",\"Training Simulators\",\"Competition Venues\"]},\"marketingCapabilities\":[\"Brand Endorsements\",\"Fitness Challenges\",\"Sports Events\"]}",
+        "versions": null,
+        "relationships": null,
+        "createdAt": "2024-03-01T00:00:00.000Z",
+        "updatedAt": "2024-03-20T00:00:00.000Z"
+      },
+      {
+        "id": "k3",
+        "name": "ArtisticSoul",
+        "type": "kol_character",
+        "status": "active",
+        "robloxId": "12345682",
+        "creator": null,
+        "metadata": "{\"description\":\"Creative digital artist and design influencer\",\"tags\":[\"art\",\"design\",\"creative\"],\"characterType\":\"Artist\",\"appearance\":{\"gender\":\"Neutral\",\"style\":[\"Artistic\",\"Bohemian\",\"Creative\"],\"hairStyle\":\"Colorful Undercut\",\"hairColor\":\"Rainbow\",\"height\":\"Medium\",\"features\":[\"Paint Splatter Clothes\",\"Digital Tablet\",\"Creative Accessories\"]},\"personality\":[\"Creative\",\"Expressive\",\"Inspiring\"],\"defaultAnimations\":[\"Drawing Pose\",\"Creative Expression\",\"Artistic Flourish\"],\"suitableFor\":{\"brands\":[\"Art Supplies\",\"Digital Tools\",\"Creative Software\"],\"products\":[\"Drawing Tablets\",\"Art Materials\",\"Creative Tools\"],\"gameTypes\":[\"Art Studios\",\"Creative Spaces\",\"Design Workshops\"]},\"marketingCapabilities\":[\"Art Tutorials\",\"Creative Collaborations\",\"Digital Art Showcases\"]}",
+        "versions": null,
+        "relationships": null,
+        "createdAt": "2024-03-01T00:00:00.000Z",
+        "updatedAt": "2024-03-20T00:00:00.000Z"
+      },
+      {
+        "id": "k4",
+        "name": "StyleIcon",
+        "type": "kol_character",
+        "status": "active",
+        "robloxId": "12345683",
+        "creator": null,
+        "metadata": "{\"description\":\"Fashion and lifestyle influencer with a keen eye for trends\",\"tags\":[\"fashion\",\"lifestyle\",\"luxury\"],\"characterType\":\"Fashion Influencer\",\"appearance\":{\"gender\":\"Female\",\"style\":[\"High Fashion\",\"Trendy\",\"Luxury\"],\"hairStyle\":\"Long Wavy\",\"hairColor\":\"Blonde\",\"height\":\"Tall\",\"features\":[\"Designer Accessories\",\"Premium Outfits\",\"Runway Walk\"]},\"personality\":[\"Sophisticated\",\"Trendsetter\",\"Charismatic\"],\"defaultAnimations\":[\"Catwalk\",\"Photo Pose\",\"Elegant Wave\"],\"suitableFor\":{\"brands\":[\"Fashion Brands\",\"Luxury Items\",\"Beauty Products\"],\"products\":[\"Designer Clothes\",\"Accessories\",\"Cosmetics\"],\"gameTypes\":[\"Fashion Shows\",\"Shopping Centers\",\"Beauty Studios\"]},\"marketingCapabilities\":[\"Fashion Showcases\",\"Style Tips\",\"Brand Collaborations\"]}",
+        "versions": null,
+        "relationships": null,
+        "createdAt": "2024-03-01T00:00:00.000Z",
+        "updatedAt": "2024-03-20T00:00:00.000Z"
+      },
+      {
+        "id": "c2",
+        "name": "Adidas Black Professional Shirt",
+        "type": "clothing",
+        "status": "active",
+        "robloxId": "16099347638",
+        "creator": null,
+        "metadata": "{\"description\":\"Adidas Black Professional Shirt\",\"tags\":[\"adidas\",\"sports\",\"athletic\"],\"image\":\"/customization/outfits/White-shirt-Adidas.png\",\"compatibility\":[\"Athlete\",\"Lifestyle\"],\"brands\":[\"Adidas\"],\"size\":[\"S\",\"M\",\"L\",\"XL\"]}",
+        "versions": null,
+        "relationships": null,
+        "createdAt": "2024-03-01T00:00:00.000Z",
+        "updatedAt": "2025-03-21T15:03:59.656Z"
+      },
+      {
+        "id": "c3",
+        "name": "Adidas Anger Tracksuit Top",
+        "type": "clothing",
+        "status": "active",
+        "robloxId": "15503479545",
+        "creator": null,
+        "metadata": "{\"description\":\"Adidas Anger Tracksuit Top (Red)\",\"tags\":[\"streetwear\",\"casual\",\"Adidas\"],\"image\":\"/customization/outfits/White-Shirt-Supreme.png\",\"compatibility\":[\"Lifestyle\",\"Artist\"],\"brands\":[\"Adidas\"],\"size\":[\"S\",\"M\",\"L\",\"XL\"]}",
+        "versions": null,
+        "relationships": null,
+        "createdAt": "2024-03-01T00:00:00.000Z",
+        "updatedAt": "2025-03-21T15:13:12.926Z"
+      },
+      {
+        "id": "c4",
+        "name": "Naruto Jacket",
+        "type": "clothing",
+        "status": "active",
+        "robloxId": "88031588525790",
+        "creator": null,
+        "metadata": "{\"description\":\"Channel your inner ninja with this high-quality jacket inspired by Naruto Uzumaki.\",\"tags\":[\"gucci\",\"luxury\",\"jacket\"],\"image\":\"/customization/outfits/Color-jacket-Gucci.png\",\"compatibility\":[\"Fashion\",\"Lifestyle\"],\"brands\":[\"Naruto\"],\"size\":[\"S\",\"M\",\"L\",\"XL\"]}",
+        "versions": null,
+        "relationships": null,
+        "createdAt": "2024-03-01T00:00:00.000Z",
+        "updatedAt": "2025-03-21T15:00:48.705Z"
+      },
+      {
+        "id": "s2",
+        "name": "Nike Air 1's Sneakers",
+        "type": "shoes",
+        "status": "active",
+        "robloxId": "18474543214",
+        "creator": null,
+        "metadata": "{\"description\":\"Nike Air One (Green)\",\"tags\":[\"nike\",\"sneakers\",\"athletic\"],\"image\":\"/customization/outfits/MixColor-Nike-AirMax.png\",\"compatibility\":[\"Athlete\",\"Lifestyle\"],\"brands\":[\"Nike\"],\"size\":[\"US7\",\"US8\",\"US9\",\"US10\",\"US11\"]}",
+        "versions": null,
+        "relationships": null,
+        "createdAt": "2024-03-01T00:00:00.000Z",
+        "updatedAt": "2025-03-21T15:18:31.166Z"
+      },
+      {
+        "id": "s3",
+        "name": "Large Classic Billboard",
+        "type": "multi_display",
+        "status": "active",
+        "robloxId": "13158731202",
+        "creator": null,
+        "metadata": "{\"description\":\"Large Classic Billboard\",\"tags\":[\"Billboard\"],\"image\":\"/customization/outfits/Red-shoes-Adidas-Superstar.png\",\"compatibility\":[\"Lifestyle\",\"Fashion\"],\"brands\":[\"Adidas\"],\"size\":[\"US7\",\"US8\",\"US9\",\"US10\",\"US11\"]}",
+        "versions": null,
+        "relationships": null,
+        "createdAt": "2024-03-01T00:00:00.000Z",
+        "updatedAt": "2025-03-21T15:50:27.126Z"
+      },
+      {
+        "id": "i1",
+        "name": "Coke",
+        "type": "item",
+        "status": "active",
+        "robloxId": "17165457035",
+        "creator": null,
+        "metadata": "{\"description\":\"Coca Coka Red can\",\"tags\":[\"drink\",\"prop\",\"beverage\"],\"image\":\"/customization/items/CocaCola.png\",\"brands\":[\"Coca-Cola\"]}",
+        "versions": null,
+        "relationships": null,
+        "createdAt": "2024-03-01T00:00:00.000Z",
+        "updatedAt": "2025-03-21T15:40:21.022Z"
+      },
+      {
+        "id": "i2",
+        "name": "Pepsi Blue Soda Can",
+        "type": "item",
+        "status": "active",
+        "robloxId": "15548194077",
+        "creator": null,
+        "metadata": "{\"description\":\"Pepsi Blue Soda Can\",\"tags\":[\"drink\",\"prop\",\"beverage\"],\"image\":\"/customization/items/Pepsi.png\",\"brands\":[\"Pepsi\"]}",
+        "versions": null,
+        "relationships": null,
+        "createdAt": "2024-03-01T00:00:00.000Z",
+        "updatedAt": "2025-03-21T15:43:40.602Z"
+      },
+      {
+        "id": "i3",
+        "name": "Redbull",
+        "type": "item",
+        "status": "active",
+        "robloxId": "73652546319715",
+        "creator": null,
+        "metadata": "{\"description\":\"Redbull \",\"tags\":[\"drink\",\"prop\",\"energy\",\"Redbull\"],\"image\":\"/customization/items/Redbull.png\",\"brands\":[\"Red Bull\"]}",
+        "versions": null,
+        "relationships": null,
+        "createdAt": "2024-03-01T00:00:00.000Z",
+        "updatedAt": "2025-03-21T15:45:16.222Z"
+      },
+      {
+        "id": "i4",
+        "name": "Monster Energy",
+        "type": "item",
+        "status": "active",
+        "robloxId": "17166207664",
+        "creator": null,
+        "metadata": "{\"description\":\"Interactive Monster Energy can prop\",\"tags\":[\"drink\",\"prop\",\"energy\",\"Monster\"],\"image\":\"/customization/items/MonsterEnergy.png\",\"brands\":[\"Monster\"]}",
+        "versions": null,
+        "relationships": null,
+        "createdAt": "2024-03-01T00:00:00.000Z",
+        "updatedAt": "2025-03-21T15:37:18.649Z"
+      },
+      {
+        "id": "a2",
+        "name": "Hips Poppin' - Zara Larsson",
+        "type": "Animation",
+        "status": "active",
+        "robloxId": "6797919579",
+        "creator": null,
+        "metadata": "{\"description\":\"Get your groove on!\",\"tags\":[\"dance\",\"hip-hop\",\"emote\"],\"compatibility\":[\"Lifestyle\",\"Artist\"],\"itemType\":\"Animation\",\"duration\":\"4.0 seconds\",\"category\":\"emote\",\"previewUrl\":\"/customization/animations/hiphop.png\",\"lastUpdated\":\"2025-04-27T23:55:54.632Z\"}",
+        "versions": null,
+        "relationships": null,
+        "createdAt": "2024-03-01T00:00:00.000Z",
+        "updatedAt": "2025-04-27T23:55:56.153Z"
+      },
+      {
+        "id": "a3",
+        "name": "Victory Dance",
+        "type": "animation",
+        "status": "active",
+        "robloxId": "15506503658",
+        "creator": null,
+        "metadata": "{\"description\":\"BIG WINNER ENERGY\",\"tags\":[\"victory\",\"celebration\",\"emote\"],\"compatibility\":[\"Athlete\",\"Gamer\"],\"duration\":\"3.0 seconds\",\"category\":\"emote\",\"previewUrl\":\"/customization/animations/Victory.png\"}",
+        "versions": null,
+        "relationships": null,
+        "createdAt": "2024-03-01T00:00:00.000Z",
+        "updatedAt": "2025-03-21T15:56:26.216Z"
+      },
+      {
+        "id": "a4",
+        "name": "Drink Animation",
+        "type": "animation",
+        "status": "active",
+        "robloxId": "12345695",
+        "creator": null,
+        "metadata": "{\"description\":\"Generic drinking animation\",\"tags\":[\"drink\",\"action\",\"emote\"],\"duration\":\"2.5 seconds\",\"category\":\"action\",\"previewUrl\":\"/customization/animations/Drinking.png\"}",
+        "versions": null,
+        "relationships": null,
+        "createdAt": "2024-03-01T00:00:00.000Z",
+        "updatedAt": "2024-03-20T00:00:00.000Z"
+      },
+      {
+        "id": "bb1",
+        "name": "Premium Billboard - Landscape",
+        "type": "multiMediaSignage",
+        "status": "active",
+        "robloxId": "132490376647395",
+        "creator": null,
+        "metadata": "{\"description\":\"Large format landscape billboard for premium game advertising\",\"tags\":[\"billboard\",\"landscape\",\"premium\"],\"dimensions\":{\"width\":1920,\"height\":1080}}",
+        "versions": null,
+        "relationships": null,
+        "createdAt": "2024-03-01T00:00:00.000Z",
+        "updatedAt": "2025-03-29T03:34:56.184Z"
+      },
+      {
+        "id": "bb2",
+        "name": "City Square Billboard",
+        "type": "multiMediaSignage",
+        "status": "active",
+        "robloxId": "102908986501799",
+        "creator": null,
+        "metadata": "{\"description\":\"Central square billboard with high visibility\",\"tags\":[\"billboard\",\"square\",\"central\"],\"dimensions\":{\"width\":2560,\"height\":1440}}",
+        "versions": null,
+        "relationships": null,
+        "createdAt": "2024-03-01T00:00:00.000Z",
+        "updatedAt": "2025-03-29T03:20:54.561Z"
+      },
+      {
+        "id": "bb3",
+        "name": "Digital Billboard - Portrait",
+        "type": "multiMediaSignage",
+        "status": "active",
+        "robloxId": "75331195844178",
+        "creator": null,
+        "metadata": "{\"description\":\"Vertical digital billboard with animation support\",\"tags\":[\"billboard\",\"portrait\",\"digital\"],\"dimensions\":{\"width\":1080,\"height\":1920}}",
+        "versions": null,
+        "relationships": null,
+        "createdAt": "2024-03-01T00:00:00.000Z",
+        "updatedAt": "2025-03-29T03:33:25.663Z"
+      },
+      {
+        "id": "asset_004",
+        "name": "Default KOL character (Male)",
+        "type": "kol_character",
+        "status": "active",
+        "robloxId": "128800353489791",
+        "creator": null,
+        "metadata": "{\"description\":\"Male teenager in-game KOL character with short hair, medium build body. \",\"tags\":[\"male\",\"teenager\",\"short hair\",\"medium build body\"]}",
+        "versions": null,
+        "relationships": null,
+        "createdAt": "2025-03-29T03:59:38.739Z",
+        "updatedAt": "2025-03-29T04:00:13.148Z"
+      },
+      {
+        "id": "asset_005",
+        "name": "Basketball shooting machine with Ad display",
+        "type": "minigame",
+        "status": "active",
+        "robloxId": "118281644248656",
+        "creator": null,
+        "metadata": "{\"description\":\"A fun arcade basketball shooting machine providing advertisement embedding.  Optional function to distribute rewards.  \",\"tags\":[\"basketball\",\"shooting\",\"arcade\",\"ad\",\"reward\"]}",
+        "versions": null,
+        "relationships": null,
+        "createdAt": "2025-03-29T04:43:38.593Z",
+        "updatedAt": "2025-03-29T04:44:56.391Z"
+      },
+      {
+        "id": "asset_006",
+        "name": "Amnesty International Hoodie (Yellow)",
+        "type": "clothing",
+        "status": "active",
+        "robloxId": "102652418299443",
+        "creator": null,
+        "metadata": "{\"description\":\"Amnesty International Hoodie (Yellow)\",\"tags\":[\"Amnesty International\",\"NGO\",\"Hoodie\"]}",
+        "versions": null,
+        "relationships": null,
+        "createdAt": "2025-03-29T10:29:52.910Z",
+        "updatedAt": "2025-03-29T16:11:01.676Z"
+      },
+      {
+        "id": "asset_007",
+        "name": "Pepsi logo",
+        "type": "image",
+        "status": "active",
+        "robloxId": "87526574011188",
+        "creator": null,
+        "metadata": "{\"description\":\"Pepsi logo (Blue Round)\",\"tags\":[\"Pepsi\",\"Blue\",\"Round\"]}",
+        "versions": null,
+        "relationships": null,
+        "createdAt": "2025-04-01T16:55:02.067Z",
+        "updatedAt": "2025-04-01T16:55:02.067Z"
+      },
+      {
+        "id": "asset_008",
+        "name": "APT_Dance_Song",
+        "type": "audio",
+        "status": "active",
+        "robloxId": "110671947384464",
+        "creator": null,
+        "metadata": "{\"description\":\"Popular APT Song by Rose and Bruno Mars\",\"tags\":[\"APT\",\"Dance\",\"Song\"]}",
+        "versions": null,
+        "relationships": null,
+        "createdAt": "2025-04-07T13:59:45.232Z",
+        "updatedAt": "2025-04-07T13:59:45.232Z"
+      },
+      {
+        "id": "asset_009",
+        "name": "YAS Insurance logo (Updated)",
+        "type": "Decal",
+        "status": "active",
+        "robloxId": "136394278819679",
+        "creator": null,
+        "metadata": "{\"description\":\"The logo of the YAS insurance app\",\"tags\":[\"YAS\",\"insurance\",\"logo\"],\"itemType\":\"image\",\"lastUpdated\":\"2025-04-08T15:36:30.777Z\"}",
+        "versions": null,
+        "relationships": null,
+        "createdAt": "2025-04-08T05:39:11.585Z",
+        "updatedAt": "2025-04-08T15:36:39.375Z"
+      },
+      {
+        "id": "asset_010",
+        "name": "TikTok Popular Dance 1",
+        "type": "animation",
+        "status": "active",
+        "robloxId": "116987473079382",
+        "creator": null,
+        "metadata": "{\"description\":\"TikTok Popular Dance 1\",\"tags\":[\"TikTok Popular Dance\",\"style\"],\"itemType\":\"Animation\"}",
+        "versions": null,
+        "relationships": null,
+        "createdAt": "2025-04-09T15:55:15.472Z",
+        "updatedAt": "2025-04-09T15:55:15.472Z"
+      }
+    ],
+    "gameAds": [
+      {
+        "id": "ad_1742883681966",
+        "gameId": "game_005",
+        "name": "Sign board",
+        "type": "multimedia_display",
+        "createdAt": "2025-03-25T06:21:22.295Z",
+        "updatedAt": "2025-03-25T06:21:22.295Z",
+        "assets": [
+          {
+            "assetId": "s3",
+            "assetType": "multi_display",
+            "robloxAssetId": "13158731202"
+          },
+          {
+            "assetId": "aud1",
+            "assetType": "audio",
+            "robloxAssetId": "12345677"
+          }
+        ]
+      },
+      {
+        "id": "ad_1744021614595",
+        "gameId": "game_005",
+        "name": "Amnesty+MonsterDrink+NikeAirShoe+WhiteCap (Male hiphop KOL)",
+        "type": "dancing_npc",
+        "createdAt": "2025-04-07T10:26:55.134Z",
+        "updatedAt": "2025-04-07T10:26:55.134Z",
+        "assets": [
+          {
+            "assetId": "asset_004",
+            "assetType": "kol_character",
+            "robloxAssetId": "128800353489791"
+          },
+          {
+            "assetId": "h1",
+            "assetType": "hat",
+            "robloxAssetId": "17881926945"
+          },
+          {
+            "assetId": "asset_006",
+            "assetType": "clothing",
+            "robloxAssetId": "102652418299443"
+          },
+          {
+            "assetId": "i4",
+            "assetType": "item",
+            "robloxAssetId": "17166207664"
+          },
+          {
+            "assetId": "s2",
+            "assetType": "shoes",
+            "robloxAssetId": "18474543214"
+          },
+          {
+            "assetId": "a1",
+            "assetType": "animation",
+            "robloxAssetId": "10214406616"
+          },
+          {
+            "assetId": "aud1",
+            "assetType": "audio",
+            "robloxAssetId": "12345677"
+          }
+        ]
+      },
+      {
+        "id": "ad_1742820645812",
+        "gameId": "game_005",
+        "name": "Adidas+Pepsi+DrMartenBoots",
+        "type": "dancing_npc",
+        "createdAt": "2025-03-24T12:50:45.987Z",
+        "updatedAt": "2025-07-07T16:43:18.970Z",
+        "assets": [
+          {
+            "assetId": "asset_004",
+            "assetType": "kol_character",
+            "robloxAssetId": "128800353489791"
+          },
+          {
+            "assetId": "c2",
+            "assetType": "clothing",
+            "robloxAssetId": "16099347638"
+          },
+          {
+            "assetId": "i2",
+            "assetType": "item",
+            "robloxAssetId": "15548194077"
+          },
+          {
+            "assetId": "s1",
+            "assetType": "shoes",
+            "robloxAssetId": "93915499446569"
+          },
+          {
+            "assetId": "a2",
+            "assetType": "animation",
+            "robloxAssetId": "6797919579"
+          },
+          {
+            "assetId": "aud1",
+            "assetType": "audio",
+            "robloxAssetId": "12345677"
+          }
+        ]
+      }
+    ],
+    "gameAdContainers": [],
+    "gameAdPerformance": [
+      {
+        "id": "perf_001",
+        "gameAdId": "ad_1742820645812",
+        "gameId": "game_001",
+        "playlistId": "playlist_1742835474241",
+        "date": "2024-03-20T00:00:00.000Z",
+        "metrics": "{\"totalImpressions\":15000,\"uniqueImpressions\":12000,\"totalEngagements\":4500,\"uniqueEngagements\":3800,\"averageEngagementDuration\":45,\"engagementRate\":30,\"completionRate\":85,\"conversionRate\":31.67}",
+        "demographics": "{\"gender\":{\"male\":55,\"female\":40,\"other\":3,\"unknown\":2},\"ageGroup\":{\"under13\":65,\"over13\":30,\"unknown\":5},\"geographicRegion\":{\"North America\":40,\"Europe\":25,\"Asia\":20,\"South America\":10,\"Oceania\":5},\"language\":{\"English\":45,\"Spanish\":15,\"French\":10,\"German\":8,\"Portuguese\":7,\"Other\":15},\"deviceType\":{\"desktop\":40,\"mobile\":35,\"tablet\":15,\"console\":8,\"unknown\":2},\"platform\":{\"windows\":35,\"mac\":15,\"ios\":20,\"android\":15,\"xbox\":10,\"unknown\":5}}",
+        "engagements": "[{\"timestamp\":\"2024-03-20T10:15:30Z\",\"duration\":60,\"interactionType\":\"view\",\"interactionDetails\":{\"timeSpent\":60}},{\"timestamp\":\"2024-03-20T10:16:00Z\",\"duration\":120,\"interactionType\":\"interact\",\"interactionDetails\":{\"buttonClicked\":\"shop_button\",\"timeSpent\":120,\"completionStatus\":\"completed\"}}]",
+        "playerDetails": "{\"totalPlayers\":15000,\"uniquePlayers\":12000,\"returningPlayers\":8000,\"newPlayers\":4000}",
+        "timeDistribution": "{\"hourOfDay\":{\"0\":500,\"1\":300,\"2\":200,\"3\":150,\"4\":100,\"5\":150,\"6\":300,\"7\":600,\"8\":1000,\"9\":1500,\"10\":2000,\"11\":2500,\"12\":3000,\"13\":2800,\"14\":2500,\"15\":2200,\"16\":2000,\"17\":1800,\"18\":1600,\"19\":1400,\"20\":1200,\"21\":1000,\"22\":800,\"23\":600},\"dayOfWeek\":{\"0\":2500,\"1\":2200,\"2\":2000,\"3\":1800,\"4\":1600,\"5\":3000,\"6\":2800}}",
+        "performanceTrends": "{\"daily\":[{\"date\":\"2024-03-14\",\"impressions\":14000,\"engagements\":4200,\"engagementRate\":30},{\"date\":\"2024-03-15\",\"impressions\":14500,\"engagements\":4350,\"engagementRate\":30},{\"date\":\"2024-03-16\",\"impressions\":15000,\"engagements\":4500,\"engagementRate\":30}],\"weekly\":[{\"weekStart\":\"2024-03-14\",\"impressions\":43500,\"engagements\":13050,\"engagementRate\":30}]}",
+        "createdAt": "2025-07-02T13:03:03.639Z",
+        "updatedAt": "2025-07-02T13:03:03.639Z"
+      }
+    ],
+    "gameMedia": [
+      {
+        "id": "image_1742794313661",
+        "type": "image",
+        "title": "ETF-V3.webp",
+        "localPath": "/media/game_005/1742794313661-ETF-V3.webp",
+        "thumbnailUrl": "/media/game_005/1742794313661-ETF-V3.webp",
+        "gameId": "game_005",
+        "createdAt": "2025-07-02T13:03:03.432Z",
+        "updatedAt": "2025-07-02T13:03:03.437Z",
+        "width": 768,
+        "height": 432,
+        "duration": null,
+        "approved": true,
+        "uploadedAt": "2025-03-24T05:31:53.662Z",
+        "robloxId": null,
+        "altText": null
+      },
+      {
+        "id": "image_1742794313862",
+        "type": "image",
+        "title": "ETF-v2.webp",
+        "localPath": "/media/game_005/1742794313862-ETF-v2.webp",
+        "thumbnailUrl": "/media/game_005/1742794313862-ETF-v2.webp",
+        "gameId": "game_005",
+        "createdAt": "2025-07-02T13:03:03.442Z",
+        "updatedAt": "2025-07-02T13:03:03.447Z",
+        "width": 768,
+        "height": 432,
+        "duration": null,
+        "approved": true,
+        "uploadedAt": "2025-03-24T05:31:53.862Z",
+        "robloxId": null,
+        "altText": null
+      }
+    ],
+    "playlists": [
+      {
+        "id": "playlist_1742835474241",
+        "name": "New cross over launch on dancing KOL",
+        "description": null,
+        "type": "standard",
+        "createdBy": null,
+        "metadata": "{\"schedules\":[{\"id\":\"schedule_1745770849170_0\",\"gameAdId\":\"ad_1742820645812\",\"startDate\":\"2025-03-24T16:56:22.419Z\",\"duration\":7,\"status\":\"scheduled\"},{\"id\":\"schedule_1745770849170_1\",\"gameAdId\":\"ad_1742883681966\",\"startDate\":\"2025-04-30T16:00:00.000Z\",\"duration\":7,\"status\":\"scheduled\"}],\"deployments\":[{\"id\":\"deployment_1745770849170_0_0\",\"gameId\":\"game_001\",\"scheduleId\":\"schedule_1745770849170_0\",\"deploymentStatus\":\"pending\"},{\"id\":\"deployment_1745770849170_0_1\",\"gameId\":\"game_001\",\"scheduleId\":\"schedule_1745770849170_0\",\"deploymentStatus\":\"pending\"},{\"id\":\"deployment_1745770849170_0_2\",\"gameId\":\"game_003\",\"scheduleId\":\"schedule_1745770849170_0\",\"deploymentStatus\":\"pending\"},{\"id\":\"deployment_1745770849170_0_3\",\"gameId\":\"game_003\",\"scheduleId\":\"schedule_1745770849170_0\",\"deploymentStatus\":\"pending\"},{\"id\":\"deployment_1745770849170_0_4\",\"gameId\":\"game_005\",\"scheduleId\":\"schedule_1745770849170_0\",\"deploymentStatus\":\"pending\"},{\"id\":\"deployment_1745770849170_0_5\",\"gameId\":\"game_005\",\"scheduleId\":\"schedule_1745770849170_0\",\"deploymentStatus\":\"pending\"},{\"id\":\"deployment_1745770849170_1_0\",\"gameId\":\"game_004\",\"scheduleId\":\"schedule_1745770849170_1\",\"deploymentStatus\":\"pending\"},{\"id\":\"deployment_1745770849170_1_1\",\"gameId\":\"game_004\",\"scheduleId\":\"schedule_1745770849170_1\",\"deploymentStatus\":\"pending\"},{\"id\":\"deployment_1745770849170_1_2\",\"gameId\":\"game_006\",\"scheduleId\":\"schedule_1745770849170_1\",\"deploymentStatus\":\"pending\"},{\"id\":\"deployment_1745770849170_1_3\",\"gameId\":\"game_006\",\"scheduleId\":\"schedule_1745770849170_1\",\"deploymentStatus\":\"pending\"},{\"id\":\"deployment_1745770849170_1_4\",\"gameId\":\"game_002\",\"scheduleId\":\"schedule_1745770849170_1\",\"deploymentStatus\":\"pending\"},{\"id\":\"deployment_1745770849170_1_5\",\"gameId\":\"game_002\",\"scheduleId\":\"schedule_1745770849170_1\",\"deploymentStatus\":\"pending\"}],\"status\":\"active\"}",
+        "createdAt": "2025-03-24T16:57:54.241Z",
+        "updatedAt": "2025-04-27T16:20:49.170Z"
+      }
+    ]
+  }
+}

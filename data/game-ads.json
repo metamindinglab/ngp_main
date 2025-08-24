@@ -5,7 +5,7 @@
       "name": "Adidas+Pepsi+DrMartenBoots",
       "templateType": "dancing_npc",
       "createdAt": "2025-03-24T12:50:45.987Z",
-      "updatedAt": "2025-04-06T13:07:09.338Z",
+      "updatedAt": "2025-06-24T10:10:30.899Z",
       "assets": [
         {
           "assetType": "kol_character",
@@ -19,8 +19,8 @@
         },
         {
           "assetType": "clothing",
-          "assetId": "c3",
-          "robloxAssetId": "15503479545"
+          "assetId": "c2",
+          "robloxAssetId": "16099347638"
         },
         {
           "assetType": "item",
@@ -54,7 +54,7 @@
         {
           "assetType": "multi_display",
           "assetId": "s3",
-          "robloxAssetId": "13158731202"
+          "robloxAssetId": "87526574011188"
         },
         {
           "assetType": "audio",

@@ -195,8 +195,7 @@ export async function getRobloxGameInfo(placeId: string): Promise<Game> {
       dates: {
         created: gameInfo.created,
         lastUpdated: gameInfo.updated,
-        mgnJoined: currentDate,
-        lastRobloxSync: currentDate
+        mgnJoined: currentDate
       },
       owner: {
         name: gameInfo.creator.name,
@@ -232,6 +231,7 @@ export async function getRobloxGameInfo(placeId: string): Promise<Game> {
           price: gameInfo.price
         }
       },
+      media: [],
       thumbnail
     };
 

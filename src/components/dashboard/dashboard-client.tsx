@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import Link from "next/link";
 import { MMLLogo } from "@/components/ui/mml-logo";
-import { Gamepad2, Upload, PlaySquare, ListVideo, BarChart3 } from "lucide-react";
+import { PlaySquare, ListVideo, BarChart3, Users, Shield, Target } from "lucide-react";
 
 export function DashboardClient() {
   return (
@@ -21,46 +21,6 @@ export function DashboardClient() {
 
         {/* Main Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 pt-6">
-          {/* Games Manager */}
-          <Link href="/dashboard/games" className="group perspective">
-            <Card className="border-2 border-transparent bg-white dark:bg-slate-900 transform transition-all duration-300 group-hover:scale-105 group-hover:shadow-xl group-hover:shadow-indigo-500/20 group-hover:rotate-2 hover:border-indigo-500/20">
-              <CardHeader className="pb-3 relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div>
-                <div className="flex items-center gap-3 relative">
-                  <div className="p-3 rounded-xl bg-indigo-100 dark:bg-indigo-900/50 transform group-hover:rotate-12 transition-transform">
-                    <Gamepad2 className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
-                  </div>
-                  <CardTitle className="text-xl group-hover:text-indigo-600 transition-colors">Games Manager</CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <CardDescription className="text-sm text-slate-600 dark:text-slate-400 group-hover:text-indigo-500 transition-colors">
-                  Manage your Roblox games and their configurations
-                </CardDescription>
-              </CardContent>
-            </Card>
-          </Link>
-
-          {/* Assets Manager */}
-          <Link href="/dashboard/assets" className="group perspective">
-            <Card className="border-2 border-transparent bg-white dark:bg-slate-900 transform transition-all duration-300 group-hover:scale-105 group-hover:shadow-xl group-hover:shadow-purple-500/20 group-hover:-rotate-2 hover:border-purple-500/20">
-              <CardHeader className="pb-3 relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-pink-500/10 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div>
-                <div className="flex items-center gap-3 relative">
-                  <div className="p-3 rounded-xl bg-purple-100 dark:bg-purple-900/50 transform group-hover:-rotate-12 transition-transform">
-                    <Upload className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-                  </div>
-                  <CardTitle className="text-xl group-hover:text-purple-600 transition-colors">Assets Manager</CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <CardDescription className="text-sm text-slate-600 dark:text-slate-400 group-hover:text-purple-500 transition-colors">
-                  Upload and manage game assets
-                </CardDescription>
-              </CardContent>
-            </Card>
-          </Link>
-
           {/* Game Ads Manager */}
           <Link href="/dashboard/game-ads" className="group perspective">
             <Card className="border-2 border-transparent bg-white dark:bg-slate-900 transform transition-all duration-300 group-hover:scale-105 group-hover:shadow-xl group-hover:shadow-blue-500/20 group-hover:rotate-2 hover:border-blue-500/20">
@@ -116,6 +76,66 @@ export function DashboardClient() {
               <CardContent>
                 <CardDescription className="text-sm text-slate-600 dark:text-slate-400 group-hover:text-rose-500 transition-colors">
                   View performance metrics for game ads
+                </CardDescription>
+              </CardContent>
+            </Card>
+          </Link>
+
+          {/* Platform Administration Portal */}
+          <Link href="/platform-admin" className="group perspective">
+            <Card className="border-2 border-transparent bg-white dark:bg-slate-900 transform transition-all duration-300 group-hover:scale-105 group-hover:shadow-xl group-hover:shadow-slate-500/20 group-hover:rotate-2 hover:border-slate-500/20">
+              <CardHeader className="pb-3 relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-r from-slate-500/10 to-gray-500/10 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div>
+                <div className="flex items-center gap-3 relative">
+                  <div className="p-3 rounded-xl bg-slate-100 dark:bg-slate-900/50 transform group-hover:rotate-12 transition-transform">
+                    <Shield className="w-6 h-6 text-slate-600 dark:text-slate-400" />
+                  </div>
+                  <CardTitle className="text-xl group-hover:text-slate-600 transition-colors">Platform Administration</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <CardDescription className="text-sm text-slate-600 dark:text-slate-400 group-hover:text-slate-500 transition-colors">
+                  Manage platform games and assets (Admin Only)
+                </CardDescription>
+              </CardContent>
+            </Card>
+          </Link>
+
+          {/* Game Advertising Portal (GAP) */}
+          <Link href="/gap/login" className="group perspective">
+            <Card className="border-2 border-transparent bg-white dark:bg-slate-900 transform transition-all duration-300 group-hover:scale-105 group-hover:shadow-xl group-hover:shadow-purple-500/20 group-hover:rotate-2 hover:border-purple-500/20">
+              <CardHeader className="pb-3 relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-indigo-500/10 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div>
+                <div className="flex items-center gap-3 relative">
+                  <div className="p-3 rounded-xl bg-purple-100 dark:bg-purple-900/50 transform group-hover:rotate-12 transition-transform">
+                    <Target className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                  </div>
+                  <CardTitle className="text-xl group-hover:text-purple-600 transition-colors">Game Advertising Portal</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <CardDescription className="text-sm text-slate-600 dark:text-slate-400 group-hover:text-purple-500 transition-colors">
+                  Create and manage game advertisements for brands
+                </CardDescription>
+              </CardContent>
+            </Card>
+          </Link>
+
+          {/* Game Owner Portal */}
+          <Link href="/game-owner" className="group perspective">
+            <Card className="border-2 border-transparent bg-white dark:bg-slate-900 transform transition-all duration-300 group-hover:scale-105 group-hover:shadow-xl group-hover:shadow-amber-500/20 group-hover:-rotate-2 hover:border-amber-500/20">
+              <CardHeader className="pb-3 relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-r from-amber-500/10 to-orange-500/10 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div>
+                <div className="flex items-center gap-3 relative">
+                  <div className="p-3 rounded-xl bg-amber-100 dark:bg-amber-900/50 transform group-hover:-rotate-12 transition-transform">
+                    <Users className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+                  </div>
+                  <CardTitle className="text-xl group-hover:text-amber-600 transition-colors">Game Owner Portal</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <CardDescription className="text-sm text-slate-600 dark:text-slate-400 group-hover:text-amber-500 transition-colors">
+                  Access the game owner management dashboard
                 </CardDescription>
               </CardContent>
             </Card>

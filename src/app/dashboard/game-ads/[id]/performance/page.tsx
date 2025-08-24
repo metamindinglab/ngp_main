@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { ArrowLeft, Info } from "lucide-react";
+import { ArrowLeft, Info, Loader2 } from "lucide-react";
 import dynamic from 'next/dynamic';
 import {
   Tooltip,
@@ -15,6 +15,9 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Image from 'next/image';
 import { MMLLogo } from "@/components/ui/mml-logo";
+import { Progress } from "@/components/ui/progress";
+import type { Game as RobloxGame } from '@/types/game';
+import { Spinner } from '@/components/ui/spinner';
 
 const RechartsComponent = dynamic(() => import('@/components/charts/performance-chart'), {
   ssr: false,
@@ -49,6 +52,7 @@ interface GamePerformance {
   engagements: number;
   engagementRate: number;
   completionRate: number;
+  conversionRate: number;
 }
 
 interface PerformanceData {
@@ -140,6 +144,80 @@ function MetricCard({ title, value, description, color = CHART_COLORS.primary }:
   );
 }
 
+function LoadingState() {
+  const [progress, setProgress] = useState(0);
+  const [loadingStep, setLoadingStep] = useState("Initializing...");
+  const [currentStep, setCurrentStep] = useState(0);
+  const smoothIntervalRef = useRef<NodeJS.Timeout>();
+  const mainIntervalRef = useRef<NodeJS.Timeout>();
+
+  useEffect(() => {
+    const steps = [
+      { progress: 20, message: "Fetching performance metrics..." },
+      { progress: 40, message: "Loading demographic data..." },
+      { progress: 60, message: "Processing engagement statistics..." },
+      { progress: 80, message: "Preparing visualization data..." },
+      { progress: 95, message: "Almost there..." }
+    ];
+
+    // Start with a small progress immediately
+    setProgress(5);
+
+    const updateProgress = () => {
+      if (currentStep < steps.length) {
+        const targetProgress = steps[currentStep].progress;
+        const currentProgress = currentStep > 0 ? steps[currentStep - 1].progress : 5;
+        const step = (targetProgress - currentProgress) / 10;
+
+        if (smoothIntervalRef.current) {
+          clearInterval(smoothIntervalRef.current);
+        }
+        
+        let currentValue = currentProgress;
+        smoothIntervalRef.current = setInterval(() => {
+          if (currentValue >= targetProgress) {
+            if (smoothIntervalRef.current) {
+              clearInterval(smoothIntervalRef.current);
+            }
+            setProgress(targetProgress);
+            setLoadingStep(steps[currentStep].message);
+            setCurrentStep(prev => prev + 1);
+          } else {
+            currentValue += step;
+            setProgress(currentValue);
+          }
+        }, 100);
+      }
+    };
+
+    // Initial update
+    updateProgress();
+
+    // Update every 2 seconds
+    mainIntervalRef.current = setInterval(() => {
+      if (currentStep < steps.length) {
+        updateProgress();
+      }
+    }, 2000);
+
+    return () => {
+      if (mainIntervalRef.current) {
+        clearInterval(mainIntervalRef.current);
+      }
+      if (smoothIntervalRef.current) {
+        clearInterval(smoothIntervalRef.current);
+      }
+    };
+  }, [currentStep]); // Add currentStep as a dependency
+
+  return (
+    <div className="flex flex-col items-center justify-center min-h-[400px] space-y-6">
+      <Progress value={progress} className="w-[60%] h-2" />
+      <p className="text-sm text-muted-foreground">{loadingStep}</p>
+    </div>
+  );
+}
+
 export default function GameAdPerformancePage({
   params
 }: {
@@ -149,281 +227,233 @@ export default function GameAdPerformancePage({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [gamePerformance, setGamePerformance] = useState<GamePerformance[]>([]);
+  const mountedRef = useRef(true);
+  const controllerRef = useRef<AbortController | null>(null);
+  const fetchingRef = useRef(false);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   useEffect(() => {
     async function loadPerformanceData() {
-      try {
-        // Check cache first
-        const cacheKey = `gameAdPerformance_${params.id}`;
-        const cachedData = sessionStorage.getItem(cacheKey);
-        const cachedTimestamp = sessionStorage.getItem(`${cacheKey}_timestamp`);
-        const now = Date.now();
-        
-        // Use cached data if it's less than 30 seconds old
-        if (cachedData && cachedTimestamp && (now - parseInt(cachedTimestamp)) < 30000) {
-          const parsedData = JSON.parse(cachedData);
-          setPerformance(parsedData);
-          setLoading(false);
-          return;
+      if (fetchingRef.current) {
+        if (controllerRef.current) {
+          controllerRef.current.abort();
         }
+      }
 
-        const response = await fetch('/api/game-ad-performance');
+      fetchingRef.current = true;
+      controllerRef.current = new AbortController();
+
+      try {
+        const response = await fetch(`/api/game-ad-performance/${params.id}`, {
+          signal: controllerRef.current.signal
+        });
+
         if (!response.ok) {
           throw new Error('Failed to fetch performance data');
         }
-        const data = await response.json();
-        const adPerformance = data.performanceData?.find(
-          (p: PerformanceData) => p.gameAdId === params.id
-        );
-        
-        if (!adPerformance) {
-          throw new Error('No performance data found for this game ad');
+
+        const performanceData = await response.json();
+
+        if (mountedRef.current) {
+          setPerformance(performanceData);
+          
+          // Set game performance data
+          if (performanceData?.gamePerformance && performanceData.gamePerformance.length > 0) {
+            const newGamePerformance = performanceData.gamePerformance.map((game: any) => ({
+              gameName: game.gameName || 'Unknown Game',
+              impressions: game.impressions || 0,
+              engagements: game.engagements || 0,
+              engagementRate: game.engagementRate || 0,
+              completionRate: game.completionRate || 0,
+              conversionRate: game.conversionRate || 0
+            }));
+            setGamePerformance(newGamePerformance);
+          } else {
+            setGamePerformance([{
+              gameName: performanceData?.ad?.games?.[0]?.name || 'Unknown Game',
+              impressions: performanceData?.metrics?.totalImpressions || 0,
+              engagements: performanceData?.metrics?.totalEngagements || 0,
+              engagementRate: performanceData?.metrics?.engagementRate || 0,
+              completionRate: performanceData?.metrics?.completionRate || 0,
+              conversionRate: performanceData?.metrics?.conversionRate || 0
+            }]);
+          }
+          
+          setLoading(false);
+          setError(null);
         }
-        
-        const performanceData = {
-          id: adPerformance.id,
-          gameAdId: adPerformance.gameAdId,
-          gameId: adPerformance.gameId,
-          metrics: {
-            totalImpressions: adPerformance.metrics.totalImpressions,
-            uniqueImpressions: adPerformance.metrics.uniqueImpressions,
-            totalEngagements: adPerformance.metrics.totalEngagements,
-            uniqueEngagements: adPerformance.metrics.uniqueEngagements,
-            engagementRate: adPerformance.metrics.engagementRate,
-            completionRate: adPerformance.metrics.completionRate,
-            conversionRate: adPerformance.metrics.conversionRate
-          },
-          demographics: {
-            gender: adPerformance.demographics.gender,
-            ageGroup: adPerformance.demographics.ageGroup,
-            geographicRegion: adPerformance.demographics.geographicRegion,
-            language: adPerformance.demographics.language,
-            deviceType: adPerformance.demographics.deviceType,
-            platform: adPerformance.demographics.platform
-          },
-          performanceTrends: {
-            daily: adPerformance.performanceTrends.daily
+      } catch (error) {
+        if (mountedRef.current) {
+          if (error instanceof Error) {
+            if (error.name === 'AbortError') {
+              return;
+            }
+            console.error('Error fetching performance data:', error);
+            setError(error.message);
+          } else {
+            setError('An unknown error occurred');
           }
-        };
-
-        // Cache the data
-        sessionStorage.setItem(cacheKey, JSON.stringify(performanceData));
-        sessionStorage.setItem(`${cacheKey}_timestamp`, now.toString());
-        
-        setPerformance(performanceData);
-
-        // Mock game performance data (replace with actual API call in production)
-        setGamePerformance([
-          {
-            gameName: "Adopt Me!",
-            impressions: 15000,
-            engagements: 4500,
-            engagementRate: 30,
-            completionRate: 85
-          },
-          {
-            gameName: "Blox Fruits",
-            impressions: 12000,
-            engagements: 3800,
-            engagementRate: 32,
-            completionRate: 80
-          },
-          {
-            gameName: "Brookhaven",
-            impressions: 18000,
-            engagements: 5400,
-            engagementRate: 28,
-            completionRate: 88
-          }
-        ]);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load performance data');
+          setLoading(false);
+        }
+      } finally {
+        fetchingRef.current = false;
       }
-      setLoading(false);
     }
 
-    // Initial load
     loadPerformanceData();
 
-    // Set up polling with a 30-second interval
-    const intervalId = setInterval(loadPerformanceData, 30000);
-
     return () => {
-      clearInterval(intervalId);
+      if (fetchingRef.current && controllerRef.current) {
+        controllerRef.current.abort();
+        controllerRef.current = null;
+      }
     };
   }, [params.id]);
 
-  if (loading) {
-    return (
-      <div className="container mx-auto p-6">
-        <Link href="/" className="self-start transform hover:scale-105 transition-transform">
-          <MMLLogo />
-        </Link>
-        <div className="flex items-center justify-center h-[60vh]">
-          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-gray-900"></div>
-        </div>
-      </div>
-    );
-  }
+  // Add data validation helper
+  const validateMetrics = (metrics: any) => {
+    if (!metrics) return {
+      totalImpressions: 0,
+      uniqueImpressions: 0,
+      totalEngagements: 0,
+      uniqueEngagements: 0,
+      engagementRate: 0,
+      completionRate: 0,
+      conversionRate: 0
+    };
 
-  if (error || !performance) {
-    return (
-      <div className="container mx-auto p-6">
-        <Link href="/" className="self-start transform hover:scale-105 transition-transform">
-          <MMLLogo />
-        </Link>
-        <div className="space-y-4">
-          <div className="flex items-center gap-4">
-            <Link href="/dashboard/game-ads/performance">
-              <Button variant="outline" size="icon">
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-            </Link>
-            <h1 className="text-2xl font-bold">Game Ad Performance</h1>
-          </div>
-          <Card>
-            <CardContent className="flex flex-col items-center justify-center h-[40vh] space-y-4">
-              <p className="text-muted-foreground">{error || 'No performance data available'}</p>
-              <Link href="/dashboard/game-ads">
-                <Button>Back to Game Ads</Button>
-              </Link>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  }
+    return {
+      totalImpressions: metrics.totalImpressions ?? 0,
+      uniqueImpressions: metrics.uniqueImpressions ?? 0,
+      totalEngagements: metrics.totalEngagements ?? 0,
+      uniqueEngagements: metrics.uniqueEngagements ?? 0,
+      engagementRate: metrics.engagementRate ?? 0,
+      completionRate: metrics.completionRate ?? 0,
+      conversionRate: metrics.conversionRate ?? 0
+    };
+  };
+
+  // Add safe number formatting
+  const formatNumber = (value: number | undefined | null): string => {
+    if (typeof value !== 'number') return '0';
+    return value.toLocaleString();
+  };
+
+  const formatPercent = (value: number | undefined | null): string => {
+    if (typeof value !== 'number') return '0%';
+    return `${value.toFixed(1)}%`;
+  };
+
+  // Ensure we have valid metrics even if performance data is null
+  const metrics = validateMetrics(performance?.metrics);
 
   return (
-    <div className="container mx-auto p-6">
-      <Link href="/" className="self-start transform hover:scale-105 transition-transform">
-        <MMLLogo />
-      </Link>
-
-      <div className="space-y-6">
-        <div className="flex items-center gap-4">
-          <Link href="/dashboard/game-ads/performance">
-            <Button variant="outline" size="icon">
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-          </Link>
-          <h1 className="text-2xl font-bold">Game Ad Performance</h1>
+    <div className="container mx-auto py-6">
+      {loading ? (
+        <div className="flex justify-center items-center h-64">
+          <Spinner />
         </div>
+      ) : error ? (
+        <div className="text-center text-red-500">{error}</div>
+      ) : (
+        <div className="space-y-6">
+          <Tabs defaultValue="overview">
+            <TabsList>
+              <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="demographics">Demographics</TabsTrigger>
+              <TabsTrigger value="game-comparison">Game Comparison</TabsTrigger>
+            </TabsList>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <MetricCard
-            title="Total Impressions"
-            value={performance.metrics.totalImpressions.toLocaleString()}
-            description="Total number of times the ad was shown"
-            color={CHART_COLORS.primary}
-          />
-          <MetricCard
-            title="Engagement Rate"
-            value={`${performance.metrics.engagementRate}%`}
-            description="Percentage of viewers who interacted with the ad"
-            color={CHART_COLORS.secondary}
-          />
-          <MetricCard
-            title="Completion Rate"
-            value={`${performance.metrics.completionRate}%`}
-            description="Percentage of viewers who watched the entire ad"
-            color={CHART_COLORS.accent}
-          />
-          <MetricCard
-            title="Conversion Rate"
-            value={`${performance.metrics.conversionRate}%`}
-            description="Percentage of unique players who took specific actions after seeing the ad (e.g., clicked through to the game, made a purchase, or completed a desired action)"
-            color={CHART_COLORS.warning}
-          />
-        </div>
-
-        <Tabs defaultValue="overview" className="space-y-4">
-          <TabsList className="bg-background border-b">
-            <TabsTrigger 
-              value="overview"
-              className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-primary"
-            >
-              Overview
-            </TabsTrigger>
-            <TabsTrigger 
-              value="demographics"
-              className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-primary"
-            >
-              Demographics
-            </TabsTrigger>
-            <TabsTrigger 
-              value="comparison"
-              className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-primary"
-            >
-              Game Comparison
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="overview">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-primary">Performance Overview</CardTitle>
-                <CardDescription>Daily impressions and engagements</CardDescription>
-              </CardHeader>
-              <CardContent className="pt-4">
-                <div className="h-[400px]">
-                  <RechartsComponent 
-                    data={performance.performanceTrends.daily}
-                    colors={{
-                      impressions: CHART_COLORS.primary,
-                      engagements: CHART_COLORS.secondary,
-                      engagementRate: CHART_COLORS.accent
-                    }}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="demographics">
-            <div className="grid md:grid-cols-2 gap-4">
-              {Object.entries(performance.demographics).map(([key, data], index) => (
-                <Card key={key}>
-                  <CardHeader>
-                    <CardTitle className="text-primary capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}</CardTitle>
+            <TabsContent value="overview">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Total Impressions</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="h-[300px]">
-                      <DemographicChart 
-                        data={data}
-                        title={key.replace(/([A-Z])/g, ' $1').trim()}
-                        colors={DEMOGRAPHIC_COLORS}
-                      />
-                    </div>
+                    <div className="text-2xl font-bold">{formatNumber(metrics.totalImpressions)}</div>
                   </CardContent>
                 </Card>
-              ))}
-            </div>
-          </TabsContent>
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Engagement Rate</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{formatPercent(metrics.engagementRate)}</div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Completion Rate</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{formatPercent(metrics.completionRate)}</div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Conversion Rate</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{formatPercent(metrics.conversionRate)}</div>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
 
-          <TabsContent value="comparison">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-primary">Game Performance Comparison</CardTitle>
-                <CardDescription>Compare performance across different games</CardDescription>
-              </CardHeader>
-              <CardContent className="pt-4">
-                <div className="h-[400px]">
-                  <GameComparisonChart 
-                    data={gamePerformance}
-                    colors={{
-                      impressions: CHART_COLORS.primary,
-                      engagements: CHART_COLORS.secondary,
-                      engagementRate: CHART_COLORS.accent,
-                      completionRate: CHART_COLORS.warning
-                    }}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-      </div>
+            <TabsContent value="demographics">
+              <div className="grid md:grid-cols-2 gap-4">
+                {Object.entries(performance?.demographics || {}).map(([key, data]) => (
+                  <Card key={`demographic-${key}`}>
+                    <CardHeader>
+                      <CardTitle className="capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}</CardTitle>
+                      <CardDescription>Distribution across different {key.toLowerCase()} groups</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="h-[300px]">
+                        <DemographicChart 
+                          data={data || {}}
+                          title={key.replace(/([A-Z])/g, ' $1').trim()}
+                          colors={DEMOGRAPHIC_COLORS}
+                        />
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="game-comparison">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Game Performance Comparison</CardTitle>
+                  <CardDescription>Compare performance metrics across different games</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-[400px]">
+                    <GameComparisonChart 
+                      key={`game-comparison-${params.id}`}
+                      data={gamePerformance} 
+                      colors={{
+                        impressions: CHART_COLORS.primary,
+                        engagements: CHART_COLORS.secondary,
+                        engagementRate: CHART_COLORS.accent,
+                        completionRate: CHART_COLORS.warning
+                      }}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        </div>
+      )}
     </div>
   );
-} 
+}

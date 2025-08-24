@@ -117,9 +117,10 @@ export function AssetsClient({ initialAssets = [] }: AssetsClientProps) {
     try {
       const response = await fetch('/api/assets');
       const data = await response.json();
-      setAssets(data.assets);
+      setAssets(data.assets || []);
     } catch (error) {
       console.error('Error loading assets:', error);
+      setAssets([]); // Ensure assets is always an array
       toast({
         title: "Error",
         description: "Failed to load assets. Please try again.",
@@ -233,7 +234,7 @@ export function AssetsClient({ initialAssets = [] }: AssetsClientProps) {
       }
 
       const savedAsset = await assetResponse.json();
-      setAssets(prevAssets => [...prevAssets, savedAsset]);
+      setAssets(prevAssets => [...(prevAssets || []), savedAsset]);
       
       toast({
         title: "Success",
@@ -270,7 +271,7 @@ export function AssetsClient({ initialAssets = [] }: AssetsClientProps) {
         throw new Error('Failed to delete asset');
       }
 
-      setAssets(assets => assets.filter(a => a.id !== asset.id));
+      setAssets(assets => (assets || []).filter(a => a.id !== asset.id));
       closeAllDialogs();
       
       toast({
@@ -296,18 +297,50 @@ export function AssetsClient({ initialAssets = [] }: AssetsClientProps) {
     return 'bg-gray-100 text-gray-800';
   };
 
-  const filteredAssets = assets.filter(asset => {
-    if (!asset) return false;
-    
-    const searchLower = searchQuery.toLowerCase();
-    const matchesSearch = 
-      (asset.name || '').toLowerCase().includes(searchLower) ||
-      (asset.description || '').toLowerCase().includes(searchLower) ||
-      (Array.isArray(asset.tags) && asset.tags.some(tag => (tag || '').toLowerCase().includes(searchLower)));
-    
-    const matchesType = selectedType === "all" || asset.assetType === selectedType;
-    return matchesSearch && matchesType;
-  });
+  const normalizeAssetTypeValue = (a: any): string => {
+    const v = (a?.assetType || a?.type || a?.canonicalType || '').toString()
+    if (!v) return ''
+    // If canonicalType like DISPLAY.image, use the suffix
+    if (v.includes('.')) return v.split('.').pop()!.toLowerCase()
+    // Also consider Roblox subtype when helpful
+    const sub = (a?.robloxSubtype || '').toString().toLowerCase()
+    if (sub) return sub
+    return v.toLowerCase()
+  }
+
+  const filteredAssets = (assets || [])
+    .filter(asset => {
+      if (!asset) return false;
+      
+      const searchLower = searchQuery.toLowerCase();
+      const matchesSearch = 
+        (asset.name || '').toLowerCase().includes(searchLower) ||
+        (asset.description || '').toLowerCase().includes(searchLower) ||
+        (Array.isArray(asset.tags) && asset.tags.some(tag => (tag || '').toLowerCase().includes(searchLower)));
+      
+      const selectedLower = (selectedType || 'all').toLowerCase()
+      const assetTypeLower = normalizeAssetTypeValue(asset)
+
+      // Intelligent grouping: map selected type to acceptable set
+      const groupMap: Record<string, string[]> = {
+        image: ['image', 'decal'],
+        decal: ['image', 'decal'],
+        video: ['video', 'videoframe'],
+        audio: ['audio', 'sound'],
+        clothing: ['clothing', 'clothing_top', 'clothing_bottom', 'shirt', 'pants', 'hat'],
+        clothing_top: ['clothing_top', 'shirt'],
+        clothing_bottom: ['clothing_bottom', 'pants'],
+      }
+      const acceptable = groupMap[selectedLower] || [selectedLower]
+      const matchesType = selectedLower === 'all' || acceptable.includes(assetTypeLower)
+      return matchesSearch && matchesType;
+    })
+    .sort((a, b) => {
+      // Sort by updatedAt in descending order (most recent first)
+      const dateA = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
+      const dateB = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
+      return dateB - dateA;
+    });
 
   const handleEditFromDetails = (asset: Asset) => {
     console.log('Editing asset:', asset); // Debug log
@@ -844,7 +877,11 @@ export function AssetsClient({ initialAssets = [] }: AssetsClientProps) {
                   <div>
                     <Label>Type</Label>
                     <div className="text-sm text-muted-foreground">
-                      {asset.assetType ? asset.assetType.charAt(0).toUpperCase() + asset.assetType.slice(1).replace(/_/g, ' ') : 'Unknown'}
+                      {(() => {
+                        const raw = asset.assetType || asset.type || (asset.canonicalType ? asset.canonicalType.split('.').pop() : '') || 'Unknown'
+                        const s = raw.toString()
+                        return s.charAt(0).toUpperCase() + s.slice(1).replace(/_/g, ' ')
+                      })()}
                     </div>
                   </div>
                   <div>

@@ -28,6 +28,7 @@ export function AssetUploadDialog({ open, onClose, onUploadComplete }: AssetUplo
   const [description, setDescription] = useState('')
   const [uploading, setUploading] = useState(false)
   const [existingAssetId, setExistingAssetId] = useState('')
+  const [preview, setPreview] = useState<any | null>(null)
   const [tags, setTags] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { toast } = useToast()
@@ -315,7 +316,22 @@ export function AssetUploadDialog({ open, onClose, onUploadComplete }: AssetUplo
                 <Label>Roblox Asset ID</Label>
                 <Input
                   value={existingAssetId}
-                  onChange={(e) => setExistingAssetId(e.target.value)}
+                  onChange={async (e) => {
+                    const v = e.target.value
+                    setExistingAssetId(v)
+                    if (v && /^\d+$/.test(v)) {
+                      try {
+                        const r = await fetch(`/api/roblox/assets/${v}`)
+                        const data = await r.json()
+                        if (data?.success) setPreview(data.preview)
+                        else setPreview(null)
+                      } catch {
+                        setPreview(null)
+                      }
+                    } else {
+                      setPreview(null)
+                    }
+                  }}
                   placeholder="Enter Roblox Asset ID"
                 />
               </div>
@@ -346,6 +362,16 @@ export function AssetUploadDialog({ open, onClose, onUploadComplete }: AssetUplo
                   placeholder="Enter tags separated by commas"
                 />
               </div>
+              {preview && (
+                <div className="flex items-center gap-4 p-3 rounded-md border">
+                  <img src={preview.thumbnail} alt="preview" width={72} height={72} style={{ borderRadius: 8 }} />
+                  <div className="text-sm">
+                    <div className="font-medium">{preview.name}</div>
+                    <div className="text-muted-foreground">{preview.robloxType} {preview.robloxSubtype ? `• ${preview.robloxSubtype}` : ''}</div>
+                    <div className="text-muted-foreground">{preview.canonicalType}</div>
+                  </div>
+                </div>
+              )}
             </div>
           </TabsContent>
         </Tabs>

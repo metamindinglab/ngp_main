@@ -8,17 +8,20 @@ export interface RobloxAuthorization {
   status: 'active' | 'expired' | 'invalid' | 'unverified';
 }
 
+export interface GameMedia {
+  id: string;
+  type: string;
+  title: string | null;
+  localPath: string;
+  thumbnailUrl: string | null;
+}
+
 export interface Game {
   id: string;
   name: string;
-  description: string;
-  genre: string;
   robloxLink: string;
-  thumbnail: string;
-  createdAt?: string;
-  updatedAt?: string;
-  
-  // Basic metrics
+  genre: string;
+  description: string;
   metrics: {
     dau: number;
     mau: number;
@@ -28,25 +31,28 @@ export interface Game {
       percentage: number;
     }[];
   };
-
-  // Dates information
+  latestMetrics?: {
+    dau: number;
+    mau: number;
+    day1Retention: number;
+    topGeographicPlayers?: {
+      country: string;
+      percentage: number;
+    }[];
+  };
   dates: {
     created: string;
     lastUpdated: string;
     mgnJoined: string;
-    lastRobloxSync?: string;
   };
-
-  // Owner information
   owner: {
     name: string;
     discordId: string;
     email: string;
     country: string;
+    robloxId?: string;
   };
-
-  // Authorization for Roblox API
-  authorization?: {
+  robloxAuthorization?: {
     type: 'api_key' | 'oauth';
     apiKey?: string;
     clientId?: string;
@@ -54,8 +60,20 @@ export interface Game {
     lastVerified?: string;
     status: 'active' | 'expired' | 'invalid' | 'unverified';
   };
-
-  // Additional Roblox information
+  thumbnail?: string;
+  thumbnailUrl?: string;
+  media: GameMedia[];
+  serverApiKey?: string;
+  serverApiKeyCreatedAt?: string;
+  serverApiKeyStatus?: string;
+  enabledTemplates?: string[];
+  assignedAds?: Array<{
+    id: string;
+    name: string;
+    templateType: string;
+    status: string;
+    createdAt: string;
+  }>;
   robloxInfo?: {
     placeId: number;
     universeId?: number;
@@ -71,24 +89,7 @@ export interface Game {
       likes: number;
       dislikes: number;
     };
-    servers?: {
-      id: string;
-      maxPlayers: number;
-      playing: number;
-      fps: number;
-      ping: number;
-    }[];
-    badges?: {
-      id: number;
-      name: string;
-      description: string;
-      enabled: boolean;
-      statistics: {
-        pastDayAwarded: number;
-        totalAwarded: number;
-      };
-    }[];
-    gameSettings?: {
+    gameSettings: {
       maxPlayers: number;
       allowCopying: boolean;
       allowedGearTypes: string[];
@@ -98,36 +99,46 @@ export interface Game {
       isFavoritedByUser: boolean;
       price: number | null;
     };
-    socialLinks?: {
+    servers: Array<{
+      id: string;
+      playing: number;
+      maxPlayers: number;
+      fps: number;
+      ping: number;
+    }>;
+    // Additional fields from enhanced integration
+    subgenre?: string;
+    subgenre2?: string;
+    isActive?: boolean;
+    dates?: {
+      created: string;
+      updated: string;
+      lastFetched: string;
+    };
+    images?: Array<{
+      id: string;
       type: string;
-      url: string;
       title: string;
-    }[];
+      url: string;
+      targetId?: number;
+      state?: string;
+      version?: string;
+    }>;
     media?: {
-      images: {
+      images: Array<{
         id: string;
-        robloxId: number;
         type: string;
-        approved: boolean;
         title?: string;
-        altText?: string;
-        localPath: string;
-        thumbnailUrl: string;
-        width: number;
-        height: number;
-        uploadedAt: string;
-      }[];
-      videos: {
-        id: string;
-        robloxId: string;
-        type: string;
-        approved: boolean;
-        title: string;
         localPath: string;
         thumbnailUrl?: string;
-        duration?: number;
-        uploadedAt: string;
-      }[];
+      }>;
+      videos: Array<{
+        id: string;
+        type: string;
+        title?: string;
+        localPath: string;
+        thumbnailUrl?: string;
+      }>;
     };
   };
 } 

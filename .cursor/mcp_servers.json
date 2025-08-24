@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "roblox-studio": {
+      "command": "/home/mml_admin/mml_roblox_asset_management/roblox-studio-mcp/target/release/rbx-studio-mcp",
+      "args": ["--stdio"]
+    }
+  }
+} 
