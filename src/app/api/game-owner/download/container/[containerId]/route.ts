@@ -176,7 +176,15 @@ async function generateContainerPackage(container: any, isFirstDownload: boolean
                   "GameId": { "$className": "StringValue", "$properties": { "Value": String(container.game.id) } },
                   "Type": { "$className": "StringValue", "$properties": { "Value": String(container.type) } },
                   "EnablePositionSync": { "$className": "BoolValue", "$properties": { "Value": true } }
-                }
+                },
+                "MMLDisplaySurface": isDisplay and {
+                  "$className": "SurfaceGui",
+                  "$properties": { "Face": "Front" },
+                  "Frame": {
+                    "$className": "Frame",
+                    "$properties": { "Size": { "Scale": 1, "Offset": 0 }, "BackgroundTransparency": 1 }
+                  }
+                } or nil
               }
             }
           }

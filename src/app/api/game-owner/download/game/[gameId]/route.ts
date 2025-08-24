@@ -482,17 +482,10 @@ surfaceGui.Face = Enum.NormalId.Front
 surfaceGui.Parent = ${safeName}
 
 local frame = Instance.new("Frame")
+frame.Name = "Frame"
 frame.Size = UDim2.new(1, 0, 1, 0)
-frame.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-frame.Parent = surfaceGui
-
-local textLabel = Instance.new("TextLabel")
-textLabel.Size = UDim2.new(1, 0, 1, 0)
-textLabel.BackgroundTransparency = 1
-textLabel.Text = "MML Ad Loading..."
-textLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-textLabel.TextScaled = true
-textLabel.Parent = frame` : container.type === 'NPC' ? `
+frame.BackgroundTransparency = 1
+frame.Parent = surfaceGui` : container.type === 'NPC' ? `
 -- Add ProximityPrompt for NPC interaction
 local prompt = Instance.new("ProximityPrompt")
 prompt.Name = "MMLInteraction"
