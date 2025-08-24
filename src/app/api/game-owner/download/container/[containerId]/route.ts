@@ -201,29 +201,19 @@ async function generateContainerPackage(container: any, isFirstDownload: boolean
 
     const projectPath = join(tempDir, 'default.project.json')
     await writeFile(projectPath, JSON.stringify(rojoProject, null, 2))
-    
-    // Build with Rojo (set size/position at build-time not in JSON to avoid schema issues)
-    const outputPath = join(tempDir, 'container.rbxm')
-    try {
-      await execAsync(`cd "${tempDir}" && rojo build --output container.rbxm`)
-      // Read the generated binary model
-      const packageData = await readFile(outputPath)
-      return { packageData, filename: `MMLContainer_${container.name.replace(/[^a-zA-Z0-9]/g, '_')}.rbxm` }
-    } catch (e) {
-      console.warn('[Rojo] build failed, falling back to RBXMX XML generation')
-      // Fallback: generate a valid RBXMX (XML) model Studio can insert
-      const xml = buildRbxmxXml({
-        containerId: String(container.id),
-        containerType: String(container.type),
-        containerName: String(container.name),
-        gameId: String(container.game.id),
-        isDisplay
-      })
-      const xmlPath = join(tempDir, 'container.rbxmx')
-      await writeFile(xmlPath, xml)
-      const packageData = await readFile(xmlPath)
-      return { packageData, filename: `MMLContainer_${container.name.replace(/[^a-zA-Z0-9]/g, '_')}.rbxmx` }
-    }
+
+    // Always generate RBXMX (XML) model for maximum Studio compatibility
+    const xml = buildRbxmxXml({
+      containerId: String(container.id),
+      containerType: String(container.type),
+      containerName: String(container.name),
+      gameId: String(container.game.id),
+      isDisplay
+    })
+    const xmlPath = join(tempDir, 'container.rbxmx')
+    await writeFile(xmlPath, xml)
+    const packageData = await readFile(xmlPath)
+    return { packageData, filename: `MMLContainer_${container.name.replace(/[^a-zA-Z0-9]/g, '_')}.rbxmx` }
     
   } catch (error) {
     console.error('Error in generateContainerPackage:', error)
