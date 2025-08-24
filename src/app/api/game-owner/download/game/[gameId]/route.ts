@@ -249,32 +249,40 @@ local function updateContainer(containerId)
     if adData and adData.hasAd then
         print("✅ Updating container", containerId, "with ad content")
         
-        -- Find the display surface
+        -- Ensure a display surface exists
         local surfaceGui = containerPart:FindFirstChild("MMLDisplaySurface")
-        if surfaceGui then
-            local frame = surfaceGui:FindFirstChild("Frame")
-            if frame then
-                -- Clear existing content
-                for _, child in pairs(frame:GetChildren()) do
-                    if child:IsA("ImageLabel") then
-                        child:Destroy()
-                    end
-                end
-                
-                -- Add new ad content
-                for _, asset in pairs(adData.assets) do
-                    if asset.assetType == "multi_display" and asset.robloxAssetId then
-                        local imageLabel = Instance.new("ImageLabel")
-                        imageLabel.Size = UDim2.new(1, 0, 1, 0)
-                        imageLabel.Image = "rbxassetid://" .. asset.robloxAssetId
-                        imageLabel.BackgroundTransparency = 1
-                        imageLabel.Name = "AdImage"
-                        imageLabel.Parent = frame
-                        
-                        print("📺 Displaying ad image:", asset.robloxAssetId)
-                        return true -- Successfully added image
-                    end
-                end
+        if not surfaceGui then
+            surfaceGui = Instance.new("SurfaceGui")
+            surfaceGui.Name = "MMLDisplaySurface"
+            surfaceGui.Face = Enum.NormalId.Front
+            surfaceGui.Parent = containerPart
+        end
+        local frame = surfaceGui:FindFirstChild("Frame")
+        if not frame then
+            frame = Instance.new("Frame")
+            frame.Name = "Frame"
+            frame.Size = UDim2.new(1, 0, 1, 0)
+            frame.BackgroundTransparency = 1
+            frame.Parent = surfaceGui
+        end
+        -- Clear existing content
+        for _, child in pairs(frame:GetChildren()) do
+            if child:IsA("ImageLabel") then
+                child:Destroy()
+            end
+        end
+        -- Add new ad content - prefer image assets
+        for _, asset in pairs(adData.assets) do
+            local at = string.lower(tostring(asset.assetType or ""))
+            if (at == "image" or at == "decal" or at == "multi_display" or at == "multimedia_display") and asset.robloxAssetId then
+                local imageLabel = Instance.new("ImageLabel")
+                imageLabel.Size = UDim2.new(1, 0, 1, 0)
+                imageLabel.Image = "rbxassetid://" .. asset.robloxAssetId
+                imageLabel.BackgroundTransparency = 1
+                imageLabel.Name = "AdImage"
+                imageLabel.Parent = frame
+                print("📺 Displaying ad image:", asset.robloxAssetId)
+                return true
             end
         end
     end
