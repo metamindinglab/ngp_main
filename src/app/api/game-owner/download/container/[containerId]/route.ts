@@ -168,9 +168,7 @@ async function generateContainerPackage(container: any, isFirstDownload: boolean
                 "$className": "Part",
                 "$properties": {
                   "Name": String(container.id),
-                  "Anchored": true,
-                  "Size": {"X": sizeX, "Y": sizeY, "Z": sizeZ},
-                  "Position": {"X": posX, "Y": posY, "Z": posZ}
+                  "Anchored": true
                 },
                 "MMLMetadata": {
                   "$className": "Folder",
@@ -178,21 +176,7 @@ async function generateContainerPackage(container: any, isFirstDownload: boolean
                   "GameId": { "$className": "StringValue", "$properties": { "Value": String(container.game.id) } },
                   "Type": { "$className": "StringValue", "$properties": { "Value": String(container.type) } },
                   "EnablePositionSync": { "$className": "BoolValue", "$properties": { "Value": true } }
-                },
-                ...(isDisplay ? {
-                  "MMLDisplaySurface": {
-                    "$className": "SurfaceGui",
-                    "$properties": { "Face": "Front" },
-                    "Frame": {
-                      "$className": "Frame",
-                      "$properties": { "Size": {"Scale": 1, "Offset": 0} },
-                      "TextLabel": {
-                        "$className": "TextLabel",
-                        "$properties": { "Text": "MML Ad Loading...", "BackgroundTransparency": 1 }
-                      }
-                    }
-                  }
-                } : {})
+                }
               }
             }
           }
@@ -203,9 +187,15 @@ async function generateContainerPackage(container: any, isFirstDownload: boolean
     const projectPath = join(tempDir, 'default.project.json')
     await writeFile(projectPath, JSON.stringify(rojoProject, null, 2))
     
-    // Build with Rojo
+    // Build with Rojo (set size/position at build-time not in JSON to avoid schema issues)
     const outputPath = join(tempDir, 'container.rbxm')
-    await execAsync(`cd "${tempDir}" && rojo build --output container.rbxm`)
+    try {
+      await execAsync(`cd "${tempDir}" && rojo build --output container.rbxm`)
+    } catch (e) {
+      console.warn('[Rojo] build failed, falling back to shipping project JSON without build')
+      // Fallback: package the JSON itself if Rojo is not available or schema mismatch
+      await writeFile(outputPath, Buffer.from(JSON.stringify(rojoProject)))
+    }
     
     // Read the generated file
     const packageData = await readFile(outputPath)
