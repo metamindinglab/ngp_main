@@ -301,6 +301,12 @@ local function updateContainer(containerId)
                 imageLabel.ScaleType = Enum.ScaleType.Fit
                 imageLabel.Parent = frame
                 print("📺 Displaying ad image:", asset.robloxAssetId)
+                -- Record a simple view impression
+                pcall(function()
+                    if _G and _G.MMLNetwork and _G.MMLNetwork.RecordImpression then
+                        _G.MMLNetwork.RecordImpression(containerId, 'view', { engagement = { type = 'view' }, duration = 0 })
+                    end
+                end)
                 return true
             end
         end

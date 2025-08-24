@@ -154,6 +154,34 @@ async function generateContainerPackage(container: any, isFirstDownload: boolean
     const posX = Number(container.position?.x || 0)
     const posY = Number(container.position?.y || 0)
     const posZ = Number(container.position?.z || 0)
+
+    // Build DisplayBoard node first, then optionally attach SurfaceGui
+    const displayBoard: any = {
+      "$className": "Part",
+      "$properties": {
+        "Name": String(container.id),
+        "Anchored": true
+      },
+      "MMLMetadata": {
+        "$className": "Folder",
+        "ContainerId": { "$className": "StringValue", "$properties": { "Value": String(container.id) } },
+        "GameId": { "$className": "StringValue", "$properties": { "Value": String(container.game.id) } },
+        "Type": { "$className": "StringValue", "$properties": { "Value": String(container.type) } },
+        "EnablePositionSync": { "$className": "BoolValue", "$properties": { "Value": true } }
+      }
+    }
+
+    if (isDisplay) {
+      displayBoard["MMLDisplaySurface"] = {
+        "$className": "SurfaceGui",
+        "$properties": { "Face": "Front", "SizingMode": "PixelsPerStud", "CanvasSize": { "X": 1024, "Y": 576 }, "AlwaysOnTop": true },
+        "Frame": {
+          "$className": "Frame",
+          "$properties": { "Size": { "Scale": 1, "Offset": 0 }, "BackgroundTransparency": 1 }
+        }
+      }
+    }
+
     const rojoProject: any = {
       name: `MMLContainer_${container.name.replace(/[^a-zA-Z0-9]/g, '_')}`,
       tree: {
@@ -164,28 +192,7 @@ async function generateContainerPackage(container: any, isFirstDownload: boolean
             "$className": "Folder",
             [safeModelName]: {
               "$className": "Model",
-              "DisplayBoard": {
-                "$className": "Part",
-                "$properties": {
-                  "Name": String(container.id),
-                  "Anchored": true
-                },
-                "MMLMetadata": {
-                  "$className": "Folder",
-                  "ContainerId": { "$className": "StringValue", "$properties": { "Value": String(container.id) } },
-                  "GameId": { "$className": "StringValue", "$properties": { "Value": String(container.game.id) } },
-                  "Type": { "$className": "StringValue", "$properties": { "Value": String(container.type) } },
-                  "EnablePositionSync": { "$className": "BoolValue", "$properties": { "Value": true } }
-                },
-                "MMLDisplaySurface": isDisplay and {
-                  "$className": "SurfaceGui",
-                  "$properties": { "Face": "Front", "SizingMode": "PixelsPerStud", "CanvasSize": { "X": 1024, "Y": 576 }, "AlwaysOnTop": true },
-                  "Frame": {
-                    "$className": "Frame",
-                    "$properties": { "Size": { "Scale": 1, "Offset": 0 }, "BackgroundTransparency": 1 }
-                  }
-                } or nil
-              }
+              "DisplayBoard": displayBoard
             }
           }
         }
