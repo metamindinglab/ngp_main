@@ -23,6 +23,9 @@ local activeMovements = {}  -- Track ongoing asset movements
 local movementQueue = {}    -- Queue for pending movements
 local visibilityMonitor = nil  -- Connection for visibility monitoring
 
+-- Forward declaration for function used before its definition
+local getAssignedAdForContainer
+
 -- Check if container is in any player's camera view
 function MMLContainerStreamer.isContainerInView(container)
     if not container or not container.model then
@@ -391,7 +394,7 @@ function MMLContainerStreamer.startMonitoring()
             
             if isInView and not wasInView then
                 -- Container came into view
-                local assignedAdId = getAssignedAdForContainer(containerId)
+                local assignedAdId = getAssignedAdForContainer and getAssignedAdForContainer(containerId) or nil
                 if assignedAdId then
                     print("[MML][Stream] Container in view:", containerId, "ad:", assignedAdId)
                     MMLContainerStreamer.moveAssetsToContainer(containerId, assignedAdId)
@@ -420,7 +423,7 @@ function MMLContainerStreamer.stopMonitoring()
 end
 
 -- Get assigned ad for container (will be enhanced with feeding engine)
-local function getAssignedAdForContainer(containerId)
+getAssignedAdForContainer = function(containerId)
     if not _G.MMLNetwork or not _G.MMLNetwork._containers then
         return nil
     end
