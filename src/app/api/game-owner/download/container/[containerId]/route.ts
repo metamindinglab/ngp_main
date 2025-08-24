@@ -145,6 +145,12 @@ async function generateContainerPackage(container: any, isFirstDownload: boolean
     // Build a Rojo project that outputs a temp/Workspace model ready to drag into game
     const isDisplay = container.type === 'DISPLAY'
     const safeModelName = `MMLContainer_${container.type}`
+    const sizeX = isDisplay ? 10 : (container.type === 'NPC' ? 2 : 8)
+    const sizeY = isDisplay ? 5 : (container.type === 'NPC' ? 6 : 8)
+    const sizeZ = isDisplay ? 0.5 : (container.type === 'NPC' ? 2 : 8)
+    const posX = Number(container.position?.x || 0)
+    const posY = Number(container.position?.y || 0)
+    const posZ = Number(container.position?.z || 0)
     const rojoProject: any = {
       name: `MMLContainer_${container.name.replace(/[^a-zA-Z0-9]/g, '_')}`,
       tree: {
@@ -158,16 +164,16 @@ async function generateContainerPackage(container: any, isFirstDownload: boolean
               "DisplayBoard": {
                 "$className": "Part",
                 "$properties": {
-                  "Name": "${container.id}",
+                  "Name": String(container.id),
                   "Anchored": true,
-                  "Size": {"X": ${isDisplay ? 10 : container.type === 'NPC' ? 2 : 8}, "Y": ${isDisplay ? 5 : container.type === 'NPC' ? 6 : 8}, "Z": ${isDisplay ? 0.5 : container.type === 'NPC' ? 2 : 8}},
-                  "Position": {"X": ${container.position.x}, "Y": ${container.position.y}, "Z": ${container.position.z}}
+                  "Size": {"X": sizeX, "Y": sizeY, "Z": sizeZ},
+                  "Position": {"X": posX, "Y": posY, "Z": posZ}
                 },
                 "MMLMetadata": {
                   "$className": "Folder",
-                  "ContainerId": { "$className": "StringValue", "$properties": { "Value": "${container.id}" } },
-                  "GameId": { "$className": "StringValue", "$properties": { "Value": "${container.game.id}" } },
-                  "Type": { "$className": "StringValue", "$properties": { "Value": "${container.type}" } },
+                  "ContainerId": { "$className": "StringValue", "$properties": { "Value": String(container.id) } },
+                  "GameId": { "$className": "StringValue", "$properties": { "Value": String(container.game.id) } },
+                  "Type": { "$className": "StringValue", "$properties": { "Value": String(container.type) } },
                   "EnablePositionSync": { "$className": "BoolValue", "$properties": { "Value": true } }
                 },
                 ...(isDisplay ? {

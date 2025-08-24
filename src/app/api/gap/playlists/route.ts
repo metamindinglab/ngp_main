@@ -190,8 +190,8 @@ export async function POST(request: NextRequest) {
 
           // Create deployments for selected games (dedupe and skip duplicates)
           if (schedule.selectedGames && schedule.selectedGames.length > 0) {
-            const uniqueGameIds = Array.from(new Set(schedule.selectedGames))
-            const data = uniqueGameIds.map((gameId: string) => ({
+            const uniqueGameIds: string[] = Array.from(new Set<string>(schedule.selectedGames as string[]))
+            const data = uniqueGameIds.map((gameId) => ({
               id: randomUUID(),
               scheduleId,
               gameId,

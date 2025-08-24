@@ -45,14 +45,14 @@ export async function GET(request: NextRequest) {
     <Item class="BoolValue"><Properties><string name="Name">EnablePositionSync</string><bool name="Value">true</bool></Properties></Item>
   </Item>`
 
-    // Panel presets: created at install time to avoid complex XML
-    local function presetSize()
-      local p = '${preset}'
-      if p == 'landscape' then return Vector3.new(12, 8, 0.5) end
-      return Vector3.new(8, 12, 0.5) -- portrait default
-    end
-
+    // Panel presets happen inside the Lua script below
     const setup = `
+local function presetSize()
+  local p = '${preset}'
+  if p == 'landscape' then return Vector3.new(12, 8, 0.5) end
+  return Vector3.new(8, 12, 0.5)
+end
+
 local model = script.Parent
 local meta = model:FindFirstChild('MMLMetadata') or Instance.new('Folder', model)
 meta.Name = 'MMLMetadata'

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { resolveAssetTyping } from '@/lib/assets/type-resolver'
 import { getAllAssets, createAsset, updateAsset, deleteAsset } from '@/lib/db/assets';
-import { Asset } from '@prisma/client';
+import { Asset, Prisma } from '@prisma/client';
 import { addCorsHeaders, handleAuth, applyRateLimit, addRateLimitHeaders, handleOptions } from '../middleware';
 
 // Helper function to transform database asset to UI format
@@ -111,11 +111,8 @@ export async function POST(request: NextRequest) {
       robloxType: typing.robloxType,
       robloxSubtype: typing.robloxSubtype,
       robloxAssetTypeId: typing.robloxAssetTypeId,
-      robloxType: typing.robloxType,
-      robloxSubtype: typing.robloxSubtype,
-      robloxAssetTypeId: typing.robloxAssetTypeId,
       canonicalType: typing.canonicalType,
-      capabilities: typing.capabilities,
+      capabilities: typing.capabilities as Prisma.InputJsonValue,
       source: typing.source,
       creator: assetData.creator || null,
       updatedAt: new Date(),
@@ -194,9 +191,8 @@ export async function PUT(request: NextRequest) {
       robloxType: typingPut.robloxType,
       robloxSubtype: typingPut.robloxSubtype,
       robloxAssetTypeId: typingPut.robloxAssetTypeId,
-      robloxType: typingPut.robloxType,
       canonicalType: typingPut.canonicalType,
-      capabilities: typingPut.capabilities,
+      capabilities: typingPut.capabilities as Prisma.InputJsonValue,
       source: typingPut.source,
       metadata: {
         description: updates.description,

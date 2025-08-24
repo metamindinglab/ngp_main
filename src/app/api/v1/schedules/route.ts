@@ -40,9 +40,11 @@ export async function POST(request: NextRequest) {
         gameAdId: body.gameAdId,
         startDate: new Date(body.startDate || Date.now()),
         duration: Number(body.duration || 0),
+        endDate: new Date(new Date(body.startDate || Date.now()).getTime() + (Number(body.duration || 0) * 24 * 60 * 60 * 1000)),
         status,
+        updatedAt: new Date(),
         deployments: body.deployments && Array.isArray(body.deployments)
-          ? { create: body.deployments.map((d: any) => ({ gameId: d.gameId, status: normalizeStatus(d.status) })) }
+          ? { create: body.deployments.map((d: any) => ({ gameId: d.gameId, status: normalizeStatus(d.status), updatedAt: new Date() })) }
           : undefined
       },
       include: { deployments: true }

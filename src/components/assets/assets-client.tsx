@@ -878,7 +878,8 @@ export function AssetsClient({ initialAssets = [] }: AssetsClientProps) {
                     <Label>Type</Label>
                     <div className="text-sm text-muted-foreground">
                       {(() => {
-                        const raw = asset.assetType || asset.type || (asset.canonicalType ? asset.canonicalType.split('.').pop() : '') || 'Unknown'
+                        const ct = (asset as any)?.canonicalType as string | undefined
+                        const raw = asset.assetType || asset.type || (ct ? ct.split('.').pop() : '') || 'Unknown'
                         const s = raw.toString()
                         return s.charAt(0).toUpperCase() + s.slice(1).replace(/_/g, ' ')
                       })()}

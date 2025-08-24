@@ -21,7 +21,7 @@ export async function POST(request: NextRequest, { params }: { params: { schedul
   try {
     const body = await request.json()
     const created = await prisma.gameDeployment.create({
-      data: { scheduleId: params.scheduleId, gameId: body.gameId, status: normalizeStatus(body.status) }
+      data: { scheduleId: params.scheduleId, gameId: body.gameId, status: normalizeStatus(body.status), updatedAt: new Date() }
     })
     return NextResponse.json({ deployment: created })
   } catch (error) {
