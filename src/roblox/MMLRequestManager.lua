@@ -102,7 +102,13 @@ function MMLRequestManager.fetchContainerAssignments()
         return true -- Use cached assignments
     end
     
-    local MMLContainerManager = require(script.Parent.MMLContainerManager)
+    local ok, MMLContainerManager = pcall(function()
+        return require(script.Parent.MMLContainerManager)
+    end)
+    if not ok or not MMLContainerManager or type(MMLContainerManager.getAllContainerSummaries) ~= "function" then
+        warn("❌ MMLContainerManager unavailable or missing getAllContainerSummaries; skipping assignment fetch")
+        return false
+    end
     local containers = MMLContainerManager.getAllContainerSummaries()
     local playerContext = getPlayerContext()
     
