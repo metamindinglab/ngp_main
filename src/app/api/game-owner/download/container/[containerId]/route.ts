@@ -72,14 +72,14 @@ export async function GET(
     const isFirstDownload = true
     
     // Generate individual container rbxm
-    const packageData = await generateContainerPackage(container, isFirstDownload)
+    const { packageData, filename } = await generateContainerPackage(container, isFirstDownload)
 
     // Return the rbxm file
     return new NextResponse(packageData, {
       status: 200,
       headers: {
         'Content-Type': 'application/octet-stream',
-        'Content-Disposition': `attachment; filename="MMLContainer_${container.name.replace(/[^a-zA-Z0-9]/g, '_')}.rbxm"`,
+        'Content-Disposition': `attachment; filename="${filename}"`,
         'Cache-Control': 'no-cache, no-store, must-revalidate',
         'Pragma': 'no-cache',
         'Expires': '0'
@@ -138,7 +138,7 @@ async function updateContainerDownload(containerId: string, gameOwnerId: string)
 }
 */
 
-async function generateContainerPackage(container: any, isFirstDownload: boolean) {
+async function generateContainerPackage(container: any, isFirstDownload: boolean): Promise<{ packageData: Buffer, filename: string }> {
   const tempDir = join(process.cwd(), 'temp', `container-${container.id}`)
   
   try {
@@ -206,21 +206,110 @@ async function generateContainerPackage(container: any, isFirstDownload: boolean
     const outputPath = join(tempDir, 'container.rbxm')
     try {
       await execAsync(`cd "${tempDir}" && rojo build --output container.rbxm`)
+      // Read the generated binary model
+      const packageData = await readFile(outputPath)
+      return { packageData, filename: `MMLContainer_${container.name.replace(/[^a-zA-Z0-9]/g, '_')}.rbxm` }
     } catch (e) {
-      console.warn('[Rojo] build failed, falling back to shipping project JSON without build')
-      // Fallback: package the JSON itself if Rojo is not available or schema mismatch
-      await writeFile(outputPath, Buffer.from(JSON.stringify(rojoProject)))
+      console.warn('[Rojo] build failed, falling back to RBXMX XML generation')
+      // Fallback: generate a valid RBXMX (XML) model Studio can insert
+      const xml = buildRbxmxXml({
+        containerId: String(container.id),
+        containerType: String(container.type),
+        containerName: String(container.name),
+        gameId: String(container.game.id),
+        isDisplay
+      })
+      const xmlPath = join(tempDir, 'container.rbxmx')
+      await writeFile(xmlPath, xml)
+      const packageData = await readFile(xmlPath)
+      return { packageData, filename: `MMLContainer_${container.name.replace(/[^a-zA-Z0-9]/g, '_')}.rbxmx` }
     }
-    
-    // Read the generated file
-    const packageData = await readFile(outputPath)
-    
-    return packageData
     
   } catch (error) {
     console.error('Error in generateContainerPackage:', error)
     throw error
   }
+}
+
+function escapeXml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;')
+}
+
+function buildRbxmxXml(args: { containerId: string, containerType: string, containerName: string, gameId: string, isDisplay: boolean }): string {
+  const size = args.containerType === 'DISPLAY' ? { x: 10, y: 5, z: 0.5 } : args.containerType === 'NPC' ? { x: 2, y: 6, z: 2 } : { x: 8, y: 8, z: 8 }
+  const modelName = `MMLContainer_${args.containerType}`
+  const includeDisplaySurface = args.isDisplay
+  const header = '<?xml version="1.0" encoding="utf-8"?>\n'
+  const open = '<roblox version="4">\n'
+  const close = '</roblox>'
+  const xml = [
+    header,
+    open,
+    '  <Item class="Model">',
+    '    <Properties>',
+    `      <string name="Name">${escapeXml(modelName)}</string>`,
+    '    </Properties>',
+    '    <Item class="Part">',
+    '      <Properties>',
+    `        <string name="Name">${escapeXml(args.containerId)}</string>`,
+    '        <bool name="Anchored">true</bool>',
+    `        <Vector3 name="Size"><X>${size.x}</X><Y>${size.y}</Y><Z>${size.z}</Z></Vector3>`,
+    '      </Properties>',
+    '      <Item class="Folder">',
+    '        <Properties>',
+    '          <string name="Name">MMLMetadata</string>',
+    '        </Properties>',
+    '        <Item class="StringValue">',
+    '          <Properties>',
+    '            <string name="Name">ContainerId</string>',
+    `            <string name="Value">${escapeXml(args.containerId)}</string>`,
+    '          </Properties>',
+    '        </Item>',
+    '        <Item class="StringValue">',
+    '          <Properties>',
+    '            <string name="Name">GameId</string>',
+    `            <string name="Value">${escapeXml(args.gameId)}</string>`,
+    '          </Properties>',
+    '        </Item>',
+    '        <Item class="StringValue">',
+    '          <Properties>',
+    '            <string name="Name">Type</string>',
+    `            <string name="Value">${escapeXml(args.containerType)}</string>`,
+    '          </Properties>',
+    '        </Item>',
+    '        <Item class="BoolValue">',
+    '          <Properties>',
+    '            <string name="Name">EnablePositionSync</string>',
+    '            <bool name="Value">true</bool>',
+    '          </Properties>',
+    '        </Item>',
+    '      </Item>',
+    includeDisplaySurface ? '      <Item class="SurfaceGui">' : '',
+    includeDisplaySurface ? '        <Properties>' : '',
+    includeDisplaySurface ? '          <string name="Name">MMLDisplaySurface</string>' : '',
+    includeDisplaySurface ? '          <token name="Face">Front</token>' : '',
+    includeDisplaySurface ? '          <token name="SizingMode">PixelsPerStud</token>' : '',
+    includeDisplaySurface ? '          <Vector2 name="CanvasSize"><X>1024</X><Y>576</Y></Vector2>' : '',
+    includeDisplaySurface ? '          <bool name="AlwaysOnTop">true</bool>' : '',
+    includeDisplaySurface ? '        </Properties>' : '',
+    includeDisplaySurface ? '        <Item class="Frame">' : '',
+    includeDisplaySurface ? '          <Properties>' : '',
+    includeDisplaySurface ? '            <string name="Name">Frame</string>' : '',
+    includeDisplaySurface ? '            <UDim2 name="Size"><XS>1</XS><XO>0</XO><YS>1</YS><YO>0</YO></UDim2>' : '',
+    includeDisplaySurface ? '            <float name="BackgroundTransparency">1</float>' : '',
+    includeDisplaySurface ? '          </Properties>' : '',
+    includeDisplaySurface ? '        </Item>' : '',
+    includeDisplaySurface ? '      </Item>' : '',
+    '    </Item>',
+    '  </Item>',
+    close,
+  ].filter(Boolean).join('\n')
+  return xml
 }
 
 function generateSingleContainerScript(container: any, isFirstDownload: boolean) {
