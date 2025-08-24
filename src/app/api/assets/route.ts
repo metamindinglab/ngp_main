@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { resolveAssetTyping } from '@/lib/assets/type-resolver'
 import { getAllAssets, createAsset, updateAsset, deleteAsset } from '@/lib/db/assets';
 import { Asset } from '@prisma/client';
 import { addCorsHeaders, handleAuth, applyRateLimit, addRateLimitHeaders, handleOptions } from '../middleware';
@@ -88,6 +89,18 @@ export async function POST(request: NextRequest) {
   try {
     const assetData = await request.json();
     
+    // Resolve typing; enrich for existing Roblox IDs when provided
+    const typing = resolveAssetTyping({
+      source: assetData.robloxAssetId ? 'ROBLOX_ID' : 'LOCAL_UPLOAD',
+      declaredSystemType: assetData.assetType || assetData.type,
+      robloxAssetId: assetData.robloxAssetId,
+      filename: assetData.fileName,
+      mimeType: assetData.mimeType,
+    })
+
+    // TODO: If we have a Roblox Asset ID, this is where you'd call Roblox Open Cloud
+    // to fetch subtype/typeId and metadata. For now, resolver + backfill provide defaults.
+
     // Transform UI data to database format
     const dbAssetData = {
       id: assetData.id || `asset_${Date.now()}`,
@@ -95,6 +108,15 @@ export async function POST(request: NextRequest) {
       type: assetData.assetType || assetData.type,
       status: 'active',
       robloxId: assetData.robloxAssetId,
+      robloxType: typing.robloxType,
+      robloxSubtype: typing.robloxSubtype,
+      robloxAssetTypeId: typing.robloxAssetTypeId,
+      robloxType: typing.robloxType,
+      robloxSubtype: typing.robloxSubtype,
+      robloxAssetTypeId: typing.robloxAssetTypeId,
+      canonicalType: typing.canonicalType,
+      capabilities: typing.capabilities,
+      source: typing.source,
       creator: assetData.creator || null,
       updatedAt: new Date(),
       metadata: {
@@ -155,11 +177,27 @@ export async function PUT(request: NextRequest) {
       );
     }
 
+    // Resolve typing
+    const typingPut = resolveAssetTyping({
+      source: updates.robloxAssetId ? 'ROBLOX_ID' : 'LOCAL_UPLOAD',
+      declaredSystemType: updates.assetType || updates.type,
+      robloxAssetId: updates.robloxAssetId,
+      filename: updates.fileName,
+      mimeType: updates.mimeType,
+    })
+
     // Transform UI data to database format
     const dbUpdates = {
       name: updates.name,
       type: updates.assetType || updates.type,
       robloxId: updates.robloxAssetId,
+      robloxType: typingPut.robloxType,
+      robloxSubtype: typingPut.robloxSubtype,
+      robloxAssetTypeId: typingPut.robloxAssetTypeId,
+      robloxType: typingPut.robloxType,
+      canonicalType: typingPut.canonicalType,
+      capabilities: typingPut.capabilities,
+      source: typingPut.source,
       metadata: {
         description: updates.description,
         thumbnail: updates.thumbnail || '',

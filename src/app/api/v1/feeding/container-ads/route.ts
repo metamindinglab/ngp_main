@@ -258,18 +258,26 @@ async function getAvailableGameAds(gameId: string) {
     const ads = await prisma.gameAd.findMany({
       where: {
         games: { some: { id: gameId } },
-        playlistSchedules: { some: { OR: [{ status: 'ACTIVE' }, { status: 'active' }], startDate: { lte: now } } }
+        playlistSchedules: {
+          some: {
+            OR: [{ status: 'ACTIVE' }, { status: 'active' }],
+            startDate: { lte: now },
+            endDate: { gt: now },
+            deployments: { some: { gameId } }
+          }
+        }
       },
       include: {
-        playlistSchedules: true
+        playlistSchedules: { include: { deployments: true } }
       }
     })
     // Post-filter end window in JS
     const filtered = ads.filter(ad => {
       return ad.playlistSchedules?.some(ps => {
-        // Interpret duration as DAYS
-        const end = new Date(ps.startDate); end.setUTCDate(end.getUTCDate() + (ps.duration || 0))
-        return String(ps.status).toLowerCase() === 'active' && now >= new Date(ps.startDate) && now < end
+        const inWindow = now >= new Date(ps.startDate) && (!ps.endDate || now < new Date(ps.endDate))
+        const statusOk = String(ps.status).toLowerCase() === 'active'
+        const deployedToGame = Array.isArray(ps.deployments) && ps.deployments.some(d => d.gameId === gameId)
+        return statusOk && inWindow && deployedToGame
       })
     })
     console.log(`✅ Found ${filtered.length} ads available for game ${gameId}`)
@@ -282,14 +290,24 @@ async function getAvailableGameAds(gameId: string) {
 
 // Check if ad is suitable for container type
 function isAdSuitableForContainer(ad: any, containerType: string): boolean {
-  const typeMapping: Record<string, string[]> = {
-    'DISPLAY': ['multimedia_display', 'display'],
-    'NPC': ['dancing_npc', 'kol'],
-    'MINIGAME': ['minigame_ad', 'minigame']
+  const normalized = (type: string) => {
+    switch (String(type).toLowerCase()) {
+      case 'multimedia_display':
+      case 'display':
+      case 'display_ad':
+        return 'DISPLAY'
+      case 'dancing_npc':
+      case 'kol':
+        return 'NPC'
+      case 'minigame_ad':
+      case 'minigame':
+        return 'MINIGAME'
+      default:
+        return 'DISPLAY'
+    }
   }
-  
-  const suitableTypes = typeMapping[containerType] || []
-  return suitableTypes.includes(ad.type)
+
+  return normalized(ad.type) === String(containerType).toUpperCase()
 }
 
 // Apply sophisticated feeding algorithm

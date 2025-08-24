@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { normalizeGameAdType } from '@/lib/ads/type-normalization'
 import { PrismaClient } from '@prisma/client'
 import { verify } from 'jsonwebtoken'
 
@@ -48,9 +49,7 @@ export async function GET(request: NextRequest) {
     const type = searchParams.get('type') || 'all'
 
     // Build where clause
-    const where: any = {
-      brandUserId: auth.userId
-    }
+    const where: any = { brandUserId: auth.userId }
 
     if (search) {
       where.name = {
@@ -66,18 +65,21 @@ export async function GET(request: NextRequest) {
     // Fetch game ads with performance data
     const gameAds = await (prisma as any).gameAd.findMany({
       where,
-      include: {
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        type: true,
+        createdAt: true,
+        updatedAt: true,
+        assets: true,
+        games: { select: { id: true, name: true, thumbnail: true } },
         performance: {
           orderBy: { date: 'desc' },
-          take: 1 // Get latest performance data
+          take: 1
         },
-        games: {
-          select: {
-            id: true,
-            name: true,
-            thumbnail: true
-          }
-        }
+        BrandUser: { select: { id: true } },
+        playlistSchedules: { select: { status: true, startDate: true, duration: true } }
       },
       orderBy: { createdAt: 'desc' }
     })
@@ -86,17 +88,26 @@ export async function GET(request: NextRequest) {
     const transformedAds = gameAds.map((ad: any) => {
       const latestPerformance = ad.performance[0]
       const metrics = latestPerformance?.metrics || {}
+      const now = new Date()
+      const broadcasting = Array.isArray(ad.playlistSchedules) && ad.playlistSchedules.some((ps: any) => {
+        const statusOk = String(ps.status).toLowerCase() === 'active'
+        const start = new Date(ps.startDate)
+        const end = new Date(start)
+        end.setUTCDate(end.getUTCDate() + (ps.duration || 0))
+        return statusOk && now >= start && now < end
+      })
       
       return {
         id: ad.id,
         name: ad.name,
+        description: ad.description,
         type: ad.type,
-        status: getAdStatus(ad, latestPerformance),
+        status: broadcasting ? 'broadcasting' : 'draft',
         impressions: metrics.impressions || 0,
         clicks: metrics.clicks || 0,
         ctr: metrics.clickThroughRate || 0,
-        createdAt: ad.createdAt.toISOString(),
-        updatedAt: ad.updatedAt.toISOString(),
+        createdAt: (ad.createdAt instanceof Date ? ad.createdAt : new Date(ad.createdAt)).toISOString(),
+        updatedAt: (ad.updatedAt instanceof Date ? ad.updatedAt : new Date(ad.updatedAt)).toISOString(),
         games: ad.games,
         assets: ad.assets
       }
@@ -148,7 +159,8 @@ export async function POST(request: NextRequest) {
         id: `gap_ad_${Date.now()}`,
         gameId: 'game_001', // Placeholder - actual game associations happen through playlists
         name,
-        type,
+        type: normalizeGameAdType(type),
+        description: description || null,
         assets: assets || [],
         brandUserId: auth.userId,
         updatedAt: new Date()
@@ -160,6 +172,7 @@ export async function POST(request: NextRequest) {
       ad: {
         id: gameAd.id,
         name: gameAd.name,
+        description: gameAd.description,
         type: gameAd.type,
         status: 'draft', // Default status for new ads
         impressions: 0, // Default metrics for new ads

@@ -15,13 +15,7 @@ function MMLUtil.findBestPrimaryPart(model)
 	end
 
 	-- Prefer common part names if present
-	local preferredNames = {
-		"PrimaryPart",
-		"HumanoidRootPart",
-		"RootPart",
-		"Handle",
-		"Head"
-	}
+	local preferredNames = { "PrimaryPart", "HumanoidRootPart", "RootPart", "Handle", "Head" }
 	for _, name in ipairs(preferredNames) do
 		local candidate = model:FindFirstChild(name)
 		if candidate and candidate:IsA("BasePart") then
@@ -94,50 +88,6 @@ function MMLUtil.getInstancePosition(instance)
 		return cf.Position
 	end
 	return Vector3.new(0, 0, 0)
-end
-
-return MMLUtil
--- src/roblox/MMLUtil.lua
--- Utility helpers for safely working with Models and Parts
-
-local MMLUtil = {}
-
--- Returns a BasePart to use as the reference for a model or part
-function MMLUtil.getReferencePart(instance)
-    if not instance then return nil end
-    if instance:IsA("BasePart") then
-        return instance
-    end
-    if instance:IsA("Model") then
-        if instance.PrimaryPart then
-            return instance.PrimaryPart
-        end
-        -- Try to set PrimaryPart to a sensible child
-        local firstPart = instance:FindFirstChildWhichIsA("BasePart", true)
-        if firstPart then
-            instance.PrimaryPart = firstPart
-            return firstPart
-        end
-    end
-    return nil
-end
-
--- Safely get world CFrame for a model or part
-function MMLUtil.getInstanceCFrame(instance)
-    local ref = MMLUtil.getReferencePart(instance)
-    if ref then
-        return ref.CFrame
-    end
-    return CFrame.new(0, 0, 0)
-end
-
--- Safely get world Position for a model or part
-function MMLUtil.getInstancePosition(instance)
-    local ref = MMLUtil.getReferencePart(instance)
-    if ref then
-        return ref.Position
-    end
-    return Vector3.new(0, 0, 0)
 end
 
 return MMLUtil

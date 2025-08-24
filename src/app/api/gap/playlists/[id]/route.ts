@@ -46,6 +46,17 @@ export async function GET(
       return NextResponse.json({ error: auth.error }, { status: 401 })
     }
 
+    // Audit: persist GameDeployment.status as ACTIVE/COMPLETED based on schedule endDate
+    await (prisma as any).$executeRaw`
+      UPDATE "GameDeployment" gd
+      SET status = CASE WHEN ps."endDate" IS NOT NULL AND ps."endDate" >= NOW() THEN 'ACTIVE' ELSE 'COMPLETED' END,
+          "updatedAt" = NOW()
+      FROM "PlaylistSchedule" ps
+      WHERE gd."scheduleId" = ps.id
+        AND ps."playlistId" = ${params.id}
+        AND (gd.status IS DISTINCT FROM CASE WHEN ps."endDate" IS NOT NULL AND ps."endDate" >= NOW() THEN 'ACTIVE' ELSE 'COMPLETED' END)
+    `
+
     const playlist = await (prisma as any).playlist.findFirst({
       where: {
         id: params.id,
@@ -82,10 +93,34 @@ export async function GET(
       return NextResponse.json({ error: 'Playlist not found' }, { status: 404 })
     }
 
-    return NextResponse.json({
-      success: true,
-      playlist
-    })
+    // Compute non-persistent computedStatus (Option A)
+    const now = new Date()
+    const transformed = {
+      ...playlist,
+      schedules: Array.isArray(playlist.schedules) ? playlist.schedules.map((ps: any) => {
+        const start = new Date(ps.startDate)
+        const end = new Date(start)
+        end.setUTCDate(end.getUTCDate() + (ps.duration || 0))
+        const scheduleStatus = String(ps.status || '').toUpperCase()
+        const inWindow = now >= start && now < end
+        const scheduleComputedStatus = scheduleStatus === 'ACTIVE' && inWindow
+          ? 'ACTIVE'
+          : (now < start ? 'SCHEDULED' : (now >= end ? 'COMPLETED' : scheduleStatus || 'SCHEDULED'))
+        return {
+          ...ps,
+          computedStatus: scheduleComputedStatus,
+          deployments: Array.isArray(ps.deployments) ? ps.deployments.map((gd: any) => {
+            const original = String(gd.status || '').toUpperCase()
+            const computed = scheduleComputedStatus === 'ACTIVE' ? 'ACTIVE'
+              : (scheduleComputedStatus === 'SCHEDULED' ? 'PENDING'
+              : (scheduleComputedStatus === 'COMPLETED' ? 'COMPLETED' : original || 'PENDING'))
+            return { ...gd, computedStatus: computed }
+          }) : []
+        }
+      }) : []
+    }
+
+    return NextResponse.json({ success: true, playlist: transformed })
   } catch (error) {
     console.error('Error fetching GAP playlist:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -151,7 +186,8 @@ export async function PUT(
                 gameAdId: schedule.gameAdId,
                 startDate: new Date(schedule.startDate),
                 duration: schedule.duration,
-                status: 'scheduled',
+                endDate: new Date(new Date(schedule.startDate).getTime() + (Number(schedule.duration || 0) * 24 * 60 * 60 * 1000)),
+                status: 'SCHEDULED',
                 updatedAt: new Date()
               }
             })
@@ -168,7 +204,7 @@ export async function PUT(
                     id: randomUUID(),
                     scheduleId: schedule.id,
                     gameId,
-                    status: 'pending',
+                    status: 'PENDING',
                     updatedAt: new Date()
                   }
                 })
@@ -184,7 +220,8 @@ export async function PUT(
                 gameAdId: schedule.gameAdId,
                 startDate: new Date(schedule.startDate),
                 duration: schedule.duration,
-                status: 'scheduled',
+                endDate: new Date(new Date(schedule.startDate).getTime() + (Number(schedule.duration || 0) * 24 * 60 * 60 * 1000)),
+                status: 'SCHEDULED',
                 updatedAt: new Date()
               }
             })
@@ -197,7 +234,7 @@ export async function PUT(
                     id: randomUUID(),
                     scheduleId,
                     gameId,
-                    status: 'pending',
+                    status: 'PENDING',
                     updatedAt: new Date()
                   }
                 })

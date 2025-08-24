@@ -13,6 +13,12 @@ model Asset {
   type          String?
   status        String?
   robloxId      String?
+  robloxType    String?
+  robloxSubtype String?
+  robloxAssetTypeId Int?
+  canonicalType String?
+  capabilities  Json?
+  source        String?
   creator       Json?
   metadata      Json?
   versions      Json?
@@ -215,8 +221,9 @@ model PlaylistSchedule {
   playlistId  String
   gameAdId    String
   startDate   DateTime
+  endDate     DateTime?
   duration    Int
-  status      String           @default("scheduled")
+  status      String           @default("SCHEDULED")
   createdAt   DateTime         @default(now())
   updatedAt   DateTime
   deployments GameDeployment[]
@@ -231,7 +238,7 @@ model GameDeployment {
   id         String           @id @default(uuid())
   scheduleId String
   gameId     String
-  status     String           @default("pending")
+  status     String           @default("PENDING")
   createdAt  DateTime         @default(now())
   updatedAt  DateTime
   game       Game             @relation(fields: [gameId], references: [id])
@@ -239,6 +246,7 @@ model GameDeployment {
 
   @@index([scheduleId])
   @@index([gameId])
+  @@unique([scheduleId, gameId], name: "GameDeployment_schedule_game_unique")
 }
 
 model RemovableAsset {

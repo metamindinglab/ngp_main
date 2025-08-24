@@ -98,9 +98,13 @@ async function generateGamePackage(game: any) {
     const integrationScript = generateGameIntegrationScript(game)
     await writeFile(join(tempDir, 'MMLNetworkIntegration.server.lua'), integrationScript)
     
-    // Generate container creation script for this game's containers
+    // Generate container creation script for this game's containers (optional demo)
     const containerScript = generateGameContainerScript(game.adContainers, game.id)
     await writeFile(join(tempDir, 'CreateContainers.server.lua'), containerScript)
+
+    // Generate ServerStorage config with API Key and base URL
+    const configModule = `-- MML Network Config (ServerStorage)\nreturn {\n\tapiKey = "${game.serverApiKey}",\n\tbaseUrl = "http://23.96.197.67:3000/api/v1",\n\tupdateInterval = 30,\n\tdebugMode = false,\n\tautoStart = true,\n\tenablePositionSync = true,\n}`
+    await writeFile(join(tempDir, 'MMLConfig.server.lua'), configModule)
     
     // Copy all MML Network modules
     const modules = [
@@ -108,7 +112,9 @@ async function generateGamePackage(game: any) {
       'MMLContainerManager.lua',
       'MMLContainerStreamer.lua',
       'MMLAssetStorage.lua',
-      'MMLRequestManager.lua'
+      'MMLRequestManager.lua',
+      'MMLUtil.lua',
+      'MMLImpressionTracker.lua',
     ]
     
     for (const moduleName of modules) {
@@ -121,36 +127,32 @@ async function generateGamePackage(game: any) {
       }
     }
     
-    // Create Rojo project for this specific game
+    // Create Rojo project using temp/{Service} layout for easy drag-and-drop
     const rojoProject = {
       name: `MMLNetwork_${game.name.replace(/[^a-zA-Z0-9]/g, '_')}`,
       tree: {
         "$className": "Folder",
-        "ReplicatedStorage": {
+        "temp": {
           "$className": "Folder",
-          "MMLGameNetwork": {
-            "$path": "MMLGameNetwork.lua"
+          "ReplicatedStorage": {
+            "$className": "Folder",
+            "MMLGameNetwork": { "$path": "MMLGameNetwork.lua" }
           },
-          "MMLContainerManager": {
-            "$path": "MMLContainerManager.lua"
+          "ServerScriptService": {
+            "$className": "Folder",
+            "MMLContainerManager": { "$path": "MMLContainerManager.lua" },
+            "MMLContainerStreamer": { "$path": "MMLContainerStreamer.lua" },
+            "MMLAssetStorage": { "$path": "MMLAssetStorage.lua" },
+            "MMLRequestManager": { "$path": "MMLRequestManager.lua" },
+            "MMLUtil": { "$path": "MMLUtil.lua" },
+            // Optional extras if present
+            "MMLImpressionTracker": { "$path": "MMLImpressionTracker.lua" },
+            "MMLNetworkIntegration": { "$path": "MMLNetworkIntegration.server.lua" },
+            "Optional_CreateContainers": { "$path": "CreateContainers.server.lua" }
           },
-          "MMLContainerStreamer": {
-            "$path": "MMLContainerStreamer.lua"
-          },
-          "MMLAssetStorage": {
-            "$path": "MMLAssetStorage.lua"
-          },
-          "MMLRequestManager": {
-            "$path": "MMLRequestManager.lua"
-          }
-        },
-        "ServerScriptService": {
-          "$className": "Folder",
-          "MMLNetworkIntegration": {
-            "$path": "MMLNetworkIntegration.server.lua"
-          },
-          "CreateContainers": {
-            "$path": "CreateContainers.server.lua"
+          "ServerStorage": {
+            "$className": "Folder",
+            "MMLConfig": { "$path": "MMLConfig.server.lua" }
           }
         }
       }
@@ -186,6 +188,21 @@ print("🚀 MML Network Integration Starting...")
 
 -- Skip game.Loaded:Wait() for Studio compatibility (fixes hanging issue)
 -- game.Loaded:Wait() -- Commented out to prevent Studio hanging
+
+local ServerStorage = game:GetService("ServerStorage")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local okCfg, config = pcall(function()
+    return require(ServerStorage:WaitForChild("MMLConfig"))
+end)
+if not okCfg or type(config) ~= "table" then
+    warn("[MML] Missing ServerStorage.MMLConfig; using defaults")
+    config = { autoStart = true, updateInterval = 30, enablePositionSync = true }
+end
+
+local MMLNetwork = nil
+pcall(function()
+    MMLNetwork = require(ReplicatedStorage:WaitForChild("MMLGameNetwork"))
+end)
 
 local HttpService = game:GetService("HttpService")
 local RunService = game:GetService("RunService")
@@ -304,7 +321,7 @@ if success then
     print("📊 Game: ${game.name}")
     print("🔑 API Key configured")
     
-    if config.autoStart then
+    if config and config.autoStart and MMLNetwork and MMLNetwork.startContainerMonitoring then
         local monitorSuccess = MMLNetwork.startContainerMonitoring()
         if monitorSuccess then
             print("🔄 MML Network: Container monitoring started")
@@ -323,7 +340,9 @@ end
 -- Handle game shutdown gracefully
 game:BindToClose(function()
     print("🛑 MML Network: Game shutting down, cleaning up...")
-    MMLNetwork.cleanup()
+    if MMLNetwork and MMLNetwork.cleanup then
+        MMLNetwork.cleanup()
+    end
 end)
 `
 }

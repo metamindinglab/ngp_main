@@ -126,7 +126,8 @@ export async function PUT(
             SET "gameAdId" = ${schedule.gameAdId},
                 "startDate" = ${new Date(schedule.startDate)},
                 duration = ${schedule.duration},
-                status = 'scheduled',
+                "endDate" = ${new Date(new Date(schedule.startDate).getTime() + (Number(schedule.duration || 0) * 24 * 60 * 60 * 1000))},
+                status = 'SCHEDULED',
                 "updatedAt" = NOW()
             WHERE id = ${schedule.id}
           `
@@ -144,7 +145,7 @@ export async function PUT(
               INSERT INTO "GameDeployment" (
                 id, "scheduleId", "gameId", status, "createdAt", "updatedAt"
               ) VALUES (
-                ${deploymentId}, ${schedule.id}, ${gameId}, 'pending', NOW(), NOW()
+                ${deploymentId}, ${schedule.id}, ${gameId}, 'PENDING', NOW(), NOW()
               )
             `
           }
@@ -156,7 +157,7 @@ export async function PUT(
               id, "playlistId", "gameAdId", "startDate", duration, status, "createdAt", "updatedAt"
             ) VALUES (
               ${scheduleId}, ${params.id}, ${schedule.gameAdId}, ${new Date(schedule.startDate)},
-              ${schedule.duration}, 'scheduled', NOW(), NOW()
+              ${schedule.duration}, 'SCHEDULED', NOW(), NOW()
             )
           `
 
@@ -167,7 +168,7 @@ export async function PUT(
               INSERT INTO "GameDeployment" (
                 id, "scheduleId", "gameId", status, "createdAt", "updatedAt"
               ) VALUES (
-                ${deploymentId}, ${scheduleId}, ${gameId}, 'pending', NOW(), NOW()
+                ${deploymentId}, ${scheduleId}, ${gameId}, 'PENDING', NOW(), NOW()
               )
             `
           }

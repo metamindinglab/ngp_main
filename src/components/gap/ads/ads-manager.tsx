@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -111,7 +111,12 @@ export function GAPAdsManager() {
 
       const data = await response.json()
       if (data.success) {
-        setAds(data.ads)
+        const sorted = [...data.ads].sort((a: any, b: any) => {
+          const da = new Date(a.createdAt).getTime()
+          const db = new Date(b.createdAt).getTime()
+          return db - da
+        })
+        setAds(sorted)
       } else {
         throw new Error(data.error || 'Failed to fetch ads')
       }
@@ -676,6 +681,11 @@ export function GAPAdsManager() {
   const totalImpressions = ads.reduce((sum, ad) => sum + (ad.impressions || 0), 0)
   const avgCTR = ads.length > 0 ? ads.reduce((sum, ad) => sum + (ad.ctr || 0), 0) / ads.length : 0
 
+  const sortedAds = useMemo(() => {
+    const arr = Array.isArray(ads) ? [...ads] : []
+    return arr.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+  }, [ads])
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -1020,7 +1030,7 @@ export function GAPAdsManager() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {ads.map((ad) => (
+            {sortedAds.map((ad) => (
               <div key={ad.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors">
                 <div className="flex items-center space-x-4">
                   <div className="flex items-center space-x-2">

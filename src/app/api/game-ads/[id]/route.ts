@@ -3,6 +3,7 @@ import { getGameAdById, updateGameAd, deleteGameAd } from '@/lib/db/gameAds'
 import { Prisma } from '@prisma/client'
 import { z } from 'zod'
 import type { GameAd, Asset as GameAdAsset, AssetType, GameAdTemplateType } from '@/types/gameAd'
+import { AcceptedGameAdTypes, normalizeGameAdType } from '@/lib/ads/type-normalization'
 import type { GameAdPerformanceMetrics } from '@/types/gameAdPerformance'
 import { prisma } from '@/lib/prisma'
 
@@ -14,7 +15,8 @@ const validAssetTypes = [
 // Validation schema for updating a game ad
 const GameAdUpdateSchema = z.object({
   name: z.string().min(1, 'Name is required'),
-  type: z.enum(['multimedia_display', 'dancing_npc', 'minigame_ad'] as const),
+  type: z.enum(AcceptedGameAdTypes as unknown as [string, ...string[]]),
+  description: z.string().optional(),
   gameIds: z.array(z.string()).optional(),
   assets: z.array(z.object({
     assetType: z.enum(validAssetTypes),
@@ -76,6 +78,7 @@ export async function GET(
     return NextResponse.json({
       id: ad.id,
       name: ad.name,
+      description: (ad as any).description ?? null,
       type: ad.type,
       assets: Array.isArray(assets) && assets.every(isGameAdAsset) ? assets : [],
       createdAt: ad.createdAt.toISOString(),
@@ -126,12 +129,33 @@ export async function PUT(
       )
     }
 
+    // Optional: validate assets compatibility if provided
+    if (Array.isArray(gameAd.assets) && gameAd.assets.length > 0) {
+      const canonicalAdType = normalizeGameAdType(gameAd.type)
+      const assetIds = gameAd.assets.map((a: any) => a.assetId)
+      const dbAssets = await prisma.asset.findMany({ where: { id: { in: assetIds } }, select: { id: true, canonicalType: true } })
+      const hasCompatible = dbAssets.some(a => {
+        const c = String(a.canonicalType || '')
+        if (canonicalAdType === 'DISPLAY') return c.startsWith('DISPLAY.')
+        if (canonicalAdType === 'NPC') return c === 'NPC.character_model' || c === 'NPC.animation'
+        if (canonicalAdType === 'MINIGAME') return c === 'MINIGAME.minigame_model'
+        return false
+      })
+      if (!hasCompatible) {
+        return NextResponse.json(
+          { error: 'Incompatible assets for ad type', details: { type: canonicalAdType, assets: assetIds } },
+          { status: 400 }
+        )
+      }
+    }
+
     // Update game ad using Prisma client
     const updated = await prisma.gameAd.update({
       where: { id: params.id },
       data: {
         name: gameAd.name,
-        type: gameAd.type,
+        type: normalizeGameAdType(gameAd.type),
+        description: gameAd.description ?? undefined,
         assets: gameAd.assets,
         updatedAt: new Date(),
         games: gameAd.gameIds ? {
@@ -154,6 +178,7 @@ export async function PUT(
     return NextResponse.json({
       id: updated.id,
       name: updated.name,
+      description: (updated as any).description ?? null,
       type: updated.type,
       assets: Array.isArray(updated.assets) && updated.assets.every(isGameAdAsset) ? updated.assets : [],
       createdAt: updated.createdAt.toISOString(),

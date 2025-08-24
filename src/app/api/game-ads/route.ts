@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
 import { z } from 'zod'
 import type { GameAd, Asset as GameAdAsset, AssetType, GameAdTemplateType } from '@/types/gameAd'
+import { AcceptedGameAdTypes, normalizeGameAdType } from '@/lib/ads/type-normalization'
 import type { GameAdPerformanceMetrics } from '@/types/gameAdPerformance'
 import { addCorsHeaders, handleAuth, applyRateLimit, addRateLimitHeaders, handleOptions } from '../middleware'
 
@@ -17,26 +18,18 @@ const validAssetTypes = [
 // Validation schema for creating a game ad
 const GameAdCreateSchema = z.object({
   name: z.string().min(1, 'Name is required'),
-  type: z.enum(['multimedia_display', 'dancing_npc', 'minigame_ad'] as const),
+  type: z.enum(AcceptedGameAdTypes as unknown as [string, ...string[]]),
   gameIds: z.array(z.string()).optional(),
   status: z.string().optional(),
   schedule: z.any().optional(),
   targeting: z.any().optional(),
   metrics: z.any().optional(),
+  description: z.string().optional(),
   assets: z.array(z.object({
     assetType: z.enum(validAssetTypes),
     assetId: z.string().min(1, 'Asset ID is required'),
     robloxAssetId: z.string().min(1, 'Roblox Asset ID is required')
-  })).refine((assets) => {
-    // For dancing_npc template, only kol_character is required
-    if (assets.some(asset => asset.assetType === 'kol_character')) {
-      return true;
-    }
-    // For other templates, require at least one asset
-    return assets.length > 0;
-  }, {
-    message: 'At least one asset is required. For Dancing NPC Ad, KOL character is required.'
-  }).optional()
+  })).optional()
 })
 
 // Type guard for GameAdAsset
@@ -131,13 +124,34 @@ export async function POST(request: Request) {
 
     const gameAd = validationResult.data
 
+    // Soft validation: ensure asset compatibility using canonical ad type and existing Asset rows if present
+    const canonicalAdType = normalizeGameAdType(gameAd.type)
+    if (Array.isArray(gameAd.assets) && gameAd.assets.length > 0) {
+      const assetIds = gameAd.assets.map(a => a.assetId)
+      const dbAssets = await prisma.asset.findMany({ where: { id: { in: assetIds } }, select: { id: true, canonicalType: true, type: true } })
+      const hasCompatible = dbAssets.some(a => {
+        const c = String(a.canonicalType || '')
+        if (canonicalAdType === 'DISPLAY') return c.startsWith('DISPLAY.')
+        if (canonicalAdType === 'NPC') return c === 'NPC.character_model' || c === 'NPC.animation'
+        if (canonicalAdType === 'MINIGAME') return c === 'MINIGAME.minigame_model'
+        return false
+      })
+      if (!hasCompatible) {
+        return NextResponse.json(
+          { error: 'Incompatible assets for ad type', details: { type: canonicalAdType, assets: assetIds } },
+          { status: 400 }
+        )
+      }
+    }
+
     // Create game ad using Prisma client
     const created = await prisma.gameAd.create({
       data: {
         id: crypto.randomUUID(),
         gameId: gameAd.gameIds && gameAd.gameIds.length > 0 ? gameAd.gameIds[0] : 'game_001', // Use first game ID or default
         name: gameAd.name,
-        type: gameAd.type,
+        type: normalizeGameAdType(gameAd.type),
+        description: gameAd.description ?? null,
         assets: gameAd.assets,
         updatedAt: new Date(),
         games: gameAd.gameIds ? {
@@ -161,6 +175,7 @@ export async function POST(request: Request) {
       id: created.id,
       name: created.name,
       type: created.type,
+      description: (created as any).description ?? null,
       assets: Array.isArray(created.assets) && created.assets.every(isGameAdAsset) ? created.assets : [],
       createdAt: created.createdAt.toISOString(),
       updatedAt: created.updatedAt.toISOString(),

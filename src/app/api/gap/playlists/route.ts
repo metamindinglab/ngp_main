@@ -43,6 +43,16 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: auth.error }, { status: 401 })
     }
 
+    // Audit: persist GameDeployment.status as ACTIVE/COMPLETED based on schedule endDate
+    await (prisma as any).$executeRaw`
+      UPDATE "GameDeployment" gd
+      SET status = CASE WHEN ps."endDate" IS NOT NULL AND ps."endDate" >= NOW() THEN 'ACTIVE' ELSE 'COMPLETED' END,
+          "updatedAt" = NOW()
+      FROM "PlaylistSchedule" ps
+      WHERE gd."scheduleId" = ps.id
+        AND (gd.status IS DISTINCT FROM CASE WHEN ps."endDate" IS NOT NULL AND ps."endDate" >= NOW() THEN 'ACTIVE' ELSE 'COMPLETED' END)
+    `
+
     const { searchParams } = new URL(request.url)
     const search = searchParams.get('search') || ''
 
@@ -89,10 +99,34 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: 'desc' }
     })
 
-    return NextResponse.json({
-      success: true,
-      playlists
-    })
+    // Compute non-persistent computedStatus for deployments based on schedule status and time window (Option A)
+    const now = new Date()
+    const transformed = playlists.map((pl: any) => ({
+      ...pl,
+      schedules: Array.isArray(pl.schedules) ? pl.schedules.map((ps: any) => {
+        const start = new Date(ps.startDate)
+        const end = new Date(start)
+        end.setUTCDate(end.getUTCDate() + (ps.duration || 0))
+        const scheduleStatus = String(ps.status || '').toUpperCase()
+        const inWindow = now >= start && now < end
+        const scheduleComputedStatus = scheduleStatus === 'ACTIVE' && inWindow
+          ? 'ACTIVE'
+          : (now < start ? 'SCHEDULED' : (now >= end ? 'COMPLETED' : scheduleStatus || 'SCHEDULED'))
+        return {
+          ...ps,
+          computedStatus: scheduleComputedStatus,
+          deployments: Array.isArray(ps.deployments) ? ps.deployments.map((gd: any) => {
+            const original = String(gd.status || '').toUpperCase()
+            const computed = scheduleComputedStatus === 'ACTIVE' ? 'ACTIVE'
+              : (scheduleComputedStatus === 'SCHEDULED' ? 'PENDING'
+              : (scheduleComputedStatus === 'COMPLETED' ? 'COMPLETED' : original || 'PENDING'))
+            return { ...gd, computedStatus: computed }
+          }) : []
+        }
+      }) : []
+    }))
+
+    return NextResponse.json({ success: true, playlists: transformed })
   } catch (error) {
     console.error('Error fetching GAP playlists:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -148,24 +182,23 @@ export async function POST(request: NextRequest) {
               gameAdId: schedule.gameAdId,
               startDate: new Date(schedule.startDate),
               duration: schedule.duration,
-              status: 'scheduled',
+              endDate: new Date(new Date(schedule.startDate).getTime() + (Number(schedule.duration || 0) * 24 * 60 * 60 * 1000)),
+              status: 'SCHEDULED',
               updatedAt: new Date()
             }
           })
 
-          // Create deployments for selected games
+          // Create deployments for selected games (dedupe and skip duplicates)
           if (schedule.selectedGames && schedule.selectedGames.length > 0) {
-            for (const gameId of schedule.selectedGames) {
-              await (tx as any).gameDeployment.create({
-                data: {
-                  id: randomUUID(),
-                  scheduleId,
-                  gameId,
-                  status: 'pending',
-                  updatedAt: new Date()
-                }
-              })
-            }
+            const uniqueGameIds = Array.from(new Set(schedule.selectedGames))
+            const data = uniqueGameIds.map((gameId: string) => ({
+              id: randomUUID(),
+              scheduleId,
+              gameId,
+              status: 'PENDING',
+              updatedAt: new Date()
+            }))
+            await (tx as any).gameDeployment.createMany({ data, skipDuplicates: true })
           }
         }
       }

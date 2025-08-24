@@ -116,21 +116,21 @@ export async function POST(request: Request) {
           const scheduleId = randomUUID()
           await tx.$executeRaw`
             INSERT INTO "PlaylistSchedule" (
-              id, "playlistId", "gameAdId", "startDate", duration, status, "createdAt", "updatedAt"
+              id, "playlistId", "gameAdId", "startDate", duration, "endDate", status, "createdAt", "updatedAt"
             ) VALUES (
               ${scheduleId}, ${playlistId}, ${schedule.gameAdId}, ${new Date(schedule.startDate)}, 
-              ${schedule.duration}, 'scheduled', NOW(), NOW()
+              ${schedule.duration}, ${new Date(new Date(schedule.startDate).getTime() + (Number(schedule.duration || 0) * 24 * 60 * 60 * 1000))}, 'SCHEDULED', NOW(), NOW()
             )
           `
 
-          // Create deployments
+          // Create deployments for new schedule
           for (const gameId of schedule.selectedGames) {
             const deploymentId = randomUUID()
             await tx.$executeRaw`
               INSERT INTO "GameDeployment" (
                 id, "scheduleId", "gameId", status, "createdAt", "updatedAt"
               ) VALUES (
-                ${deploymentId}, ${scheduleId}, ${gameId}, 'pending', NOW(), NOW()
+                ${deploymentId}, ${scheduleId}, ${gameId}, 'PENDING', NOW(), NOW()
               )
             `
           }

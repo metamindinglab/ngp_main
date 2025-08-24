@@ -34,17 +34,15 @@ export async function GET(request: NextRequest, { params }: { params: { gameId: 
         games: { some: { id: gameId } },
         playlistSchedules: {
           some: {
-            OR: [
-              { status: 'ACTIVE' },
-              { status: 'active' }
-            ],
+            OR: [ { status: 'ACTIVE' }, { status: 'active' } ],
             startDate: { lte: now },
-            // End window check done in JS below as duration is an int
+            endDate: { gt: now },
+            deployments: { some: { gameId } }
           }
         }
       },
       include: {
-        playlistSchedules: true
+        playlistSchedules: { include: { deployments: true } }
       }
     })
 
@@ -52,12 +50,10 @@ export async function GET(request: NextRequest, { params }: { params: { gameId: 
     const filtered = [] as typeof availableAds
     for (const ad of availableAds) {
       const activeSchedules = ad.playlistSchedules.filter(ps => {
-        // Interpret duration as DAYS
-        const end = new Date(ps.startDate)
-        end.setUTCDate(end.getUTCDate() + (ps.duration || 0))
-        const inWindow = now >= new Date(ps.startDate) && now < end
+        const inWindow = now >= new Date(ps.startDate) && (!ps.endDate || now < new Date(ps.endDate))
         const statusOk = String(ps.status).toLowerCase() === 'active'
-        return statusOk && inWindow
+        const deployedToGame = Array.isArray(ps.deployments) && ps.deployments.some(d => d.gameId === gameId)
+        return statusOk && inWindow && deployedToGame
       })
       if (activeSchedules.length > 0) filtered.push(ad)
     }

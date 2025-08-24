@@ -141,29 +141,56 @@ async function generateContainerPackage(container: any, isFirstDownload: boolean
   try {
     // Create temp directory
     await mkdir(tempDir, { recursive: true })
-    
-    // Generate container-specific script with duplicate prevention
-    const containerScript = generateSingleContainerScript(container, isFirstDownload)
-    await writeFile(join(tempDir, 'ContainerSetup.server.lua'), containerScript)
-    
-    // Generate container model
-    const containerModel = generateContainerModel(container)
-    await writeFile(join(tempDir, 'ContainerModel.lua'), containerModel)
-    
-    // Create Rojo project for this specific container
-    const rojoProject = {
+
+    // Build a Rojo project that outputs a temp/Workspace model ready to drag into game
+    const isDisplay = container.type === 'DISPLAY'
+    const safeModelName = `MMLContainer_${container.type}`
+    const rojoProject: any = {
       name: `MMLContainer_${container.name.replace(/[^a-zA-Z0-9]/g, '_')}`,
       tree: {
         "$className": "Folder",
-        "ContainerSetup": {
-          "$path": "ContainerSetup.server.lua"
-        },
-        "ContainerModel": {
-          "$path": "ContainerModel.lua"
+        "temp": {
+          "$className": "Folder",
+          "Workspace": {
+            "$className": "Folder",
+            [safeModelName]: {
+              "$className": "Model",
+              "DisplayBoard": {
+                "$className": "Part",
+                "$properties": {
+                  "Name": "${container.id}",
+                  "Anchored": true,
+                  "Size": {"X": ${isDisplay ? 10 : container.type === 'NPC' ? 2 : 8}, "Y": ${isDisplay ? 5 : container.type === 'NPC' ? 6 : 8}, "Z": ${isDisplay ? 0.5 : container.type === 'NPC' ? 2 : 8}},
+                  "Position": {"X": ${container.position.x}, "Y": ${container.position.y}, "Z": ${container.position.z}}
+                },
+                "MMLMetadata": {
+                  "$className": "Folder",
+                  "ContainerId": { "$className": "StringValue", "$properties": { "Value": "${container.id}" } },
+                  "GameId": { "$className": "StringValue", "$properties": { "Value": "${container.game.id}" } },
+                  "Type": { "$className": "StringValue", "$properties": { "Value": "${container.type}" } },
+                  "EnablePositionSync": { "$className": "BoolValue", "$properties": { "Value": true } }
+                },
+                ...(isDisplay ? {
+                  "MMLDisplaySurface": {
+                    "$className": "SurfaceGui",
+                    "$properties": { "Face": "Front" },
+                    "Frame": {
+                      "$className": "Frame",
+                      "$properties": { "Size": {"Scale": 1, "Offset": 0} },
+                      "TextLabel": {
+                        "$className": "TextLabel",
+                        "$properties": { "Text": "MML Ad Loading...", "BackgroundTransparency": 1 }
+                      }
+                    }
+                  }
+                } : {})
+              }
+            }
+          }
         }
       }
     }
-    
+
     const projectPath = join(tempDir, 'default.project.json')
     await writeFile(projectPath, JSON.stringify(rojoProject, null, 2))
     

@@ -127,46 +127,72 @@ async function generateCustomPackage(gameOwnerId: string, games: any[], containe
     
     // Generate custom integration script with API keys
     const integrationScript = generateCustomIntegrationScript(games, containers)
-    await writeFile(join(tempDir, 'MMLNetworkIntegration.lua'), integrationScript)
+    await writeFile(join(tempDir, 'MMLNetworkIntegration.server.lua'), integrationScript)
     
-    // Generate container creation script
+    // Generate container creation script (optional demo)
     const containerScript = generateContainerCreationScript(containers)
-    await writeFile(join(tempDir, 'CreateContainers.lua'), containerScript)
+    await writeFile(join(tempDir, 'CreateContainers.server.lua'), containerScript)
     
-    // Copy the base module
-    const baseModulePath = join(process.cwd(), 'src', 'roblox', 'MMLGameNetwork.lua')
-    const baseModule = await readFile(baseModulePath, 'utf-8')
-    await writeFile(join(tempDir, 'MMLGameNetwork.lua'), baseModule)
+    // Copy modules (Core)
+    const moduleNames = [
+      'MMLGameNetwork.lua',
+      'MMLContainerManager.lua',
+      'MMLContainerStreamer.lua',
+      'MMLAssetStorage.lua',
+      'MMLRequestManager.lua',
+      'MMLUtil.lua',
+      'MMLImpressionTracker.lua',
+    ]
+    for (const moduleName of moduleNames) {
+      try {
+        const moduleContent = await readFile(join(process.cwd(), 'src', 'roblox', moduleName), 'utf-8')
+        await writeFile(join(tempDir, moduleName), moduleContent)
+      } catch (e) {
+        console.warn(`[custom] Missing ${moduleName}, continuing`)
+      }
+    }
     
-    // Create custom Rojo project
+    // Create ServerStorage config (multi-game uses first valid key or placeholder)
+    const firstGameWithKey = games.find(g => !!g.serverApiKey)
+    const configModule = `-- MML Network Config (ServerStorage)\nreturn {\n\tapiKey = "${firstGameWithKey?.serverApiKey || 'GENERATE_API_KEY_FIRST'}",\n\tbaseUrl = "http://23.96.197.67:3000/api/v1",\n\tupdateInterval = 30,\n\tdebugMode = false,\n\tautoStart = true,\n\tenablePositionSync = true,\n}`
+    await writeFile(join(tempDir, 'MMLConfig.server.lua'), configModule)
+    
+    // Create custom Rojo project using temp/{Service} layout
     const rojoProject = {
       name: `MMLNetwork_${gameOwnerId}_Custom`,
       tree: {
         "$className": "Folder",
-        "ReplicatedStorage": {
+        "temp": {
           "$className": "Folder",
-          "MMLGameNetwork": {
-            "$path": "MMLGameNetwork.lua"
-          }
-        },
-        "ServerScriptService": {
-          "$className": "Folder",
-          "MMLNetworkIntegration": {
-            "$path": "MMLNetworkIntegration.lua"
+          "ReplicatedStorage": {
+            "$className": "Folder",
+            "MMLGameNetwork": { "$path": "MMLGameNetwork.lua" }
           },
-          "CreateContainers": {
-            "$path": "CreateContainers.lua"
+          "ServerScriptService": {
+            "$className": "Folder",
+            "MMLContainerManager": { "$path": "MMLContainerManager.lua" },
+            "MMLContainerStreamer": { "$path": "MMLContainerStreamer.lua" },
+            "MMLAssetStorage": { "$path": "MMLAssetStorage.lua" },
+            "MMLRequestManager": { "$path": "MMLRequestManager.lua" },
+            "MMLUtil": { "$path": "MMLUtil.lua" },
+            "MMLImpressionTracker": { "$path": "MMLImpressionTracker.lua" },
+            "MMLNetworkIntegration": { "$path": "MMLNetworkIntegration.server.lua" },
+            "Optional_CreateContainers": { "$path": "CreateContainers.server.lua" }
+          },
+          "ServerStorage": {
+            "$className": "Folder",
+            "MMLConfig": { "$path": "MMLConfig.server.lua" }
           }
         }
       }
     }
     
-    const projectPath = join(tempDir, 'project.json')
+    const projectPath = join(tempDir, 'default.project.json')
     await writeFile(projectPath, JSON.stringify(rojoProject, null, 2))
     
     // Build with Rojo
     const outputPath = join(tempDir, 'custom-package.rbxm')
-    await execAsync(`cd "${tempDir}" && rojo build project.json --output custom-package.rbxm`)
+    await execAsync(`cd "${tempDir}" && rojo build --output custom-package.rbxm`)
     
     // Read the generated file
     const packageData = await readFile(outputPath)
@@ -192,6 +218,21 @@ print("🚀 MML Network Custom Integration Starting...")
 
 -- Skip game.Loaded:Wait() for Studio compatibility (fixes hanging issue)
 -- game.Loaded:Wait() -- Commented out to prevent Studio hanging
+
+local ServerStorage = game:GetService("ServerStorage")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local okCfg, config = pcall(function()
+    return require(ServerStorage:WaitForChild("MMLConfig"))
+end)
+if not okCfg or type(config) ~= "table" then
+    warn("[MML] Missing ServerStorage.MMLConfig; using defaults")
+    config = { autoStart = true, updateInterval = 30, enablePositionSync = true }
+end
+
+local MMLNetwork = nil
+pcall(function()
+    MMLNetwork = require(ReplicatedStorage:WaitForChild("MMLGameNetwork"))
+end)
 
 local HttpService = game:GetService("HttpService")
 local RunService = game:GetService("RunService")
@@ -333,7 +374,7 @@ if success then
     end
     print("📊 Found containers:", containerCount)
     
-    if config.autoStart then
+    if config and config.autoStart and MMLNetwork and MMLNetwork.startContainerMonitoring then
         local monitorSuccess = MMLNetwork.startContainerMonitoring()
         if monitorSuccess then
             print("🔄 MML Network: Container monitoring started")
@@ -352,7 +393,9 @@ end
 -- Handle game shutdown gracefully
 game:BindToClose(function()
     print("🛑 MML Network: Game shutting down, cleaning up...")
-    MMLNetwork.cleanup()
+    if MMLNetwork and MMLNetwork.cleanup then
+        MMLNetwork.cleanup()
+    end
 end)`
 }
 

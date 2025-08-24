@@ -297,6 +297,17 @@ export function AssetsClient({ initialAssets = [] }: AssetsClientProps) {
     return 'bg-gray-100 text-gray-800';
   };
 
+  const normalizeAssetTypeValue = (a: any): string => {
+    const v = (a?.assetType || a?.type || a?.canonicalType || '').toString()
+    if (!v) return ''
+    // If canonicalType like DISPLAY.image, use the suffix
+    if (v.includes('.')) return v.split('.').pop()!.toLowerCase()
+    // Also consider Roblox subtype when helpful
+    const sub = (a?.robloxSubtype || '').toString().toLowerCase()
+    if (sub) return sub
+    return v.toLowerCase()
+  }
+
   const filteredAssets = (assets || [])
     .filter(asset => {
       if (!asset) return false;
@@ -307,7 +318,21 @@ export function AssetsClient({ initialAssets = [] }: AssetsClientProps) {
         (asset.description || '').toLowerCase().includes(searchLower) ||
         (Array.isArray(asset.tags) && asset.tags.some(tag => (tag || '').toLowerCase().includes(searchLower)));
       
-      const matchesType = selectedType === "all" || asset.assetType === selectedType;
+      const selectedLower = (selectedType || 'all').toLowerCase()
+      const assetTypeLower = normalizeAssetTypeValue(asset)
+
+      // Intelligent grouping: map selected type to acceptable set
+      const groupMap: Record<string, string[]> = {
+        image: ['image', 'decal'],
+        decal: ['image', 'decal'],
+        video: ['video', 'videoframe'],
+        audio: ['audio', 'sound'],
+        clothing: ['clothing', 'clothing_top', 'clothing_bottom', 'shirt', 'pants', 'hat'],
+        clothing_top: ['clothing_top', 'shirt'],
+        clothing_bottom: ['clothing_bottom', 'pants'],
+      }
+      const acceptable = groupMap[selectedLower] || [selectedLower]
+      const matchesType = selectedLower === 'all' || acceptable.includes(assetTypeLower)
       return matchesSearch && matchesType;
     })
     .sort((a, b) => {
@@ -852,7 +877,11 @@ export function AssetsClient({ initialAssets = [] }: AssetsClientProps) {
                   <div>
                     <Label>Type</Label>
                     <div className="text-sm text-muted-foreground">
-                      {asset.assetType ? asset.assetType.charAt(0).toUpperCase() + asset.assetType.slice(1).replace(/_/g, ' ') : 'Unknown'}
+                      {(() => {
+                        const raw = asset.assetType || asset.type || (asset.canonicalType ? asset.canonicalType.split('.').pop() : '') || 'Unknown'
+                        const s = raw.toString()
+                        return s.charAt(0).toUpperCase() + s.slice(1).replace(/_/g, ' ')
+                      })()}
                     </div>
                   </div>
                   <div>
