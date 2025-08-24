@@ -195,7 +195,7 @@ export function GameOwnerDashboard() {
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `MMLContainer_${containerName.replace(/[^a-zA-Z0-9]/g, '_')}.rbxm`
+      a.download = `MMLContainer_${containerName.replace(/[^a-zA-Z0-9]/g, '_')}.rbxmx`
       document.body.appendChild(a)
       a.click()
       window.URL.revokeObjectURL(url)

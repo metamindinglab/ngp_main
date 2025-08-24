@@ -530,13 +530,13 @@ print("📦 Container ${container.name} created at position:", ${container.name.
                         <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
                           <h4 className="font-semibold text-blue-900 mb-2">🎯 Recommended: Individual Download</h4>
                           <p className="text-sm text-blue-700 mb-3">
-                            Download this container as a plug-and-play .rbxm file
+                            Download this container as a plug-and-play .rbxmx file
                           </p>
                           <div className="space-y-2">
                             <Button asChild className="w-full" size="sm">
                               <Link href={`/api/game-owner/download/container/${container.id}`} download>
                                 <Download className="h-4 w-4 mr-2" />
-                                Download MMLContainer_{container.name.replace(/[^a-zA-Z0-9]/g, '_')}.rbxm
+                                Download MMLContainer_{container.name.replace(/[^a-zA-Z0-9]/g, '_')}.rbxmx
                               </Link>
                             </Button>
                             <div className="text-xs text-blue-600 space-y-1">
