@@ -195,37 +195,44 @@ end
 
 -- Create an asset instance in storage
 function MMLAssetStorage.createAssetInstance(assetData, storageBasePosition, parentFolder)
-    if not assetData or not assetData.type then
+    if not assetData then
         warn("❌ Invalid asset data")
         return nil
     end
-    
-    local assetType = assetData.type
-    local robloxAssetId = assetData.robloxAssetId
-    
+
+    -- Normalize field names coming from API
+    local assetType = assetData.type or assetData.assetType
+    local robloxAssetId = assetData.robloxAssetId or assetData.robloxId
+    local assetId = assetData.id or assetData.assetId
+
+    if not assetType then
+        warn("❌ Invalid asset data (missing type)")
+        return nil
+    end
+
     if assetType == "image" then
-        return createImageAsset(assetData, storageBasePosition, parentFolder)
+        return createImageAsset({ id = assetId, type = assetType, robloxAssetId = robloxAssetId }, storageBasePosition, parentFolder)
         
     elseif assetType == "multiMediaSignage" then
-        return create3DModelAsset(assetData, storageBasePosition, parentFolder)
+        return create3DModelAsset({ id = assetId, type = assetType, robloxAssetId = robloxAssetId }, storageBasePosition, parentFolder)
         
     elseif assetType == "video" then
-        return createVideoAsset(assetData, storageBasePosition, parentFolder)
+        return createVideoAsset({ id = assetId, type = assetType, robloxAssetId = robloxAssetId }, storageBasePosition, parentFolder)
         
     elseif assetType == "npc_character" then
-        return createNPCAsset(assetData, storageBasePosition, parentFolder)
+        return createNPCAsset({ id = assetId, type = assetType, robloxAssetId = robloxAssetId }, storageBasePosition, parentFolder)
         
     elseif assetType == "clothing_top" or assetType == "clothing_bottom" or assetType == "shoes" then
-        return createClothingAsset(assetData, storageBasePosition, parentFolder)
+        return createClothingAsset({ id = assetId, type = assetType, robloxAssetId = robloxAssetId }, storageBasePosition, parentFolder)
         
     elseif assetType == "animation" then
-        return createAnimationAsset(assetData, storageBasePosition, parentFolder)
+        return createAnimationAsset({ id = assetId, type = assetType, robloxAssetId = robloxAssetId }, storageBasePosition, parentFolder)
         
     elseif assetType == "audio" then
-        return createAudioAsset(assetData, storageBasePosition, parentFolder)
+        return createAudioAsset({ id = assetId, type = assetType, robloxAssetId = robloxAssetId }, storageBasePosition, parentFolder)
         
     elseif assetType == "minigame" then
-        return createMinigameAsset(assetData, storageBasePosition, parentFolder)
+        return createMinigameAsset({ id = assetId, type = assetType, robloxAssetId = robloxAssetId }, storageBasePosition, parentFolder)
         
     else
         warn("❓ Unknown asset type:", assetType)
