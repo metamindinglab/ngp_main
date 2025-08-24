@@ -7,6 +7,7 @@ local MMLRequestManager = {}
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
+local RunService = game:GetService("RunService")
 
 -- Request batching system
 local requestBatches = {
@@ -33,6 +34,11 @@ local requestBatches = {
         batchSize = 1          -- flush each event chunk
     }
 }
+
+-- Forward declarations for helpers
+local getPlayerContext
+local getCurrentAssignments
+local getActiveContainerIds
 
 -- Resolve the MML game id used by server APIs
 local function getMmlGameId()
@@ -78,8 +84,11 @@ function MMLRequestManager.fetchGameAds()
     
     spawn(function()
         local success, result = pcall(function()
+            local gid = getMmlGameId()
+            local url = _G.MMLNetwork._config.baseUrl .. "/games/" .. gid .. "/ads/available"
+            print("[MML][HTTP] GET available ads:", url)
             return HttpService:RequestAsync({
-                Url = _G.MMLNetwork._config.baseUrl .. "/games/" .. getMmlGameId() .. "/ads/available",
+                Url = url,
                 Method = "GET",
                 Headers = {
                     ["X-API-Key"] = _G.MMLNetwork._config.apiKey
@@ -88,7 +97,11 @@ function MMLRequestManager.fetchGameAds()
         end)
         
         if success and result.Success then
-            local data = HttpService:JSONDecode(result.Body)
+            local data = {}
+            if result.Body and #result.Body > 0 then
+                local ok, parsed = pcall(function() return HttpService:JSONDecode(result.Body) end)
+                if ok then data = parsed else data = {} end
+            end
             batch.cache = data.ads or {}
             batch.lastFetch = currentTime
             
@@ -135,12 +148,14 @@ function MMLRequestManager.fetchContainerAssignments()
         return false
     end
     local containers = MMLContainerManager.getAllContainerSummaries()
-    local playerContext = getPlayerContext()
+    local playerContext = getPlayerContext and getPlayerContext() or {}
     
     spawn(function()
         local success, result = pcall(function()
+            local url = _G.MMLNetwork._config.baseUrl .. "/feeding/container-ads"
+            print("[MML][HTTP] POST container-ads:", url, "gameId:", getMmlGameId())
             return HttpService:RequestAsync({
-                Url = _G.MMLNetwork._config.baseUrl .. "/feeding/container-ads",
+                Url = url,
                 Method = "POST",
                 Headers = {
                     ["X-API-Key"] = _G.MMLNetwork._config.apiKey,
@@ -150,13 +165,17 @@ function MMLRequestManager.fetchContainerAssignments()
                     gameId = getMmlGameId(),
                     containers = containers,
                     playerContext = playerContext,
-                    currentAssignments = getCurrentAssignments()
+                    currentAssignments = getCurrentAssignments and getCurrentAssignments() or {}
                 })
             })
         end)
         
         if success and result.Success then
-            local data = HttpService:JSONDecode(result.Body)
+            local data = {}
+            if result.Body and #result.Body > 0 then
+                local ok, parsed = pcall(function() return HttpService:JSONDecode(result.Body) end)
+                if ok then data = parsed else data = {} end
+            end
             batch.cache = data
             batch.lastFetch = currentTime
             
