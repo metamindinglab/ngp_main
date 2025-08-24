@@ -35,10 +35,24 @@ local requestBatches = {
 
 -- Resolve the MML game id used by server APIs
 local function getMmlGameId()
-    if _G.MMLNetwork and _G.MMLNetwork._config and _G.MMLNetwork._config.gameId then
-        return _G.MMLNetwork._config.gameId
+    if _G.MMLNetwork and _G.MMLNetwork._config then
+        -- Prefer explicit string MML game id if provided
+        local gid = _G.MMLNetwork._config.gameId
+        if type(gid) == "string" and #gid > 0 then
+            return gid
+        end
+        -- Fallback to ServerStorage MMLConfig if present
+        local ss = game:GetService("ServerStorage")
+        local cfg = ss:FindFirstChild("MMLConfig")
+        if cfg and cfg:IsA("ModuleScript") then
+            local ok, data = pcall(function() return require(cfg) end)
+            if ok and type(data) == "table" and type(data.gameId) == "string" and #data.gameId > 0 then
+                _G.MMLNetwork._config.gameId = data.gameId
+                return data.gameId
+            end
+        end
     end
-    -- Fallback: Roblox numeric GameId is not the same as MML's string id; prefer configured id
+    -- Last resort: Roblox numeric GameId (may not match MML id)
     return tostring(game.GameId)
 end
 

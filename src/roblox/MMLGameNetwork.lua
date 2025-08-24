@@ -78,9 +78,9 @@ _G.MMLImpressionTracker = MMLImpressionTracker
 function MMLNetwork.Initialize(config)
   assert(config.apiKey, "API key is required")
   
-  -- Update configuration
+  -- Update configuration (allow setting keys even if default is nil, e.g., gameId)
   for key, value in pairs(config) do
-    if MMLNetwork._config[key] ~= nil then
+    if MMLNetwork._config[key] ~= nil or key == "gameId" then
       MMLNetwork._config[key] = value
     end
   end

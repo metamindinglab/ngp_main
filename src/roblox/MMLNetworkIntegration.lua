@@ -31,13 +31,25 @@ local config = {
     enablePositionSync = true,
     -- Ensure the client speaks to the correct API server
     baseUrl = "http://23.96.197.67:3000/api/v1",
-    -- Explicit MML Game ID used by server APIs
+    -- Explicit MML Game ID used by server APIs (will be overridden by ServerStorage.MMLConfig if present)
     gameId = "game_90648d31"
 }
 
 print("🎮 MML Network: Starting initialization...")
 
 -- Initialize the MML Network
+-- Try to load ServerStorage.MMLConfig for apiKey/baseUrl/gameId overrides
+local ss = game:GetService("ServerStorage")
+local cfg = ss:FindFirstChild("MMLConfig")
+if cfg and cfg:IsA("ModuleScript") then
+    local ok, data = pcall(function() return require(cfg) end)
+    if ok and type(data) == "table" then
+        if type(data.apiKey) == "string" and #data.apiKey > 0 then gameAPIKey = data.apiKey end
+        if type(data.baseUrl) == "string" and #data.baseUrl > 0 then config.baseUrl = data.baseUrl end
+        if type(data.gameId) == "string" and #data.gameId > 0 then config.gameId = data.gameId end
+    end
+end
+
 local success, result = MMLNetwork.Initialize({ apiKey = gameAPIKey, baseUrl = config.baseUrl, debugMode = config.debugMode, enablePositionSync = config.enablePositionSync, updateInterval = config.updateInterval, gameId = config.gameId })
 
 if success then
