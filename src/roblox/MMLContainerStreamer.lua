@@ -125,22 +125,9 @@ function MMLContainerStreamer.moveAssetsToContainer(containerId, adId)
         if surfaceGui and surfaceGui:IsA("SurfaceGui") then
             -- Ensure Frame and ImageLabel exist
             local frame = surfaceGui:FindFirstChild("Frame")
-            if not frame then
-                frame = Instance.new("Frame")
-                frame.Name = "Frame"
-                frame.Size = UDim2.new(1, 0, 1, 0)
-                frame.BackgroundTransparency = 1
-                frame.Parent = surfaceGui
-            end
+            if not frame then return false end
             local imageLabel = frame:FindFirstChild("AdImage")
-            if not imageLabel then
-                imageLabel = Instance.new("ImageLabel")
-                imageLabel.Name = "AdImage"
-                imageLabel.Size = UDim2.new(1, 0, 1, 0)
-                imageLabel.BackgroundTransparency = 1
-                imageLabel.ScaleType = Enum.ScaleType.Fit
-                imageLabel.Parent = frame
-            end
+            local videoFrame = frame:FindFirstChild("AdVideo")
             -- Pick first suitable visual asset (image/video), robust to legacy keys
             local function normalizeAsset(assetInfo)
                 local data = assetInfo and assetInfo.assetData or {}
@@ -161,25 +148,20 @@ function MMLContainerStreamer.moveAssetsToContainer(containerId, adId)
                 end
             end
             if chosen then
-                if chosen.type == "video" then
-                    -- Replace with VideoFrame under frame
+                if chosen.type == "video" and videoFrame then
                     if imageLabel then imageLabel.Visible = false end
-                    local videoFrame = frame:FindFirstChild("AdVideo")
-                    if not videoFrame then
-                        videoFrame = Instance.new("VideoFrame")
-                        videoFrame.Name = "AdVideo"
-                        videoFrame.Size = UDim2.new(1, 0, 1, 0)
-                        videoFrame.BackgroundTransparency = 1
-                        videoFrame.Looped = true
-                        videoFrame.Volume = 0
-                        videoFrame.Parent = frame
-                    end
+                    videoFrame.Visible = true
                     videoFrame.Video = "rbxassetid://" .. tostring(chosen.id)
                     videoFrame.Playing = true
-                else
-                    -- Show image on surface
+                elseif imageLabel then
+                    if videoFrame then
+                        videoFrame.Playing = false
+                        videoFrame.Visible = false
+                    end
                     imageLabel.Visible = true
                     imageLabel.Image = "rbxassetid://" .. tostring(chosen.id)
+                else
+                    return false
                 end
                 -- Update container state
                 container.assetStorage.currentAssets = {}

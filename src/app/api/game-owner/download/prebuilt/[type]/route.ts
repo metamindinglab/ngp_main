@@ -88,7 +88,40 @@ async function buildPrebuiltContainer(type: 'DISPLAY' | 'NPC' | 'MINIGAME') {
         "CanCollide": false,
         "Size": type === 'DISPLAY' ? [10, 5, 0.5] : type === 'NPC' ? [4, 4, 4] : [12, 8, 12],
         "Material": "SmoothPlastic",
-        "BrickColor": "Medium stone grey"
+        "BrickColor": "Medium stone grey",
+        ...(type === 'DISPLAY' ? {
+          "MMLDisplaySurface": {
+            "$className": "SurfaceGui",
+            "Face": "Front",
+            "SizingMode": "PixelsPerStud",
+            "CanvasSize": [1024, 576],
+            "AlwaysOnTop": true,
+            "Frame": {
+              "$className": "Frame",
+              "Name": "Frame",
+              "Size": [1, 0, 1, 0],
+              "BackgroundTransparency": 1,
+              "AdImage": {
+                "$className": "ImageLabel",
+                "Name": "AdImage",
+                "Size": [1, 0, 1, 0],
+                "BackgroundTransparency": 1,
+                "ScaleType": "Fit",
+                "Visible": true
+              },
+              "AdVideo": {
+                "$className": "VideoFrame",
+                "Name": "AdVideo",
+                "Size": [1, 0, 1, 0],
+                "BackgroundTransparency": 1,
+                "Looped": true,
+                "Volume": 0,
+                "Playing": false,
+                "Visible": false
+              }
+            }
+          }
+        } : {})
       },
       "MMLContainerRuntime": { "$className": "Script", "$path": "MMLContainerRuntime.server.lua" }
     }
