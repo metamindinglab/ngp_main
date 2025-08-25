@@ -119,12 +119,21 @@ function MMLContainerStreamer.moveAssetsToContainer(containerId, adId)
                 imageLabel.ScaleType = Enum.ScaleType.Fit
                 imageLabel.Parent = frame
             end
-            -- Pick first suitable visual asset (image/video)
+            -- Pick first suitable visual asset (image/video), robust to legacy keys
+            local function normalizeAsset(assetInfo)
+                local data = assetInfo and assetInfo.assetData or {}
+                local t = string.lower(tostring(data.type or data.assetType or ""))
+                local rid = data.robloxAssetId or data.robloxId
+                if t == "decal" or t == "texture" or t == "image_asset" then t = "image" end
+                if t == "multi_display" or t == "multimedia_display" or t == "multimediasignage" then t = "image" end
+                if t == "video_frame" then t = "video" end
+                return t, rid
+            end
+
             local chosen
             for _, assetInfo in pairs(preloadedAd.assets) do
-                local at = string.lower(tostring(assetInfo.assetData.type or ""))
-                local rid = assetInfo.assetData.robloxAssetId
-                if rid and (at == "image" or at == "multimediasignage" or at == "video") then
+                local at, rid = normalizeAsset(assetInfo)
+                if rid and (at == "image" or at == "video") then
                     chosen = { type = at, id = rid }
                     break
                 end
