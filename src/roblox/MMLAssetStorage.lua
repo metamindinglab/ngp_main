@@ -193,7 +193,7 @@ function MMLAssetStorage.preloadAdAssets(loadTask)
           "Time:", math.round((tick() - loadStartTime) * 100) / 100, "s")
 end
 
--- Create an asset instance in storage
+-- Create an asset instance in storage (after helper functions are defined)
 function MMLAssetStorage.createAssetInstance(assetData, storageBasePosition, parentFolder)
     if not assetData then
         warn("❌ Invalid asset data")
