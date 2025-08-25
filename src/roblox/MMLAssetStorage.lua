@@ -161,7 +161,14 @@ function MMLAssetStorage.preloadAdAssets(loadTask)
             }
             print("✅ Pre-loaded asset:", assetData.id, "for ad:", adId)
         else
-            warn("❌ Failed to pre-load asset:", assetData.id, "Error:", tostring(assetInstance))
+            -- Store a placeholder so renderers can fall back to direct draw
+            preloadedAssets[assetData.id] = {
+                instance = nil,
+                assetData = assetData,
+                storagePosition = nil
+            }
+            -- downgrade noise; we will fallback to cached draw
+            warn("⚠️ Skipping preload, will render from cache for asset:", assetData.id)
         end
         
         -- Timeout check
@@ -183,8 +190,10 @@ function MMLAssetStorage.preloadAdAssets(loadTask)
     }
     
     -- Count successful loads
-    for _ in pairs(preloadedAssets) do
-        globalStorage.preloadedAds[adId].successCount = globalStorage.preloadedAds[adId].successCount + 1
+    for _, v in pairs(preloadedAssets) do
+        if v.instance then
+            globalStorage.preloadedAds[adId].successCount = globalStorage.preloadedAds[adId].successCount + 1
+        end
     end
     
     print("🎯 Pre-loaded ad:", adId, 
