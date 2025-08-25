@@ -12,15 +12,15 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 -- Import our new modules (robust to placement: as children of this module or as siblings in ReplicatedStorage)
 local function resolveModule(moduleName)
-  -- Prefer child ModuleScript
-  local child = script:FindFirstChild(moduleName)
-  if child then
-    return child
-  end
-  -- Fallback to ReplicatedStorage sibling
+  -- Prefer ReplicatedStorage sibling (avoid stale embedded children)
   local sibling = ReplicatedStorage:FindFirstChild(moduleName)
   if sibling then
     return sibling
+  end
+  -- Fallback to child ModuleScript
+  local child = script:FindFirstChild(moduleName)
+  if child then
+    return child
   end
   return nil
 end

@@ -118,7 +118,7 @@ function MMLContainerManager.updateContainerAds(containerId, availableAds)
     print("📋 Updated ads for container", containerId, ":", #availableAds, "ads available")
     
     -- If container is visible and has no current ad, assign one
-    if container.visibility.isInCameraView and not container.adRotation.currentAdId and #availableAds > 0 then
+    if (container.visibility.isInCameraView or true) and not container.adRotation.currentAdId and #availableAds > 0 then
         local MMLContainerStreamer = require(script.Parent.MMLContainerStreamer)
         local nextAdId = selectNextAd and selectNextAd(container) or nil
         if nextAdId and MMLContainerStreamer then
