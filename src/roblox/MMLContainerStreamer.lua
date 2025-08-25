@@ -92,8 +92,8 @@ function MMLContainerStreamer.moveAssetsToContainer(containerId, adId)
         local okRM, MMLRequestManager = pcall(function()
             return require(script.Parent.MMLRequestManager)
         end)
-        if okRM and MMLRequestManager and type(MMLRequestManager.fetchGameAds) == "function" then
-            local ads = MMLRequestManager.fetchGameAds() or {}
+        if okRM and MMLRequestManager and type(MMLRequestManager.getCachedGameAds) == "function" then
+            local ads = MMLRequestManager.getCachedGameAds() or {}
             for _, ad in pairs(ads) do
                 if ad.id == adId then
                     preloadedAd = { assets = {} }

@@ -505,6 +505,12 @@ function MMLRequestManager.getRequestStats()
     }
 end
 
+-- New: expose cached game ads for renderer fallbacks
+function MMLRequestManager.getCachedGameAds()
+    local batch = requestBatches.gameAds
+    return batch.cache or {}
+end
+
 -- Shutdown request manager
 function MMLRequestManager.shutdown()
     -- Clear all queues
