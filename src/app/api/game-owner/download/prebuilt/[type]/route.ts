@@ -92,33 +92,10 @@ async function buildPrebuiltContainer(type: 'DISPLAY' | 'NPC' | 'MINIGAME') {
         ...(type === 'DISPLAY' ? {
           "MMLDisplaySurface": {
             "$className": "SurfaceGui",
-            "Face": "Front",
-            "SizingMode": "PixelsPerStud",
-            "CanvasSize": [1024, 576],
-            "AlwaysOnTop": true,
             "Frame": {
               "$className": "Frame",
-              "Name": "Frame",
-              "Size": [1, 0, 1, 0],
-              "BackgroundTransparency": 1,
-              "AdImage": {
-                "$className": "ImageLabel",
-                "Name": "AdImage",
-                "Size": [1, 0, 1, 0],
-                "BackgroundTransparency": 1,
-                "ScaleType": "Fit",
-                "Visible": true
-              },
-              "AdVideo": {
-                "$className": "VideoFrame",
-                "Name": "AdVideo",
-                "Size": [1, 0, 1, 0],
-                "BackgroundTransparency": 1,
-                "Looped": true,
-                "Volume": 0,
-                "Playing": false,
-                "Visible": false
-              }
+              "AdImage": { "$className": "ImageLabel" },
+              "AdVideo": { "$className": "VideoFrame" }
             }
           }
         } : {})
