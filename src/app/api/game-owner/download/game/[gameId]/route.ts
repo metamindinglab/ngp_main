@@ -349,28 +349,37 @@ print("✅ MML Network integration active!")
 print("📱 Monitoring containers for ad updates every 30 seconds")
 print("💡 Use updateContainerNow('container_id') to test immediately")
 
--- Initialize the MML Network
-local success, result = true, "Direct integration active"
-
-if success then
-    print("✅ MML Network initialized successfully!")
-    print("📊 Game: ${game.name}")
-    print("🔑 API Key configured")
-    
-    if config and config.autoStart and MMLNetwork and MMLNetwork.startContainerMonitoring then
-        local monitorSuccess = MMLNetwork.startContainerMonitoring()
-        if monitorSuccess then
-            print("🔄 MML Network: Container monitoring started")
-            print("📱 Your ad containers are now active!")
+-- Initialize the MML Network (ServerStorage config → MMLGameNetwork)
+do
+    local initOk, initErr = pcall(function()
+        if MMLNetwork and MMLNetwork.Initialize then
+            MMLNetwork.Initialize({
+                apiKey = (config and config.apiKey) or "${game.serverApiKey}",
+                baseUrl = (config and config.baseUrl) or "http://23.96.197.67:3000/api/v1",
+                gameId = (config and config.gameId) or "${game.id}",
+                enablePositionSync = (config and config.enablePositionSync) ~= false,
+                debugMode = (config and config.debugMode) == true
+            })
+            print("✅ MML Network initialized successfully!")
+            print("📊 Game: ${game.name}")
+            print("🔑 API Key configured")
+            if config and config.autoStart and MMLNetwork.startContainerMonitoring then
+                if MMLNetwork.startContainerMonitoring() then
+                    print("🔄 MML Network: Container monitoring started")
+                    print("📱 Your ad containers are now active!")
+                else
+                    warn("❌ MML Network: Failed to start container monitoring")
+                end
+            end
         else
-            warn("❌ MML Network: Failed to start container monitoring")
+            warn("❌ MMLGameNetwork module not available; skipping MML initialization")
         end
+    end)
+    if not initOk then
+        warn("❌ MML Network initialization failed:", initErr)
+        warn("🔧 Game: ${game.name}")
+        warn("🔧 Game ID: ${game.id}")
     end
-    
-else
-    warn("❌ MML Network initialization failed:", result)
-    warn("🔧 Game: ${game.name}")
-    warn("🔧 Game ID: ${game.id}")
 end
 
 -- Handle game shutdown gracefully
