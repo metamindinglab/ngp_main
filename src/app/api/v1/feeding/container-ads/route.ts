@@ -116,6 +116,13 @@ export async function POST(request: NextRequest) {
       body.currentAssignments = {}
     }
 
+    // Ensure playerContext is an object (some Roblox JSON encoders send [] for empty tables)
+    if (!body.playerContext || Array.isArray(body.playerContext)) {
+      body.playerContext = { totalPlayers: 0 }
+    } else if (typeof body.playerContext !== 'object') {
+      body.playerContext = { totalPlayers: 0 }
+    }
+
     const validatedData = ContainerRequestSchema.parse(body)
 
     console.log(`[DEBUG] Processing request for game ${game.id} with ${validatedData.containers.length} containers`);
