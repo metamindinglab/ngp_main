@@ -6,6 +6,10 @@ import { promisify } from 'util'
 import { verify } from 'jsonwebtoken'
 import { prisma } from '@/lib/prisma'
 
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key'
 const execAsync = promisify(exec)
 
@@ -91,8 +95,8 @@ async function generateGamePackage(game: any) {
   const tempDir = join(process.cwd(), 'temp', `game-${game.id}`)
   
   try {
-    // Create temp directory
-    await mkdir(tempDir, { recursive: true })
+    // Recreate a fresh temp directory for every build to avoid stale files
+    await execAsync(`rm -rf "${tempDir}" && mkdir -p "${tempDir}"`)
     
     // Generate game-specific integration script (fixed for Studio compatibility)
     const integrationScript = generateGameIntegrationScript(game)
@@ -102,8 +106,8 @@ async function generateGamePackage(game: any) {
     const containerScript = generateGameContainerScript(game.adContainers, game.id)
     await writeFile(join(tempDir, 'CreateContainers.server.lua'), containerScript)
 
-    // Generate ServerStorage config with API Key and base URL
-    const configModule = `-- MML Network Config (ServerStorage)\nreturn {\n\tapiKey = "${game.serverApiKey}",\n\tbaseUrl = "http://23.96.197.67:3000/api/v1",\n\tupdateInterval = 30,\n\tdebugMode = false,\n\tautoStart = true,\n\tenablePositionSync = true,\n}`
+    // Generate ServerStorage config with API Key, base URL, and gameId
+    const configModule = `-- MML Network Config (ServerStorage)\nreturn {\n\tapiKey = "${game.serverApiKey}",\n\tbaseUrl = "http://23.96.197.67:3000/api/v1",\n\tgameId = "${game.id}",\n\tupdateInterval = 30,\n\tdebugMode = false,\n\tautoStart = true,\n\tenablePositionSync = true,\n}`
     await writeFile(join(tempDir, 'MMLConfig.server.lua'), configModule)
     
     // Copy all MML Network modules
