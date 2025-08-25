@@ -61,6 +61,11 @@ function MMLContainerStreamer.isContainerInView(container)
         end
     end
     
+    -- Server-only: if no players, treat as visible to allow server-side testing
+    local RunService = game:GetService("RunService")
+    if RunService:IsServer() and #Players:GetPlayers() == 0 then
+        return true, nil, 0
+    end
     return false, nil, math.huge
 end
 
@@ -92,7 +97,75 @@ function MMLContainerStreamer.moveAssetsToContainer(containerId, adId)
     -- Mark ad as being used
     preloadedAd.lastUsed = tick()
     
-    -- Calculate target positions for each asset
+    -- DISPLAY shortcut: render directly into container's MMLDisplaySurface when available
+    if container.type == "DISPLAY" then
+        local surfaceGui = (container.model and container.model:FindFirstChild("MMLDisplaySurface"))
+        if surfaceGui and surfaceGui:IsA("SurfaceGui") then
+            -- Ensure Frame and ImageLabel exist
+            local frame = surfaceGui:FindFirstChild("Frame")
+            if not frame then
+                frame = Instance.new("Frame")
+                frame.Name = "Frame"
+                frame.Size = UDim2.new(1, 0, 1, 0)
+                frame.BackgroundTransparency = 1
+                frame.Parent = surfaceGui
+            end
+            local imageLabel = frame:FindFirstChild("AdImage")
+            if not imageLabel then
+                imageLabel = Instance.new("ImageLabel")
+                imageLabel.Name = "AdImage"
+                imageLabel.Size = UDim2.new(1, 0, 1, 0)
+                imageLabel.BackgroundTransparency = 1
+                imageLabel.ScaleType = Enum.ScaleType.Fit
+                imageLabel.Parent = frame
+            end
+            -- Pick first suitable visual asset (image/video)
+            local chosen
+            for _, assetInfo in pairs(preloadedAd.assets) do
+                local at = string.lower(tostring(assetInfo.assetData.type or ""))
+                local rid = assetInfo.assetData.robloxAssetId
+                if rid and (at == "image" or at == "multimediasignage" or at == "video") then
+                    chosen = { type = at, id = rid }
+                    break
+                end
+            end
+            if chosen then
+                if chosen.type == "video" then
+                    -- Replace with VideoFrame under frame
+                    if imageLabel then imageLabel.Visible = false end
+                    local videoFrame = frame:FindFirstChild("AdVideo")
+                    if not videoFrame then
+                        videoFrame = Instance.new("VideoFrame")
+                        videoFrame.Name = "AdVideo"
+                        videoFrame.Size = UDim2.new(1, 0, 1, 0)
+                        videoFrame.BackgroundTransparency = 1
+                        videoFrame.Looped = true
+                        videoFrame.Volume = 0
+                        videoFrame.Parent = frame
+                    end
+                    videoFrame.Video = "rbxassetid://" .. tostring(chosen.id)
+                    videoFrame.Playing = true
+                else
+                    -- Show image on surface
+                    imageLabel.Visible = true
+                    imageLabel.Image = "rbxassetid://" .. tostring(chosen.id)
+                end
+                -- Update container state
+                container.assetStorage.currentAssets = {}
+                container.visibility.currentState = "VISIBLE"
+                container.visibility.shouldBeVisible = true
+                container.adRotation.currentAdId = adId
+                -- Fire container update event
+                if container.OnContentUpdate then
+                    container.OnContentUpdate:Fire(adId, "LOADED")
+                end
+                print("✅ Rendered ad on MMLDisplaySurface for container", containerId)
+                return true
+            end
+        end
+    end
+
+    -- Calculate target positions for each asset (fallback path)
     local containerPosition = MMLUtil.getInstancePosition(container.model)
     local containerCFrame = MMLUtil.getInstanceCFrame(container.model) or CFrame.new(containerPosition)
     
