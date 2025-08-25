@@ -88,8 +88,30 @@ function MMLContainerStreamer.moveAssetsToContainer(containerId, adId)
     
     local preloadedAd = MMLAssetStorage.getPreloadedAd(adId)
     if not preloadedAd then
-        warn("❌ Pre-loaded ad not found:", adId)
-        return false
+        -- Fallback: pull assets directly from available ads cache (bypass preload)
+        local okRM, MMLRequestManager = pcall(function()
+            return require(script.Parent.MMLRequestManager)
+        end)
+        if okRM and MMLRequestManager and type(MMLRequestManager.fetchGameAds) == "function" then
+            local ads = MMLRequestManager.fetchGameAds() or {}
+            for _, ad in pairs(ads) do
+                if ad.id == adId then
+                    preloadedAd = { assets = {} }
+                    for _, asset in pairs(ad.assets or {}) do
+                        preloadedAd.assets[asset.id or asset.assetId or tostring(#preloadedAd.assets+1)] = {
+                            instance = nil,
+                            assetData = asset,
+                            storagePosition = nil
+                        }
+                    end
+                    break
+                end
+            end
+        end
+        if not preloadedAd then
+            warn("❌ Pre-loaded ad not found:", adId)
+            return false
+        end
     end
     
     print("🚀 Moving assets for ad", adId, "to container", containerId)
