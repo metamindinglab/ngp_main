@@ -148,7 +148,16 @@ function MMLRequestManager.fetchContainerAssignments()
         return false
     end
     local containers = MMLContainerManager.getAllContainerSummaries()
-    local playerContext = getPlayerContext and getPlayerContext() or {}
+    -- Ensure playerContext is a JSON object (Roblox encodes empty tables as [])
+    local playerContext = { totalPlayers = #Players:GetPlayers() }
+    local ctx = getPlayerContext and getPlayerContext() or nil
+    if type(ctx) == "table" then
+        -- Merge selected fields to keep it object-like
+        playerContext.serverRegion = ctx.serverRegion
+        playerContext.gameTime = ctx.gameTime
+        playerContext.timestamp = ctx.timestamp
+        playerContext.demographics = ctx.demographics
+    end
     
     spawn(function()
         local success, result = pcall(function()

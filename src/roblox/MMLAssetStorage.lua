@@ -241,7 +241,16 @@ function MMLAssetStorage.createAssetInstance(assetData, storageBasePosition, par
 end
 
 -- Asset creation functions
-local function createImageAsset(assetData, storagePosition, parentFolder)
+local createImageAsset
+local create3DModelAsset
+local createVideoAsset
+local createNPCAsset
+local createClothingAsset
+local createAnimationAsset
+local createAudioAsset
+local createMinigameAsset
+
+createImageAsset = function(assetData, storagePosition, parentFolder)
     if not assetData.robloxAssetId then
         warn("❌ No Roblox Asset ID for image asset:", assetData.id)
         return nil
@@ -292,7 +301,7 @@ local function createImageAsset(assetData, storagePosition, parentFolder)
 end
 
 -- NEW: Create 3D model asset using InsertService
-local function create3DModelAsset(assetData, storagePosition, parentFolder)
+create3DModelAsset = function(assetData, storagePosition, parentFolder)
     if not assetData.robloxAssetId then
         warn("❌ No Roblox Asset ID for 3D model asset:", assetData.id)
         return nil
@@ -351,7 +360,7 @@ local function create3DModelAsset(assetData, storagePosition, parentFolder)
     end
 end
 
-local function createVideoAsset(assetData, storagePosition, parentFolder)
+createVideoAsset = function(assetData, storagePosition, parentFolder)
     if not assetData.robloxAssetId then
         warn("❌ No Roblox Asset ID for video asset:", assetData.id)
         return nil
@@ -399,7 +408,7 @@ local function createVideoAsset(assetData, storagePosition, parentFolder)
     return part
 end
 
-local function createNPCAsset(assetData, storagePosition, parentFolder)
+createNPCAsset = function(assetData, storagePosition, parentFolder)
     -- Create character model
     local npcModel = Instance.new("Model")
     npcModel.Name = "NPCAsset_" .. assetData.id
@@ -460,7 +469,7 @@ local function createNPCAsset(assetData, storagePosition, parentFolder)
     return npcModel
 end
 
-local function createClothingAsset(assetData, storagePosition, parentFolder)
+createClothingAsset = function(assetData, storagePosition, parentFolder)
     -- Create a simple part to represent clothing asset
     local part = Instance.new("Part")
     part.Name = assetData.type .. "Asset_" .. assetData.id
@@ -490,7 +499,7 @@ local function createClothingAsset(assetData, storagePosition, parentFolder)
     return part
 end
 
-local function createAnimationAsset(assetData, storagePosition, parentFolder)
+createAnimationAsset = function(assetData, storagePosition, parentFolder)
     local part = Instance.new("Part")
     part.Name = "AnimationAsset_" .. assetData.id
     part.Size = Vector3.new(0.5, 0.5, 0.5)
@@ -518,7 +527,7 @@ local function createAnimationAsset(assetData, storagePosition, parentFolder)
     return part
 end
 
-local function createAudioAsset(assetData, storagePosition, parentFolder)
+createAudioAsset = function(assetData, storagePosition, parentFolder)
     local part = Instance.new("Part")
     part.Name = "AudioAsset_" .. assetData.id
     part.Size = Vector3.new(0.3, 0.3, 0.3)
@@ -554,7 +563,7 @@ local function createAudioAsset(assetData, storagePosition, parentFolder)
     return part
 end
 
-local function createMinigameAsset(assetData, storagePosition, parentFolder)
+createMinigameAsset = function(assetData, storagePosition, parentFolder)
     local model = Instance.new("Model")
     model.Name = "MinigameAsset_" .. assetData.id
     model.Parent = parentFolder
