@@ -5,6 +5,11 @@
 local MMLContainerManager = {}
 local MMLUtil = require(script.Parent.MMLUtil)
 
+-- Forward declarations for functions used before definition
+local selectNextAd
+local selectWeightedAd
+local selectPerformanceBasedAd
+
 -- Initialize a container with multi-ad support
 function MMLContainerManager.initializeContainer(containerId, containerModel, containerType)
     local container = {
@@ -115,7 +120,7 @@ function MMLContainerManager.updateContainerAds(containerId, availableAds)
     -- If container is visible and has no current ad, assign one
     if container.visibility.isInCameraView and not container.adRotation.currentAdId and #availableAds > 0 then
         local MMLContainerStreamer = require(script.Parent.MMLContainerStreamer)
-        local nextAdId = selectNextAd(container)
+        local nextAdId = selectNextAd and selectNextAd(container) or nil
         if nextAdId and MMLContainerStreamer then
             MMLContainerStreamer.moveAssetsToContainer(containerId, nextAdId)
         end
@@ -125,7 +130,7 @@ function MMLContainerManager.updateContainerAds(containerId, availableAds)
 end
 
 -- Select next ad based on rotation strategy
-local function selectNextAd(container)
+selectNextAd = function(container)
     local availableAds = container.adRotation.availableAds
     if #availableAds == 0 then return nil end
     
@@ -154,7 +159,7 @@ local function selectNextAd(container)
 end
 
 -- Placeholder for weighted ad selection
-local function selectWeightedAd(container)
+selectWeightedAd = function(container)
     local availableAds = container.adRotation.availableAds
     local adPriorities = container.adRotation.adPriorities
     
@@ -188,7 +193,7 @@ local function selectWeightedAd(container)
 end
 
 -- Placeholder for performance-based ad selection
-local function selectPerformanceBasedAd(container)
+selectPerformanceBasedAd = function(container)
     local availableAds = container.adRotation.availableAds
     local performanceScores = container.adRotation.performanceScores
     
