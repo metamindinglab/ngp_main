@@ -30,10 +30,16 @@ local requestBatches = {
     impressions = {
         queue = {},
         lastBatch = 0,
-        interval = 5,          -- send quickly for testing
-        batchSize = 1          -- flush each event chunk
+        interval = 90,         -- send every 90s to reduce noise in logs
+        batchSize = 20         -- accumulate small batches
     }
 }
+
+-- Log helper respecting global mute flag
+local function mmlPrint(...)
+    if _G and _G.MML_LOGS_MUTED then return end
+    print(...)
+end
 
 -- Forward declarations for helpers
 local getPlayerContext
@@ -86,7 +92,7 @@ function MMLRequestManager.fetchGameAds()
         local success, result = pcall(function()
             local gid = getMmlGameId()
             local url = _G.MMLNetwork._config.baseUrl .. "/games/" .. gid .. "/ads/available"
-            print("[MML][HTTP] GET available ads:", url)
+            mmlPrint("[MML][HTTP] GET available ads:", url)
             return HttpService:RequestAsync({
                 Url = url,
                 Method = "GET",
@@ -105,7 +111,7 @@ function MMLRequestManager.fetchGameAds()
             batch.cache = data.ads or {}
             batch.lastFetch = currentTime
             
-            print("📦 Updated game ads cache:", #batch.cache, "ads available")
+            mmlPrint("📦 Updated game ads cache:", #batch.cache, "ads available")
             
             -- Pre-load all available ads
             local MMLAssetStorage = require(script.Parent.MMLAssetStorage)
@@ -162,7 +168,7 @@ function MMLRequestManager.fetchContainerAssignments()
     spawn(function()
         local success, result = pcall(function()
             local url = _G.MMLNetwork._config.baseUrl .. "/feeding/container-ads"
-            print("[MML][HTTP] POST container-ads:", url, "gameId:", getMmlGameId())
+            mmlPrint("[MML][HTTP] POST container-ads:", url, "gameId:", getMmlGameId())
             return HttpService:RequestAsync({
                 Url = url,
                 Method = "POST",
@@ -200,7 +206,7 @@ function MMLRequestManager.fetchContainerAssignments()
                 end
             end
             
-            print("🎯 Updated container assignments from feeding engine:", 
+            mmlPrint("🎯 Updated container assignments from feeding engine:", 
                   "Total containers:", #containers,
                   "Strategy:", data.metadata and data.metadata.strategy or "unknown")
                   
@@ -297,7 +303,7 @@ function MMLRequestManager.processPlayerEligibilityBatch()
                 end
             end
             
-            print("✅ Processed eligibility for", #playersToProcess, "players")
+            mmlPrint("✅ Processed eligibility for", #playersToProcess, "players")
         else
             warn("❌ Failed to process player eligibility batch:", result and result.StatusMessage or "Unknown error")
         end
@@ -306,6 +312,10 @@ end
 
 -- 4. Batch impression reporting (every 60 seconds)
 function MMLRequestManager.queueImpression(impressionData)
+    -- Server-only: avoid client attempting HTTP to external API
+    if not RunService:IsServer() then
+        return
+    end
     table.insert(requestBatches.impressions.queue, impressionData)
     
     local batch = requestBatches.impressions
@@ -315,6 +325,10 @@ function MMLRequestManager.queueImpression(impressionData)
 end
 
 function MMLRequestManager.sendImpressionBatch()
+    -- Server-only
+    if not RunService:IsServer() then
+        return
+    end
     if not _G.MMLNetwork or not _G.MMLNetwork._config then
         return
     end
@@ -330,12 +344,63 @@ function MMLRequestManager.sendImpressionBatch()
     batch.lastBatch = tick()
     
     spawn(function()
+        -- Normalize queued impressions to backend schema
+        local normalized = {}
+        for _, ev in pairs(impressionsToSend) do
+            local eventType = tostring(ev.eventType or ev.event or "view")
+            local mappedEvent = (eventType == "touch" or eventType == "click" or eventType == "touch_down") and "touch" or "view"
+            local adId = ev.adId or (ev.eventData and ev.eventData.adId)
+            if adId then
+                local duration = 0
+                if type(ev.eventData) == "table" then
+                    duration = tonumber(ev.eventData.duration or ev.eventData.dwell or ev.eventData.dwellSec or 0) or 0
+                end
+                local ts = ev.timestamp
+                if typeof(ts) == "number" then
+                    -- Accept both seconds and ms; backend normalizes
+                else
+                    ts = tick()
+                end
+                local player
+                if type(ev.player) == "table" then
+                    player = {
+                        id = ev.player.id and tostring(ev.player.id) or nil,
+                        name = ev.player.name,
+                        country = ev.player.country,
+                        accountAge = ev.player.accountAge,
+                        membershipType = ev.player.membershipType,
+                    }
+                end
+                table.insert(normalized, {
+                    event = mappedEvent,
+                    adId = tostring(adId),
+                    containerId = ev.containerId and tostring(ev.containerId) or nil,
+                    duration = duration,
+                    timestamp = ts,
+                    player = player,
+                })
+            end
+        end
+
+        if #normalized == 0 then
+            return
+        end
+
         local payload = {
-            impressions = impressionsToSend,
+            impressions = normalized,
             batchId = HttpService:GenerateGUID(),
             gameSession = game:GetAttribute("SessionId") or HttpService:GenerateGUID(),
             serverTimestamp = tick()
         }
+        local okEnc, bodyJson = pcall(function() return HttpService:JSONEncode(payload) end)
+        if okEnc then
+            local hasKey = string.find(bodyJson, '"impressions"') ~= nil
+            local sample = normalized[1]
+            local adIdStr = sample and tostring(sample.adId) or "nil"
+            mmlPrint("[MML][Impression] Debug send:", "len=", #impressionsToSend, "hasKey=", tostring(hasKey), "adId=", adIdStr, "bytes=", #bodyJson)
+        else
+            warn("[MML][Impression] JSONEncode failed:", tostring(bodyJson))
+        end
         local success, result = pcall(function()
             return HttpService:RequestAsync({
                 Url = _G.MMLNetwork._config.baseUrl .. "/impressions/batch",
@@ -344,15 +409,15 @@ function MMLRequestManager.sendImpressionBatch()
                     ["X-API-Key"] = _G.MMLNetwork._config.apiKey,
                     ["Content-Type"] = "application/json"
                 },
-                Body = HttpService:JSONEncode(payload)
+                Body = okEnc and bodyJson or HttpService:JSONEncode(payload)
             })
         end)
         if success and result.Success then
-            print("📤 Sent batch of", #impressionsToSend, "events to GameAdPerformance")
+            mmlPrint("📤 Sent batch of", #impressionsToSend, "events to GameAdPerformance")
             if result.Body then
                 local ok, parsed = pcall(function() return HttpService:JSONDecode(result.Body) end)
                 if ok and parsed and parsed.processed then
-                    print("✅ Server processed:", parsed.processed, "upserts:", parsed.upserts)
+                    mmlPrint("✅ Server processed:", parsed.processed, "upserts:", parsed.upserts)
                 end
             end
         else
@@ -429,6 +494,10 @@ end
 
 -- Auto-start request management
 function MMLRequestManager.initialize()
+    -- Server-only
+    if not RunService:IsServer() then
+        return false
+    end
     if not _G.MMLNetwork then
         warn("❌ MMLNetwork not initialized, cannot start request manager")
         return false
@@ -454,7 +523,7 @@ function MMLRequestManager.initialize()
     -- Start periodic batch processing
     spawn(function()
         while _G.MMLNetwork do
-            wait(30) -- Check every 30 seconds
+            wait(15) -- Check more frequently, but send less often via interval/batchSize
             
             -- Process any pending batches
             if #requestBatches.playerEligibility.queue > 0 then
@@ -462,13 +531,17 @@ function MMLRequestManager.initialize()
             end
             
             if #requestBatches.impressions.queue > 0 then
-                print("[MML][Impression] Pending queue:", #requestBatches.impressions.queue)
-                MMLRequestManager.sendImpressionBatch()
+                mmlPrint("[MML][Impression] Pending queue:", #requestBatches.impressions.queue)
+                -- Only flush if interval has elapsed since last batch
+                local batch = requestBatches.impressions
+                if (tick() - batch.lastBatch) >= batch.interval then
+                    MMLRequestManager.sendImpressionBatch()
+                end
             end
         end
     end)
     
-    print("🚀 MML Request Manager initialized")
+    mmlPrint("🚀 MML Request Manager initialized")
     return true
 end
 

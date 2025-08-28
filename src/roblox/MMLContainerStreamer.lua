@@ -3,11 +3,17 @@
 -- Handles dynamic movement of assets from storage to containers based on camera visibility
 
 local MMLContainerStreamer = {}
+MMLContainerStreamer._version = "2.0.1-thumb-first-front-only-billboard-fallback"
+
+function MMLContainerStreamer.getVersion()
+    return MMLContainerStreamer._version
+end
 
 local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
 local MMLUtil = require(script.Parent.MMLUtil)
+local ContentProvider = game:GetService("ContentProvider")
 
 -- Movement configuration
 local MOVEMENT_CONFIG = {
@@ -121,13 +127,65 @@ function MMLContainerStreamer.moveAssetsToContainer(containerId, adId)
     
     -- DISPLAY shortcut: render directly into container's MMLDisplaySurface when available
     if container.type == "DISPLAY" then
-        local surfaceGui = (container.model and container.model:FindFirstChild("MMLDisplaySurface"))
+        -- Find SurfaceGui anywhere under the model; support Stage -> SurfaceGui structure
+        local surfaceGui
+        if container.model then
+            -- Recursive search for existing MMLDisplaySurface
+            local okFind, found = pcall(function()
+                return container.model:FindFirstChild("MMLDisplaySurface", true)
+            end)
+            if okFind then surfaceGui = found end
+            -- If not found, prefer attaching to a Stage part if present
+            if not surfaceGui then
+                local okStage, stage = pcall(function()
+                    return container.model:FindFirstChild("Stage", true)
+                end)
+                if okStage and stage and stage:IsA("BasePart") then
+                    surfaceGui = Instance.new("SurfaceGui")
+                    surfaceGui.Name = "MMLDisplaySurface"
+                    surfaceGui.Face = Enum.NormalId.Front
+                    surfaceGui.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
+                    surfaceGui.CanvasSize = Vector2.new(1024, 576)
+                    surfaceGui.AlwaysOnTop = false
+                    surfaceGui.Parent = stage
+                end
+            end
+        end
         if surfaceGui and surfaceGui:IsA("SurfaceGui") then
-            -- Ensure Frame and ImageLabel exist
+            -- Ensure Frame and media children exist (self-heal model assumptions)
+            surfaceGui.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
+            surfaceGui.CanvasSize = Vector2.new(1024, 576)
+            surfaceGui.AlwaysOnTop = false
+            surfaceGui.Face = surfaceGui.Face or Enum.NormalId.Front
+
             local frame = surfaceGui:FindFirstChild("Frame")
-            if not frame then return false end
+            if not frame then
+                frame = Instance.new("Frame")
+                frame.Name = "Frame"
+                frame.Size = UDim2.new(1, 0, 1, 0)
+                frame.BackgroundTransparency = 1
+                frame.Parent = surfaceGui
+            end
             local imageLabel = frame:FindFirstChild("AdImage")
+            if not imageLabel then
+                imageLabel = Instance.new("ImageLabel")
+                imageLabel.Name = "AdImage"
+                imageLabel.Size = UDim2.new(1, 0, 1, 0)
+                imageLabel.BackgroundTransparency = 1
+                imageLabel.ScaleType = Enum.ScaleType.Fit
+                imageLabel.Visible = false
+                imageLabel.Parent = frame
+            end
             local videoFrame = frame:FindFirstChild("AdVideo")
+            if not videoFrame then
+                videoFrame = Instance.new("VideoFrame")
+                videoFrame.Name = "AdVideo"
+                videoFrame.Size = UDim2.new(1, 0, 1, 0)
+                videoFrame.BackgroundTransparency = 1
+                videoFrame.Visible = false
+                videoFrame.Looped = true
+                videoFrame.Parent = frame
+            end
             -- Pick first suitable visual asset (image/video), robust to legacy keys
             local function normalizeAsset(assetInfo)
                 local data = assetInfo and assetInfo.assetData or {}
@@ -148,18 +206,105 @@ function MMLContainerStreamer.moveAssetsToContainer(containerId, adId)
                 end
             end
             if chosen then
+                -- Ensure current ad id is set BEFORE any early returns (e.g., locked image)
+                container.adRotation.currentAdId = adId
+                -- Helper to parse current Image and detect source kind
+                local function parseImageId(image)
+                    if not image then return nil, nil end
+                    local aid = tostring(image):match("rbxassetid://(%d+)")
+                    if aid then return aid, "asset" end
+                    local tid = tostring(image):match("rbxthumb://[^?]*%?[^&]*id=(%d+)")
+                    if tid then return tid, "thumb" end
+                    return nil, nil
+                end
                 if chosen.type == "video" and videoFrame then
                     if imageLabel then imageLabel.Visible = false end
                     videoFrame.Visible = true
                     videoFrame.Video = "rbxassetid://" .. tostring(chosen.id)
                     videoFrame.Playing = true
                 elseif imageLabel then
+                    -- Respect manual lock to avoid overwriting during diagnostics
+                    local locked = false
+                    pcall(function() locked = imageLabel:GetAttribute("Lock") == true end)
+                    if locked then
+                        -- Even if locked, we still want the system state to reflect the active ad
+                        container.adRotation.currentAdId = adId
+                        return true
+                    end
                     if videoFrame then
                         videoFrame.Playing = false
                         videoFrame.Visible = false
                     end
                     imageLabel.Visible = true
-                    imageLabel.Image = "rbxassetid://" .. tostring(chosen.id)
+                    -- For image ads, also update a Decal on the Stage (Front face only)
+                    local okStage2, stage2 = pcall(function()
+                        return container.model and container.model:FindFirstChild("Stage", true)
+                    end)
+                    if okStage2 and stage2 and stage2:IsA("BasePart") then
+                        local name = "AdDecal_Front"
+                        local d = stage2:FindFirstChild(name)
+                        if not d then
+                            d = Instance.new("Decal")
+                            d.Name = name
+                            d.Face = Enum.NormalId.Front
+                            d.Parent = stage2
+                        end
+                        d.Texture = ("rbxassetid://%s"):format(tostring(chosen.id))
+                    end
+
+                    -- Decide whether to prefer direct asset or thumbnail (default to thumbnail)
+                    local preferThumbnail = true
+                    pcall(function()
+                        if imageLabel:GetAttribute("DirectAssetPreferred") == true then
+                            preferThumbnail = false
+                        end
+                    end)
+
+                    -- If a correct direct asset is already loaded, keep it (idempotent)
+                    local currentId, currentKind = parseImageId(imageLabel.Image)
+                    if currentKind == "asset" and tostring(currentId) == tostring(chosen.id) and imageLabel.IsLoaded then
+                        -- Already good; do not overwrite
+                        return true
+                    end
+
+                    local function setDirectThenFallback()
+                        imageLabel.Image = ("rbxassetid://%s"):format(tostring(chosen.id))
+                        -- Wait briefly for load; fallback to thumbnail if it fails
+                        local t0 = tick()
+                        while not imageLabel.IsLoaded and tick() - t0 < 2.0 do
+                            wait(0.1)
+                        end
+                        if not imageLabel.IsLoaded then
+                            -- Temporary debug: raise AOT to rule out occlusion
+                            surfaceGui.AlwaysOnTop = true
+                            imageLabel.Image = ("rbxthumb://type=Asset&id=%s&w=480&h=270"):format(tostring(chosen.id))
+                        end
+                    end
+
+                    if preferThumbnail then
+                        imageLabel.Image = ("rbxthumb://type=Asset&id=%s&w=480&h=270"):format(tostring(chosen.id))
+                        -- If thumbnail fails to load, fall back to direct asset only; do not create back/billboard
+                        local t0 = tick()
+                        while not imageLabel.IsLoaded and tick() - t0 < 2.0 do
+                            wait(0.1)
+                        end
+                        if not imageLabel.IsLoaded then
+                            setDirectThenFallback()
+                        end
+                    else
+                        setDirectThenFallback()
+                    end
+
+                    -- Begin impression tracking for DISPLAY surface
+                    if _G.MMLImpressionTracker then
+                        local okStage, stage = pcall(function()
+                            return container.model and container.model:FindFirstChild("Stage", true)
+                        end)
+                        _G.MMLImpressionTracker.startTracking(containerId, okStage and stage or nil, surfaceGui, {
+                            id = adId,
+                            type = container.type
+                        })
+                    end
                 else
                     return false
                 end
@@ -174,6 +319,66 @@ function MMLContainerStreamer.moveAssetsToContainer(containerId, adId)
                 end
                 print("✅ Rendered ad on MMLDisplaySurface for container", containerId)
                 return true
+            end
+
+            -- Fallback: render first available asset as thumbnail to guarantee visibility
+            if imageLabel then
+                -- Helper to parse current Image and detect source kind
+                local function parseImageId(image)
+                    if not image then return nil, nil end
+                    local aid = tostring(image):match("rbxassetid://(%d+)")
+                    if aid then return aid, "asset" end
+                    local tid = tostring(image):match("rbxthumb://[^?]*%?[^&]*id=(%d+)")
+                    if tid then return tid, "thumb" end
+                    return nil, nil
+                end
+                local fallbackRid
+                for _, assetInfo in pairs(preloadedAd.assets) do
+                    local data = assetInfo and assetInfo.assetData or {}
+                    local rid = data.robloxAssetId or data.robloxId
+                    if rid then fallbackRid = rid break end
+                end
+                if fallbackRid then
+                    if videoFrame then
+                        videoFrame.Playing = false
+                        videoFrame.Visible = false
+                    end
+                    imageLabel.Visible = true
+                    -- If a matching direct asset is already loaded, keep it; otherwise prefer direct, fallback to thumb
+                    local currentId, currentKind = parseImageId(imageLabel.Image)
+                    if currentKind == "asset" and tostring(currentId) == tostring(fallbackRid) and imageLabel.IsLoaded then
+                        -- Keep existing
+                    else
+                        imageLabel.Image = ("rbxassetid://%s"):format(tostring(fallbackRid))
+                        local t0 = tick()
+                        while not imageLabel.IsLoaded and tick() - t0 < 2.0 do
+                            wait(0.1)
+                        end
+                        if not imageLabel.IsLoaded then
+                            imageLabel.Image = ("rbxthumb://type=Asset&id=%s&w=480&h=270"):format(tostring(fallbackRid))
+                        end
+                    end
+
+                    -- Begin impression tracking for DISPLAY surface
+                    if _G.MMLImpressionTracker then
+                        local okStage, stage = pcall(function()
+                            return container.model and container.model:FindFirstChild("Stage", true)
+                        end)
+                        _G.MMLImpressionTracker.startTracking(containerId, okStage and stage or nil, surfaceGui, {
+                            id = adId,
+                            type = container.type
+                        })
+                    end
+                    container.assetStorage.currentAssets = {}
+                    container.visibility.currentState = "VISIBLE"
+                    container.visibility.shouldBeVisible = true
+                    container.adRotation.currentAdId = adId
+                    if container.OnContentUpdate then
+                        container.OnContentUpdate:Fire(adId, "LOADED")
+                    end
+                    print("✅ Rendered thumbnail fallback on MMLDisplaySurface for container", containerId)
+                    return true
+                end
             end
         end
     end

@@ -74,28 +74,32 @@ async function buildPrebuiltContainer(type: 'DISPLAY' | 'NPC' | 'MINIGAME') {
     name: modelName,
     tree: {
       "$className": "Model",
-      "Name": modelName,
+      "$properties": { "Name": modelName },
       "MMLMetadata": {
         "$className": "Folder",
-        "ContainerId": { "$className": "StringValue", "Value": "" },
-        "GameId": { "$className": "StringValue", "Value": "" },
-        "Type": { "$className": "StringValue", "Value": type },
-        "EnablePositionSync": { "$className": "BoolValue", "Value": true }
+        "ContainerId": { "$className": "StringValue", "$properties": { "Value": "" } },
+        "GameId": { "$className": "StringValue", "$properties": { "Value": "" } },
+        "Type": { "$className": "StringValue", "$properties": { "Value": type } },
+        "EnablePositionSync": { "$className": "BoolValue", "$properties": { "Value": true } }
       },
       "Stage": {
         "$className": "Part",
-        "Anchored": true,
-        "CanCollide": false,
-        "Size": type === 'DISPLAY' ? [10, 5, 0.5] : type === 'NPC' ? [4, 4, 4] : [12, 8, 12],
-        "Material": "SmoothPlastic",
-        "BrickColor": "Medium stone grey",
+        "$properties": {
+          "Anchored": true,
+          "CanCollide": false,
+          "Size": (type === 'DISPLAY' ? [10, 5, 0.5] : type === 'NPC' ? [4, 4, 4] : [12, 8, 12]) as any,
+          "Material": "SmoothPlastic",
+          "BrickColor": "Medium stone grey"
+        },
         ...(type === 'DISPLAY' ? {
           "MMLDisplaySurface": {
             "$className": "SurfaceGui",
+            "$properties": {},
             "Frame": {
               "$className": "Frame",
-              "AdImage": { "$className": "ImageLabel" },
-              "AdVideo": { "$className": "VideoFrame" }
+              "$properties": {},
+              "AdImage": { "$className": "ImageLabel", "$properties": {} },
+              "AdVideo": { "$className": "VideoFrame", "$properties": {} }
             }
           }
         } : {})

@@ -8,6 +8,12 @@ local MMLImpressionTracker = {}
 
 local activeTrackers = {} -- containerId -> { adId, startedAt, perPlayer = { [userId] = {viewStart, duration}}, hbConn, touchConns }
 
+-- Impression logging helper (respects global mute flag)
+local function mmlPrint(...)
+	if _G and _G.MML_LOGS_MUTED then return end
+	print(...)
+end
+
 local function getContainer(containerId)
 	if not _G.MMLNetwork or not _G.MMLNetwork._containers then return nil end
 	return _G.MMLNetwork._containers[containerId]
@@ -41,7 +47,7 @@ local function queueViewDuration(containerId, userId, seconds)
 		player = playerInfo,
 		timestamp = tick()
 	}
-	print("[MML][Impression] Queue view:", containerId, adId, string.format("%.2fs", seconds), playerInfo and playerInfo.id or "anon")
+	mmlPrint("[MML][Impression] Queue view:", containerId, adId, string.format("%.2fs", seconds), playerInfo and playerInfo.id or "anon")
 	local MMLRequestManager = require(script.Parent.MMLRequestManager)
 	MMLRequestManager.queueImpression(payload)
 end
@@ -64,7 +70,7 @@ local function queueTouch(containerId, player)
 		} or nil,
 		timestamp = tick()
 	}
-	print("[MML][Impression] Queue touch:", containerId, adId, player and player.UserId or "")
+	mmlPrint("[MML][Impression] Queue touch:", containerId, adId, player and player.UserId or "")
 	local MMLRequestManager = require(script.Parent.MMLRequestManager)
 	MMLRequestManager.queueImpression(payload)
 end
@@ -79,17 +85,30 @@ function MMLImpressionTracker.startTracking(containerId, assetInstance, surfaceG
 		perPlayer = {},
 		touchConns = {}
 	}
-	-- Heartbeat accumulation per player when container visible and player near/facing
+	-- Heartbeat accumulation per player; for DISPLAY, relax gates so all containers emit
 	activeTrackers[containerId].hbConn = RunService.Heartbeat:Connect(function(dt)
 		for _, player in pairs(Players:GetPlayers()) do
 			local entry = activeTrackers[containerId]
 			if not entry then return end
 			local userId = tostring(player.UserId)
-			-- Reuse streamer visibility logic: basic proximity check via character present
-			if container.visibility.isInCameraView then
+			local isDisplay = (container.type == "DISPLAY")
+			local visible = isDisplay or (container.visibility.isInCameraView == true)
+			local near = true
+			if not isDisplay then
+				near = false
+				local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+				if hrp and container.model then
+					local ok, mag = pcall(function()
+						local anchor = container.model.PrimaryPart or hrp
+						return (hrp.Position - anchor.Position).Magnitude
+					end)
+					near = ok and mag and mag <= 65
+				end
+			end
+			if visible and near then
 				entry.perPlayer[userId] = entry.perPlayer[userId] or { duration = 0 }
 				entry.perPlayer[userId].duration = entry.perPlayer[userId].duration + dt
-				-- Ship in 5s chunks
+				-- Ship in ~5s chunks
 				if entry.perPlayer[userId].duration >= 5 then
 					queueViewDuration(containerId, userId, entry.perPlayer[userId].duration)
 					entry.perPlayer[userId].duration = 0
@@ -112,10 +131,14 @@ end
 function MMLImpressionTracker.stopTracking(containerId)
 	local entry = activeTrackers[containerId]
 	if not entry then return end
+	-- If container not visible anymore, drop partials instead of over-counting
+	local container = getContainer(containerId)
 	-- Flush any remaining durations
 	for userId, rec in pairs(entry.perPlayer) do
 		if rec.duration and rec.duration > 0 then
-			queueViewDuration(containerId, userId, rec.duration)
+			if container and container.visibility and container.visibility.isInCameraView then
+				queueViewDuration(containerId, userId, rec.duration)
+			end
 		end
 	end
 	if entry.hbConn then entry.hbConn:Disconnect() end

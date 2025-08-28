@@ -22,7 +22,8 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { useToast } from '@/components/ui/use-toast'
 import { Container } from '@/types/container'
-import { ArrowLeft, Save } from 'lucide-react'
+import { ArrowLeft, Save, Download } from 'lucide-react'
+import Link from 'next/link'
 import { useGameOwnerAuth } from '@/components/game-owner/auth/auth-context'
 
 export default function ContainerConfigPage() {
@@ -312,6 +313,32 @@ export default function ContainerConfigPage() {
               </CardContent>
             </Card>
           )}
+
+          {/* Downloads */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Downloads</CardTitle>
+              <CardDescription>Get this container as a plug-and-play model</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Button asChild className="w-full sm:w-auto" size="sm">
+                <Link href={`/api/game-owner/download/container/${container.id}`} download>
+                  <Download className="h-4 w-4 mr-2" />
+                  Download container (.rbxmx)
+                </Link>
+              </Button>
+              <div className="text-xs text-gray-600">
+                <span className="mr-1">Or static (no auth):</span>
+                <Link
+                  href={`/downloads/containers/MMLContainer_${container.type}.rbxmx`}
+                  className="underline"
+                  target="_blank"
+                >
+                  MMLContainer_{container.type}.rbxmx
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Actions */}
           <div className="flex justify-end space-x-4">

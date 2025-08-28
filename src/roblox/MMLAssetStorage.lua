@@ -28,6 +28,16 @@ local globalStorage = {
     isInitialized = false
 }
 
+-- Forward-declare asset creation helpers so createAssetInstance can call them
+local createImageAsset
+local create3DModelAsset
+local createVideoAsset
+local createNPCAsset
+local createClothingAsset
+local createAnimationAsset
+local createAudioAsset
+local createMinigameAsset
+
 -- Initialize global asset storage
 function MMLAssetStorage.initialize()
     if globalStorage.isInitialized then
@@ -148,27 +158,45 @@ function MMLAssetStorage.preloadAdAssets(loadTask)
     local loadStartTime = tick()
     
     -- Pre-load each asset
+    local indexCounter = 1
     for _, assetData in pairs(assets) do
         local success, assetInstance = pcall(function()
             return MMLAssetStorage.createAssetInstance(assetData, storagePosition, storageArea)
         end)
         
+        -- Robust asset keying: ensure non-nil table key
+        local assetKey = tostring((assetData and (assetData.id or assetData.assetId)) or indexCounter)
+        indexCounter = indexCounter + 1
+
         if success and assetInstance then
-            preloadedAssets[assetData.id] = {
+            local sp
+            if assetInstance:IsA("Model") then
+                if assetInstance.PrimaryPart then
+                    sp = assetInstance.PrimaryPart.CFrame
+                else
+                    local firstPart = assetInstance:FindFirstChildOfClass("BasePart")
+                    sp = firstPart and firstPart.CFrame or CFrame.new()
+                end
+            elseif assetInstance:IsA("BasePart") then
+                sp = assetInstance.CFrame
+            else
+                sp = CFrame.new()
+            end
+            preloadedAssets[assetKey] = {
                 instance = assetInstance,
                 assetData = assetData,
-                storagePosition = assetInstance.CFrame or CFrame.new(assetInstance.Position)
+                storagePosition = sp
             }
-            print("✅ Pre-loaded asset:", assetData.id, "for ad:", adId)
+            print("✅ Pre-loaded asset:", assetKey, "for ad:", adId)
         else
             -- Store a placeholder so renderers can fall back to direct draw
-            preloadedAssets[assetData.id] = {
+            preloadedAssets[assetKey] = {
                 instance = nil,
                 assetData = assetData,
                 storagePosition = nil
             }
             -- downgrade noise; we will fallback to cached draw
-            warn("⚠️ Skipping preload, will render from cache for asset:", assetData.id)
+            warn("⚠️ Skipping preload, will render from cache for asset:", assetKey)
         end
         
         -- Timeout check
@@ -250,14 +278,6 @@ function MMLAssetStorage.createAssetInstance(assetData, storageBasePosition, par
 end
 
 -- Asset creation functions
-local createImageAsset
-local create3DModelAsset
-local createVideoAsset
-local createNPCAsset
-local createClothingAsset
-local createAnimationAsset
-local createAudioAsset
-local createMinigameAsset
 
 createImageAsset = function(assetData, storagePosition, parentFolder)
     if not assetData.robloxAssetId then

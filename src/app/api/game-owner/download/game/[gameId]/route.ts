@@ -67,8 +67,8 @@ export async function GET(
       }, { status: 400 })
     }
 
-    // Generate individual game package
-    const packageData = await generateGamePackage(game)
+    // Generate individual game package with build verification
+    const { data: packageData, buildId } = await generateGamePackage(game)
 
     // Return the rbxm file
     return new NextResponse(packageData, {
@@ -78,7 +78,8 @@ export async function GET(
         'Content-Disposition': `attachment; filename="MMLNetwork_${game.name.replace(/[^a-zA-Z0-9]/g, '_')}.rbxm"`,
         'Cache-Control': 'no-cache, no-store, must-revalidate',
         'Pragma': 'no-cache',
-        'Expires': '0'
+        'Expires': '0',
+        'x-build-id': buildId,
       },
     })
 
@@ -91,8 +92,10 @@ export async function GET(
   }
 }
 
-async function generateGamePackage(game: any) {
+async function generateGamePackage(game: any): Promise<{ data: Buffer, buildId: string }> {
   const tempDir = join(process.cwd(), 'temp', `game-${game.id}`)
+  const buildId = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
+  const rojoBin = process.env.ROJO_BIN || 'rojo'
   
   try {
     // Recreate a fresh temp directory for every build to avoid stale files
@@ -106,9 +109,46 @@ async function generateGamePackage(game: any) {
     const containerScript = generateGameContainerScript(game.adContainers, game.id)
     await writeFile(join(tempDir, 'CreateContainers.server.lua'), containerScript)
 
+    // Generate optional one-shot setup script for existing places (adds metadata/SurfaceGui if missing)
+    const setupOneShot = `-- MML Optional Setup (one-shot)
+local function ensureContainer(part, id, type)
+    if not part:FindFirstChild("MMLMetadata") then
+        local meta = Instance.new("Folder")
+        meta.Name = "MMLMetadata"; meta.Parent = part
+        local cid = Instance.new("StringValue"); cid.Name = "ContainerId"; cid.Value = id; cid.Parent = meta
+        local ctype = Instance.new("StringValue"); ctype.Name = "Type"; ctype.Value = type or "DISPLAY"; ctype.Parent = meta
+    end
+    local gui = part:FindFirstChild("MMLDisplaySurface") or Instance.new("SurfaceGui")
+    gui.Name = "MMLDisplaySurface"; gui.Parent = part
+    gui.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
+    gui.CanvasSize = Vector2.new(1024,576)
+    gui.AlwaysOnTop = false
+    gui.Face = Enum.NormalId.Front
+    local f = gui:FindFirstChild("Frame") or Instance.new("Frame")
+    f.Name = "Frame"; f.Size = UDim2.new(1,0,1,0); f.BackgroundTransparency = 1; f.Parent = gui
+    local img = f:FindFirstChild("AdImage") or Instance.new("ImageLabel")
+    img.Name = "AdImage"; img.Size = UDim2.new(1,0,1,0); img.BackgroundTransparency = 1; img.ScaleType = Enum.ScaleType.Fit; img.Parent = f
+end
+
+-- Heuristic: attach to Parts named with pattern MMLContainer_* or with a StringValue ContainerId
+for _, obj in ipairs(workspace:GetDescendants()) do
+    if obj:IsA("Part") then
+        local idVal = obj:FindFirstChild("MMLMetadata") and obj.MMLMetadata:FindFirstChild("ContainerId")
+        if idVal and idVal:IsA("StringValue") and #tostring(idVal.Value) > 0 then
+            ensureContainer(obj, tostring(idVal.Value), (obj.MMLMetadata:FindFirstChild("Type") and obj.MMLMetadata.Type.Value) or "DISPLAY")
+        elseif string.find(obj.Name, "MMLContainer_") then
+            ensureContainer(obj, obj.Name, "DISPLAY")
+        end
+    end
+end
+
+script:Destroy()  -- run once and self-remove
+`
+    await writeFile(join(tempDir, 'MMLSetupOneShot.server.lua'), setupOneShot)
+
     // Generate ServerStorage config with API Key, base URL, and gameId
     const configModule = `-- MML Network Config (ServerStorage)\nreturn {\n\tapiKey = "${game.serverApiKey}",\n\tbaseUrl = "http://23.96.197.67:3000/api/v1",\n\tgameId = "${game.id}",\n\tupdateInterval = 30,\n\tdebugMode = false,\n\tautoStart = true,\n\tenablePositionSync = true,\n}`
-    await writeFile(join(tempDir, 'MMLConfig.server.lua'), configModule)
+    await writeFile(join(tempDir, 'MMLConfig.lua'), configModule)
     
     // Copy all MML Network modules
     const modules = [
@@ -124,12 +164,17 @@ async function generateGamePackage(game: any) {
     for (const moduleName of modules) {
       const modulePath = join(process.cwd(), 'src', 'roblox', moduleName)
       try {
-        const moduleContent = await readFile(modulePath, 'utf-8')
+        let moduleContent = await readFile(modulePath, 'utf-8')
+        // Embed build id for freshness verification
+        moduleContent = `-- BUILD_ID: ${buildId}\n${moduleContent}`
         await writeFile(join(tempDir, moduleName), moduleContent)
       } catch (error) {
         console.warn(`Warning: Could not find module ${moduleName}, skipping...`)
       }
     }
+    // Add build info module
+    const buildInfoLua = `return { buildId = "${buildId}", generatedAt = "${new Date().toISOString()}" }`
+    await writeFile(join(tempDir, 'MMLBuildInfo.lua'), buildInfoLua)
     
     // Create Rojo project using temp/{Service} layout for easy drag-and-drop
     const rojoProject = {
@@ -146,16 +191,18 @@ async function generateGamePackage(game: any) {
             "MMLContainerStreamer": { "$path": "MMLContainerStreamer.lua" },
             "MMLRequestManager": { "$path": "MMLRequestManager.lua" },
             "MMLImpressionTracker": { "$path": "MMLImpressionTracker.lua" },
-            "MMLUtil": { "$path": "MMLUtil.lua" }
+            "MMLUtil": { "$path": "MMLUtil.lua" },
+            "MMLBuildInfo": { "$path": "MMLBuildInfo.lua" }
           },
           "ServerScriptService": {
             "$className": "Folder",
             "MMLNetworkIntegration": { "$path": "MMLNetworkIntegration.server.lua" },
-            "Optional_CreateContainers": { "$path": "CreateContainers.server.lua" }
+            "Optional_CreateContainers": { "$path": "CreateContainers.server.lua" },
+            "Optional_SetupOneShot": { "$path": "MMLSetupOneShot.server.lua" }
           },
           "ServerStorage": {
             "$className": "Folder",
-            "MMLConfig": { "$path": "MMLConfig.server.lua" }
+            "MMLConfig": { "$path": "MMLConfig.lua" }
           }
         }
       }
@@ -164,14 +211,47 @@ async function generateGamePackage(game: any) {
     const projectPath = join(tempDir, 'default.project.json')
     await writeFile(projectPath, JSON.stringify(rojoProject, null, 2))
     
-    // Build with Rojo
+    // Probe Rojo version in logs (helps when PATH differs in runtime)
+    try {
+      const { stdout: rv } = await execAsync(`${rojoBin} --version`)
+      console.log('[rojo] version:', (rv || '').trim())
+    } catch (e) {
+      console.warn('[rojo] not found via', rojoBin, e)
+    }
+
+    // Build with Rojo (retry once on failure)
     const outputPath = join(tempDir, 'game-package.rbxm')
-    await execAsync(`cd "${tempDir}" && rojo build --output game-package.rbxm`)
-    
+    const runBuild = async () => {
+      try {
+        const { stdout, stderr } = await execAsync(`cd "${tempDir}" && ${rojoBin} build --output game-package.rbxm`)
+        if (stdout) console.log('[rojo] build stdout:', stdout.slice(0, 1000))
+        if (stderr) console.log('[rojo] build stderr:', stderr.slice(0, 1000))
+        return true
+      } catch (e) {
+        console.error('[rojo] build error:', e)
+        return false
+      }
+    }
+    let ok = await runBuild()
+    if (!ok) {
+      // retry once with clean write of project file
+      await writeFile(join(tempDir, 'default.project.json'), JSON.stringify(rojoProject, null, 2))
+      ok = await runBuild()
+    }
+    if (!ok) {
+      throw new Error('Rojo build failed')
+    }
     // Read the generated file
     const packageData = await readFile(outputPath)
+    // Robust verification: look for marker bytes directly in the binary
+    const marker = Buffer.from(`BUILD_ID: ${buildId}`, 'utf8')
+    const hasMarker = packageData.indexOf(marker) !== -1
+    if (!hasMarker) {
+      console.warn('[rojo] verification warning: build id not found in binary; continuing', buildId)
+      // Do not throw — some encoders may transform script bodies
+    }
     
-    return packageData
+    return { data: packageData, buildId }
     
   } catch (error) {
     console.error('Error in generateGamePackage:', error)
@@ -287,32 +367,43 @@ local function updateContainer(containerId)
             frame.BackgroundTransparency = 1
             frame.Parent = surfaceGui
         end
-        -- Clear existing content
-        for _, child in pairs(frame:GetChildren()) do
-            if child:IsA("ImageLabel") then
-                child:Destroy()
-            end
-        end
-        -- Add new ad content - prefer image assets
+        -- Determine target image URL first (prefer thumbnail for reliability in Studio)
+        local targetImageUrl = nil
         for _, asset in pairs(adData.assets) do
             local at = string.lower(tostring(asset.assetType or ""))
             if (at == "image" or at == "decal" or at == "multi_display" or at == "multimedia_display") and asset.robloxAssetId then
-                local imageLabel = Instance.new("ImageLabel")
-                imageLabel.Size = UDim2.new(1, 0, 1, 0)
-                imageLabel.Image = "rbxassetid://" .. asset.robloxAssetId
-                imageLabel.BackgroundTransparency = 1
+                targetImageUrl = ("rbxthumb://type=Asset&id=%s&w=1024&h=576"):format(tostring(asset.robloxAssetId))
+                break
+            end
+        end
+        if targetImageUrl then
+            -- Reuse existing AdImage if present; only replace when changed
+            local imageLabel = frame:FindFirstChild("AdImage")
+            if not imageLabel then
+                imageLabel = Instance.new("ImageLabel")
                 imageLabel.Name = "AdImage"
+                imageLabel.Size = UDim2.new(1, 0, 1, 0)
+                imageLabel.BackgroundTransparency = 1
                 imageLabel.ScaleType = Enum.ScaleType.Fit
                 imageLabel.Parent = frame
-                print("📺 Displaying ad image:", asset.robloxAssetId)
+            end
+            if imageLabel.Image ~= targetImageUrl then
+                imageLabel.Image = targetImageUrl
+                imageLabel.Visible = true
+                -- Ensure the SurfaceGui won't overlay characters
+                surfaceGui.AlwaysOnTop = false
+                print("📺 Displaying ad image:", targetImageUrl)
                 -- Record a simple view impression
                 pcall(function()
                     if _G and _G.MMLNetwork and _G.MMLNetwork.RecordImpression then
                         _G.MMLNetwork.RecordImpression(containerId, 'view', { engagement = { type = 'view' }, duration = 0 })
                     end
                 end)
-                return true
+            else
+                -- No change; keep existing image
+                imageLabel.Visible = true
             end
+            return true
         end
     end
     return false
@@ -349,6 +440,30 @@ print("✅ MML Network integration active!")
 print("📱 Monitoring containers for ad updates every 30 seconds")
 print("💡 Use updateContainerNow('container_id') to test immediately")
 
+-- Startup heal helpers
+local function _mml_buildRidMap()
+    local ReplicatedStorage = game:GetService("ReplicatedStorage")
+    local ok, RM = pcall(function() return require(ReplicatedStorage:WaitForChild("MMLRequestManager")) end)
+    if not ok or not RM or type(RM.getCachedGameAds) ~= "function" then return {} end
+    local map = {}
+    for _, ad in ipairs(RM.getCachedGameAds() or {}) do
+        local rid
+        for _, a in ipairs(ad.assets or {}) do
+            local t = string.lower(tostring(a.assetType or a.type or ""))
+            local r = a.robloxAssetId or a.robloxId or a.assetId
+            if r and (t=="image" or t=="decal" or t=="texture" or t=="multi_display" or t=="multimedia_display") then rid = tostring(r) break end
+            if not rid and r then rid = tostring(r) end
+        end
+        map[ad.id] = rid
+    end
+    return map
+end
+
+local function _mml_faceTowardCamera(part)
+    local cam = workspace.CurrentCamera
+    return (part.CFrame.LookVector:Dot((cam.CFrame.Position - part.Position).Unit) > 0) and Enum.NormalId.Front or Enum.NormalId.Back
+end
+
 -- Initialize the MML Network (ServerStorage config → MMLGameNetwork)
 do
     local initOk, initErr = pcall(function()
@@ -371,6 +486,41 @@ do
                     warn("❌ MML Network: Failed to start container monitoring")
                 end
             end
+            -- One-shot startup heal to ensure signs render
+            spawn(function()
+                local ReplicatedStorage = game:GetService("ReplicatedStorage")
+                local okRM, RM = pcall(function() return require(ReplicatedStorage:WaitForChild("MMLRequestManager")) end)
+                if okRM and RM then
+                    if RM.refreshGameAds then RM.refreshGameAds() elseif RM.fetchGameAds then RM.fetchGameAds() end
+                end
+                wait(3)
+                if _G and _G.MMLNetwork and _G.MMLNetwork._containers then
+                    local rid = _mml_buildRidMap()
+                    for cid, c in pairs(_G.MMLNetwork._containers) do
+                        local adId = c.adRotation.currentAdId or (c.adRotation.availableAds or {})[1]
+                        local r = adId and rid[adId]
+                        local stage = c.model and (c.model:FindFirstChild("Stage", true) or c.model:FindFirstChildWhichIsA("BasePart", true))
+                        if stage and r then
+                            local g = stage:FindFirstChild("MMLDisplaySurface") or Instance.new("SurfaceGui")
+                            g.Name = "MMLDisplaySurface"; g.Parent = stage
+                            g.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
+                            g.CanvasSize = Vector2.new(1024,576)
+                            g.AlwaysOnTop = false
+                            g.Face = _mml_faceTowardCamera(stage)
+                            local f = g:FindFirstChild("Frame") or Instance.new("Frame"); f.Name = "Frame"; f.Size = UDim2.new(1,0,1,0); f.BackgroundTransparency = 1; f.Parent = g
+                            local img = f:FindFirstChild("AdImage") or Instance.new("ImageLabel"); img.Name = "AdImage"; img.Size = UDim2.new(1,0,1,0); img.BackgroundTransparency = 1; img.ScaleType = Enum.ScaleType.Fit; img.Parent = f
+                            local vid = f:FindFirstChild("AdVideo"); if vid then vid.Playing = false; vid.Visible = false end
+                            img.Image = ("rbxthumb://type=Asset&id=%s&w=480&h=270"):format(r)
+                        end
+                        local ads = c.adRotation.availableAds or {}
+                        if #ads > 1 then
+                            local sum = 0; for i = 1, #cid do sum = sum + string.byte(cid, i) end
+                            c.adRotation.currentAdIndex = (sum % #ads) + 1
+                            c.adRotation.currentAdId = ads[c.adRotation.currentAdIndex]
+                        end
+                    end
+                end
+            end)
         else
             warn("❌ MMLGameNetwork module not available; skipping MML initialization")
         end

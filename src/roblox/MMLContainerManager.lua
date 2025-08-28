@@ -10,6 +10,43 @@ local selectNextAd
 local selectWeightedAd
 local selectPerformanceBasedAd
 
+-- Helper: collect all currently displayed adIds across containers
+local function getCurrentAdIds()
+    local used = {}
+    if _G.MMLNetwork and _G.MMLNetwork._containers then
+        for _, other in pairs(_G.MMLNetwork._containers) do
+            local aid = other and other.adRotation and other.adRotation.currentAdId
+            if aid then used[aid] = true end
+        end
+    end
+    return used
+end
+
+-- Helper: if selection duplicates another container and there are alternatives, pick a different one
+local function avoidDuplicateSelection(chosenAdId, container)
+    local availableAds = container.adRotation.availableAds or {}
+    if #availableAds <= 1 then
+        return chosenAdId
+    end
+    local used = getCurrentAdIds()
+    -- If chosen is unique or no conflicts, keep it
+    if not used[chosenAdId] then
+        return chosenAdId
+    end
+    -- Try to pick any ad not currently displayed by other containers
+    local candidates = {}
+    for _, aid in ipairs(availableAds) do
+        if not used[aid] then table.insert(candidates, aid) end
+    end
+    if #candidates > 0 then
+        -- Randomly choose among non-duplicates for better distribution
+        local idx = math.random(1, #candidates)
+        return candidates[idx]
+    end
+    -- All are in use; fall back to the originally chosen id
+    return chosenAdId
+end
+
 -- Initialize a container with multi-ad support
 function MMLContainerManager.initializeContainer(containerId, containerModel, containerType)
     local container = {
@@ -111,8 +148,20 @@ function MMLContainerManager.updateContainerAds(containerId, availableAds)
     
     -- Reset rotation index if ads changed
     if #previousAds ~= #availableAds then
-        container.adRotation.currentAdIndex = 1
+        -- Stagger starting index by stable hash of containerId so different containers start on different ads
+        local function hashId(id)
+            local h = 0
+            for i = 1, #id do h = (h * 131 + string.byte(id, i)) % 1000000007 end
+            return h
+        end
+        if #container.adRotation.availableAds > 0 then
+            local h = hashId(containerId)
+            container.adRotation.currentAdIndex = (h % #container.adRotation.availableAds) + 1
+        else
+            container.adRotation.currentAdIndex = 1
+        end
         container.adRotation.lastRotation = 0
+        container.adRotation.currentAdId = nil
     end
     
     print("📋 Updated ads for container", containerId, ":", #availableAds, "ads available")
@@ -140,21 +189,25 @@ selectNextAd = function(container)
         -- Simple round-robin rotation
         local index = container.adRotation.currentAdIndex or 1
         container.adRotation.currentAdIndex = (index % #availableAds) + 1
-        return availableAds[index]
+        local chosen = availableAds[index]
+        return avoidDuplicateSelection(chosen, container)
         
     elseif strategy == "weighted" then
         -- Weight-based selection (placeholder for feeding engine)
-        return selectWeightedAd(container)
+        local chosen = selectWeightedAd(container)
+        return chosen and avoidDuplicateSelection(chosen, container) or chosen
         
     elseif strategy == "performance_based" then
         -- Performance-based selection (placeholder for feeding engine)
-        return selectPerformanceBasedAd(container)
+        local chosen = selectPerformanceBasedAd(container)
+        return chosen and avoidDuplicateSelection(chosen, container) or chosen
         
     else
         -- Default to round-robin
         local index = container.adRotation.currentAdIndex or 1
         container.adRotation.currentAdIndex = (index % #availableAds) + 1
-        return availableAds[index]
+        local chosen = availableAds[index]
+        return avoidDuplicateSelection(chosen, container)
     end
 end
 

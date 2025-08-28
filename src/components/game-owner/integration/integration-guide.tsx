@@ -539,6 +539,20 @@ print("📦 Container ${container.name} created at position:", ${container.name.
                                 Download MMLContainer_{container.name.replace(/[^a-zA-Z0-9]/g, '_')}.rbxmx
                               </Link>
                             </Button>
+                            {/* Static, no-auth link for prebuilt model by type */}
+                            <div className="text-xs text-blue-900/80 pt-1">
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium">Or:</span>
+                                <Link
+                                  href={`/downloads/containers/${container.type}`}
+                                  className="underline"
+                                  target="_blank"
+                                >
+                                  Static download (no auth): MMLContainer_{container.type}
+                                </Link>
+                              </div>
+                              <p className="mt-1">If the static link is unavailable in your environment, use the button above.</p>
+                            </div>
                             <div className="text-xs text-blue-600 space-y-1">
                               <p>✅ Includes smart positioning relative to spawn points</p>
                               <p>✅ Auto-configures container type and metadata</p>

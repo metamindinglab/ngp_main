@@ -329,11 +329,13 @@ export function PlaylistDialog({ open, onClose, initialData, onSave }: PlaylistD
                               <SelectValue placeholder="Select a game ad" />
                             </SelectTrigger>
                             <SelectContent>
-                              {(gameAds || []).map(ad => (
-                                <SelectItem key={ad.id} value={ad.id}>
-                                  {ad.name || 'Unnamed Ad'}
-                                </SelectItem>
-                              ))}
+                              {(gameAds || [])
+                                .filter(ad => ad && typeof ad.id === 'string' && ad.id.trim() !== '')
+                                .map(ad => (
+                                  <SelectItem key={ad.id} value={ad.id}>
+                                    {ad.name || `Unnamed Ad (${ad.id})`}
+                                  </SelectItem>
+                                ))}
                             </SelectContent>
                           </Select>
                         </div>

@@ -58,6 +58,26 @@ model Game {
   ads                        GameAd[]         @relation("GameToAds")
 }
 
+model AdEvent {
+  id               String   @id @default(cuid())
+  gameId           String
+  adId             String
+  containerId      String?
+  playerId         String?
+  sessionId        String?
+  event            String   // 'view' | 'touch'
+  durationDeltaSec Int?
+  country          String?
+  accountAge       Int?
+  membershipType   String?
+  timestamp        DateTime @default(now())
+  createdAt        DateTime @default(now())
+
+  @@index([gameId, adId, timestamp])
+  @@index([playerId, timestamp])
+  @@index([sessionId])
+}
+
 model GameMetricData {
   id         String     @id @default(cuid())
   gameId     String

@@ -77,6 +77,12 @@ _G.MMLImpressionTracker = MMLImpressionTracker
 -- Initialize the enhanced network module
 function MMLNetwork.Initialize(config)
   assert(config.apiKey, "API key is required")
+  -- Respect debug setting for log muting; default to muted unless explicitly enabled
+  if config.debugMode == true then
+    _G.MML_LOGS_MUTED = false
+  else
+    _G.MML_LOGS_MUTED = true
+  end
   
   -- Update configuration (allow setting keys even if default is nil, e.g., gameId)
   for key, value in pairs(config) do
@@ -115,6 +121,20 @@ function MMLNetwork.Initialize(config)
   if MMLNetwork._config.enablePositionSync then
     MMLContainerManager.startPositionMonitoring()
   end
+
+  -- Flush impressions when players leave or server shuts down
+  local function flushImpressions()
+    local ok, RM = pcall(function() return MMLRequestManager end)
+    if ok and RM and type(RM.sendImpressionBatch) == "function" then
+      pcall(function() RM.sendImpressionBatch() end)
+    end
+  end
+  game.Players.PlayerRemoving:Connect(function()
+    flushImpressions()
+  end)
+  game:BindToClose(function()
+    flushImpressions()
+  end)
   
   if success then
     MMLNetwork._initialized = true

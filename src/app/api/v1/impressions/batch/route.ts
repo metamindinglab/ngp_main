@@ -131,6 +131,52 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Ensure referenced GameAds exist for this game to satisfy FK constraints
+    const uniqueAdIds = Array.from(new Set(Array.from(buckets.keys()).map(k => k.split('|')[0])))
+    for (const adId of uniqueAdIds) {
+      try {
+        await prisma.gameAd.upsert({
+          where: { id: adId },
+          update: { updatedAt: new Date() },
+          create: {
+            id: adId,
+            gameId: auth.gameId,
+            name: `Auto ${adId}`,
+            type: 'display',
+            assets: [],
+            updatedAt: new Date(),
+          },
+        })
+      } catch (e) {
+        console.error('[DEBUG] Failed to upsert GameAd for impressions batch:', adId, e)
+      }
+    }
+
+    // AdEvent DDL removed: schema should be managed via migrations or out-of-band setup
+
+    // Optional: also write raw events to AdEvent for analysis
+    try {
+      const events = impressions.map(ev => ({
+        id: `ev_${crypto.randomUUID()}`,
+        gameId: auth.gameId!,
+        adId: ev.adId,
+        containerId: ev.containerId,
+        playerId: ev.player?.id,
+        sessionId: parsed.data.gameSession,
+        event: ev.event,
+        durationDeltaSec: ev.duration ? Math.round(ev.duration) : null,
+        country: ev.player?.country,
+        accountAge: ev.player?.accountAge ?? null,
+        membershipType: ev.player?.membershipType ?? null,
+        timestamp: new Date((ev.timestamp ?? Date.now()) * ((ev.timestamp && ev.timestamp < 10_000_000_000) ? 1000 : 1))
+      }))
+      if (events.length > 0) {
+        await (prisma as any).adEvent.createMany({ data: events })
+      }
+    } catch (e) {
+      console.error('[DEBUG] Failed to write AdEvent rows:', e)
+    }
+
     let upserts = 0
     for (const [key, agg] of buckets.entries()) {
       const [adId, dayIso] = key.split('|')
