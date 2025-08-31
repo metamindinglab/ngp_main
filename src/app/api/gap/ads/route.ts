@@ -144,10 +144,12 @@ export async function GET(request: NextRequest) {
       }
     })
 
+    const query = (search || '').toLowerCase()
     const filtered = transformedAds.filter((ad: any) => {
       const statusOk = status === 'all' || ad.status === status
       const typeOk = type === 'all' || ad.category === type
-      return statusOk && typeOk
+      const searchOk = !query || (String(ad.name || '').toLowerCase().includes(query)) || (String(ad.description || '').toLowerCase().includes(query))
+      return statusOk && typeOk && searchOk
     })
 
     return NextResponse.json({
