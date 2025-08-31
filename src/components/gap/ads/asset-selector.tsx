@@ -62,20 +62,12 @@ interface AssetSelectorProps {
 const TEMPLATE_CONFIGS = {
   display: [
     {
-      type: 'multiMediaSignage',
-      required: true,
-      label: 'Multimedia Signage',
-      description: 'Digital display hardware (Required)',
-      icon: Monitor,
-      dbTypes: ['multi_display', 'multiMediaSignage'] // Map to actual database types
-    },
-    {
       type: 'image',
       required: false,
       label: 'Image Content',
       description: 'Choose Image OR Video (Required - Pick One)',
       icon: ImageIcon,
-      dbTypes: ['image', 'Image'] // Map to actual database types
+      dbTypes: ['image', 'Image']
     },
     {
       type: 'video',
@@ -83,7 +75,7 @@ const TEMPLATE_CONFIGS = {
       label: 'Video Content', 
       description: 'Choose Image OR Video (Required - Pick One)',
       icon: Video,
-      dbTypes: ['video', 'Video'] // Map to actual database types
+      dbTypes: ['video', 'Video']
     },
     {
       type: 'audio',
@@ -91,7 +83,7 @@ const TEMPLATE_CONFIGS = {
       label: 'Background Music',
       description: 'Optional background audio',
       icon: Music,
-      dbTypes: ['audio', 'Audio'] // Map to actual database types
+      dbTypes: ['audio', 'Audio']
     }
   ],
   kol: [
@@ -263,17 +255,12 @@ export function AssetSelector({ template, onAssetsChange, selectedAssets }: Asse
   }
 
   const isValidSelection = () => {
-    // Check all required assets are selected
     const requiredTypes = templateConfig.filter(c => c.required).map(c => c.type)
-    
-    // For display template, need multimedia signage + (image OR video)
     if (template === 'display') {
-      const hasSignage = selectedAssets.multiMediaSignage
-      const hasImageOrVideo = selectedAssets.image || selectedAssets.video
-      return hasSignage && hasImageOrVideo
+      const hasImage = !!selectedAssets.image
+      const hasVideo = !!selectedAssets.video
+      return (hasImage !== hasVideo)
     }
-    
-    // For other templates, check all required types
     return requiredTypes.every(type => selectedAssets[type])
   }
 
@@ -374,17 +361,9 @@ export function AssetSelector({ template, onAssetsChange, selectedAssets }: Asse
             <div>
               <h4 className="font-medium text-blue-900">Display Ad Requirements</h4>
               <p className="text-sm text-blue-700 mt-1">
-                You must select a Multimedia Signage device AND either an Image OR Video content (not both).
+                You must select either an Image OR a Video (not both). Audio is optional.
               </p>
               <div className="mt-2 space-y-1 text-xs text-blue-600">
-                <div className="flex items-center gap-2">
-                  {selectedAssets.multiMediaSignage ? (
-                    <Check className="h-3 w-3 text-green-600" />
-                  ) : (
-                    <X className="h-3 w-3 text-red-600" />
-                  )}
-                  <span>Multimedia Signage Selected</span>
-                </div>
                 <div className="flex items-center gap-2">
                   {(selectedAssets.image || selectedAssets.video) && !(selectedAssets.image && selectedAssets.video) ? (
                     <Check className="h-3 w-3 text-green-600" />

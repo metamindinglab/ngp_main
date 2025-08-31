@@ -1049,18 +1049,6 @@ export function GAPAdsManager() {
                 </div>
 
                 <div className="flex items-center space-x-6">
-                  <div className="text-center">
-                    <div className="text-sm font-medium">{(ad.impressions || 0).toLocaleString()}</div>
-                    <div className="text-xs text-gray-500">Impressions</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-sm font-medium">{(ad.clicks || 0).toLocaleString()}</div>
-                    <div className="text-xs text-gray-500">Clicks</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-sm font-medium">{(ad.ctr || 0).toFixed(1)}%</div>
-                    <div className="text-xs text-gray-500">CTR</div>
-                  </div>
                   <Badge className={getStatusColor(ad.status || 'draft')}>
                     {ad.status || 'draft'}
                   </Badge>
