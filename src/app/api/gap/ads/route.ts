@@ -89,20 +89,27 @@ export async function GET(request: NextRequest) {
       const latestPerformance = ad.performance[0]
       const metrics = latestPerformance?.metrics || {}
       const now = new Date()
-      const broadcasting = Array.isArray(ad.playlistSchedules) && ad.playlistSchedules.some((ps: any) => {
-        const statusOk = String(ps.status).toLowerCase() === 'active'
+      const schedules = Array.isArray(ad.playlistSchedules) ? ad.playlistSchedules : []
+      const hasActiveWindow = schedules.some((ps: any) => {
+        const st = String(ps.status || '').toLowerCase()
         const start = new Date(ps.startDate)
         const end = new Date(start)
         end.setUTCDate(end.getUTCDate() + (ps.duration || 0))
-        return statusOk && now >= start && now < end
+        return st === 'active' && now >= start && now < end
       })
+      const hasPending = schedules.some((ps: any) => {
+        const st = String(ps.status || '').toLowerCase()
+        const start = new Date(ps.startDate)
+        return (st === 'active' && now < start) || st === 'scheduled'
+      })
+      const computedStatus = hasActiveWindow ? 'broadcasting' : (hasPending ? 'pending' : 'draft')
       
       return {
         id: ad.id,
         name: ad.name,
         description: ad.description,
         type: ad.type,
-        status: broadcasting ? 'broadcasting' : 'draft',
+        status: computedStatus,
         impressions: metrics.impressions || 0,
         clicks: metrics.clicks || 0,
         ctr: metrics.clickThroughRate || 0,
@@ -219,19 +226,14 @@ function validateTemplateAssets(adType: string, assets: any[]) {
 
   switch (adType) {
     case 'multimedia_display':
-      // Required: multiMediaSignage + (image OR video), Optional: audio
-      const hasSignage = assetTypes.includes('multiMediaSignage')
+      // Required: (image XOR video); Optional: audio. No signage required.
       const hasImage = assetTypes.includes('image')
       const hasVideo = assetTypes.includes('video')
-      
-      if (!hasSignage) {
-        return { isValid: false, error: 'Multimedia signage is required for display ads' }
-      }
-      if (!hasImage && !hasVideo) {
-        return { isValid: false, error: 'Either image or video content is required for display ads' }
+      if ((!hasImage && !hasVideo)) {
+        return { isValid: false, error: 'Display ad requires either an image or a video' }
       }
       if (hasImage && hasVideo) {
-        return { isValid: false, error: 'Cannot have both image and video content for display ads' }
+        return { isValid: false, error: 'Display ad cannot include both image and video' }
       }
       return { isValid: true }
 

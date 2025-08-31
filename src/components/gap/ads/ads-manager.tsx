@@ -275,8 +275,12 @@ export function GAPAdsManager() {
     if (!editTemplate) return false
     
     switch (editTemplate) {
-      case 'display':
-        return editAssets.multiMediaSignage && (editAssets.image || editAssets.video)
+      case 'display': {
+        const hasImage = !!editAssets.image
+        const hasVideo = !!editAssets.video
+        // exactly one of image or video; audio optional
+        return (hasImage !== hasVideo)
+      }
       case 'kol':
         return editAssets.kol_character && 
                editAssets.clothing_top && 
@@ -589,6 +593,8 @@ export function GAPAdsManager() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
+      case 'broadcasting': return 'bg-green-100 text-green-800'
+      case 'pending': return 'bg-yellow-100 text-yellow-800'
       case 'active': return 'bg-green-100 text-green-800'
       case 'paused': return 'bg-yellow-100 text-yellow-800'
       case 'draft': return 'bg-gray-100 text-gray-800'
@@ -632,8 +638,12 @@ export function GAPAdsManager() {
     if (!selectedTemplate) return false
     
     switch (selectedTemplate) {
-      case 'display':
-        return selectedAssets.multiMediaSignage && (selectedAssets.image || selectedAssets.video)
+      case 'display': {
+        const hasImage = !!selectedAssets.image
+        const hasVideo = !!selectedAssets.video
+        // exactly one of image or video; audio optional
+        return (hasImage !== hasVideo)
+      }
       case 'kol':
         return selectedAssets.kol_character && 
                selectedAssets.clothing_top && 
@@ -741,10 +751,6 @@ export function GAPAdsManager() {
                   <div className="space-y-2 text-xs">
                     <div className="flex items-center gap-2">
                       <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                      <span>Multimedia Signage (Required)</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
                       <span>Image OR Video (Choose One)</span>
                     </div>
                     <div className="flex items-center gap-2">
