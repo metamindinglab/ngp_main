@@ -147,7 +147,7 @@ script:Destroy()  -- run once and self-remove
     await writeFile(join(tempDir, 'MMLSetupOneShot.server.lua'), setupOneShot)
 
     // Generate ServerStorage config with API Key, base URL, and gameId
-    const configModule = `-- MML Network Config (ServerStorage)\nreturn {\n\tapiKey = "${game.serverApiKey}",\n\tbaseUrl = "http://23.96.197.67:3000/api/v1",\n\tgameId = "${game.id}",\n\tupdateInterval = 30,\n\tdebugMode = false,\n\tautoStart = true,\n\tenablePositionSync = true,\n}`
+    const configModule = `-- MML Network Config (ServerStorage)\nreturn {\n\tapiKey = "${game.serverApiKey}",\n\tbaseUrl = "http://23.96.197.67:3000/api/v1",\n\tgameId = "${game.id}",\n\tupdateInterval = 30,\n\tdebugMode = false,\n\tautoStart = true,\n\tenablePositionSync = true,\n\tfallbackImageAssetId = "87978147915417",\n}`
     await writeFile(join(tempDir, 'MMLConfig.lua'), configModule)
     
     // Copy all MML Network modules
@@ -415,30 +415,11 @@ function updateContainerNow(containerId)
     return updateContainer(containerId)
 end
 
--- Start monitoring containers
-spawn(function()
-    print("🕐 Starting container monitoring loop...")
-    while true do
-        wait(30) -- Check every 30 seconds
-        
-        -- Look for containers with MML metadata
-        for _, obj in pairs(workspace:GetChildren()) do
-            if obj:IsA("Part") then
-                local metadata = obj:FindFirstChild("MMLMetadata")
-                if metadata then
-                    local containerIdValue = metadata:FindFirstChild("ContainerId")
-                    if containerIdValue and containerIdValue.Value then
-                        updateContainer(containerIdValue.Value)
-                    end
-                end
-            end
-        end
-    end
-end)
+-- Manual polling loop disabled; MMLContainerStreamer handles rendering
 
 print("✅ MML Network integration active!")
-print("📱 Monitoring containers for ad updates every 30 seconds")
-print("💡 Use updateContainerNow('container_id') to test immediately")
+print("📱 Direct streaming mode active (no manual polling loop)")
+-- print("💡 Use updateContainerNow('container_id') to test immediately")
 
 -- Startup heal helpers
 local function _mml_buildRidMap()
@@ -448,11 +429,19 @@ local function _mml_buildRidMap()
     local map = {}
     for _, ad in ipairs(RM.getCachedGameAds() or {}) do
         local rid
+        -- Pass 1: explicit image-like assets only
         for _, a in ipairs(ad.assets or {}) do
             local t = string.lower(tostring(a.assetType or a.type or ""))
             local r = a.robloxAssetId or a.robloxId or a.assetId
-            if r and (t=="image" or t=="decal" or t=="texture" or t=="multi_display" or t=="multimedia_display") then rid = tostring(r) break end
-            if not rid and r then rid = tostring(r) end
+            if r and (t=="image" or t=="decal" or t=="texture" or t=="image_asset") then rid = tostring(r) break end
+        end
+        -- Pass 2: accept multi* types as last resort
+        if not rid then
+            for _, a in ipairs(ad.assets or {}) do
+                local t = string.lower(tostring(a.assetType or a.type or ""))
+                local r = a.robloxAssetId or a.robloxId or a.assetId
+                if r and (t=="multi_display" or t=="multimedia_display" or t=="multimediasignage") then rid = tostring(r) break end
+            end
         end
         map[ad.id] = rid
     end
@@ -509,8 +498,13 @@ do
                             g.Face = _mml_faceTowardCamera(stage)
                             local f = g:FindFirstChild("Frame") or Instance.new("Frame"); f.Name = "Frame"; f.Size = UDim2.new(1,0,1,0); f.BackgroundTransparency = 1; f.Parent = g
                             local img = f:FindFirstChild("AdImage") or Instance.new("ImageLabel"); img.Name = "AdImage"; img.Size = UDim2.new(1,0,1,0); img.BackgroundTransparency = 1; img.ScaleType = Enum.ScaleType.Fit; img.Parent = f
+                            img:SetAttribute("ThumbnailOnly", true)
                             local vid = f:FindFirstChild("AdVideo"); if vid then vid.Playing = false; vid.Visible = false end
-                            img.Image = ("rbxthumb://type=Asset&id=%s&w=480&h=270"):format(r)
+                            -- Prefer thumbnail for reliability; set if empty
+                            local cur = img.Image
+                            if (not cur) or cur == "" then
+                                img.Image = ("rbxthumb://type=Asset&id=%s&w=1024&h=576"):format(r)
+                            end
                         end
                         local ads = c.adRotation.availableAds or {}
                         if #ads > 1 then

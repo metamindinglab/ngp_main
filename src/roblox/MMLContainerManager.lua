@@ -48,11 +48,12 @@ local function avoidDuplicateSelection(chosenAdId, container)
 end
 
 -- Initialize a container with multi-ad support
-function MMLContainerManager.initializeContainer(containerId, containerModel, containerType)
+function MMLContainerManager.initializeContainer(containerId, containerModel, containerType, metadataInstance)
     local container = {
         id = containerId,
         type = containerType,
         model = containerModel,
+        metadata = metadataInstance,
         
         -- Multi-ad rotation system
         adRotation = {
@@ -119,11 +120,59 @@ function MMLContainerManager.initializeContainer(containerId, containerModel, co
     
     _G.MMLNetwork._containers[containerId] = container
     
-    -- Set up container model metadata
+    -- Set up container model metadata and build display surfaces
     if containerModel then
         containerModel:SetAttribute("MMLContainerId", containerId)
         containerModel:SetAttribute("MMLContainerType", containerType)
         containerModel:SetAttribute("MMLInitialized", true)
+        -- Ensure Stage part exists and attach front/back SurfaceGuis once at init
+        local okStage, stage = pcall(function()
+            return containerModel:FindFirstChild("Stage", true)
+        end)
+        if okStage and stage and stage:IsA("BasePart") then
+            -- Ensure players cannot walk through the stage/sign
+            pcall(function()
+                stage.CanCollide = true
+            end)
+            -- Remove any pre-existing SurfaceGuis/Decals (deep)
+            for _, d in ipairs(stage:GetDescendants()) do
+                if d:IsA("SurfaceGui") or d:IsA("Decal") then d:Destroy() end
+            end
+            -- Runtime guard: prevent any decals from being recreated under this container model
+            if container.model and not container._modelDecalGuard then
+                container._modelDecalGuard = container.model.DescendantAdded:Connect(function(inst)
+                    if inst:IsA("Decal") then inst:Destroy() end
+                end)
+            end
+            -- Determine dominant faces
+            local function getDominantFacePair(part)
+                local sx, sy, sz = part.Size.X, part.Size.Y, part.Size.Z
+                local areaX, areaY, areaZ = sy*sz, sx*sz, sx*sy
+                if areaZ >= areaX and areaZ >= areaY then
+                    return Enum.NormalId.Front, Enum.NormalId.Back
+                elseif areaX >= areaY then
+                    return Enum.NormalId.Right, Enum.NormalId.Left
+                else
+                    return Enum.NormalId.Top, Enum.NormalId.Bottom
+                end
+            end
+            local front, back = getDominantFacePair(stage)
+            local function make(name, face)
+                local g = Instance.new("SurfaceGui")
+                g.Name = name
+                g.Face = face
+                g.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
+                g.CanvasSize = Vector2.new(1024,576)
+                g.AlwaysOnTop = false
+                g.Parent = stage
+                local f = Instance.new("Frame"); f.Name="Frame"; f.Size=UDim2.new(1,0,1,0); f.BackgroundTransparency=1; f.Parent = g
+                local img = Instance.new("ImageLabel"); img.Name="AdImage"; img.Size=UDim2.new(1,0,1,0); img.BackgroundTransparency=1; img.ScaleType=Enum.ScaleType.Fit; img.Visible=false; img.Parent=f
+                local vid = Instance.new("VideoFrame"); vid.Name="AdVideo"; vid.Size=UDim2.new(1,0,1,0); vid.BackgroundTransparency=1; vid.Visible=false; vid.Looped=true; vid.Parent=f
+                return g
+            end
+            make("MMLDisplaySurface", front)
+            make("MMLDisplaySurface_Back", back)
+        end
     end
     
     print("🆕 Initialized container:", containerId, "Type:", containerType)
@@ -556,8 +605,8 @@ function MMLContainerManager.initializeContainersFromWorkspace()
                 
                 print("🔍 Found container:", containerId, "Type:", containerType)
                 
-                -- Initialize container with database ID
-                MMLContainerManager.initializeContainer(containerId, obj, containerType)
+                -- Initialize container with database ID, pass this metadata node
+                MMLContainerManager.initializeContainer(containerId, obj, containerType, metadata)
                 
                 -- Set up position sync if enabled
                 local enablePositionSync = metadata:FindFirstChild("EnablePositionSync")
@@ -574,6 +623,23 @@ function MMLContainerManager.initializeContainersFromWorkspace()
         end
     end
     
+    -- Global guard: remove any legacy decals that appear later (e.g., created by other scripts)
+    if not _G.MMLNetwork._globalDecalGuard then
+        _G.MMLNetwork._globalDecalGuard = workspace.DescendantAdded:Connect(function(inst)
+            if inst and inst:IsA("Decal") then
+                -- If decal is under any MML container (has MMLMetadata ancestor), delete it
+                local p = inst.Parent
+                while p do
+                    if p:FindFirstChild("MMLMetadata") then
+                        inst:Destroy()
+                        break
+                    end
+                    p = p.Parent
+                end
+            end
+        end)
+    end
+
     print("🏗️ Initialized", count, "containers from workspace")
     return count
 end

@@ -154,7 +154,7 @@ async function generateCustomPackage(gameOwnerId: string, games: any[], containe
     
     // Create ServerStorage config (multi-game uses first valid key or placeholder)
     const firstGameWithKey = games.find(g => !!g.serverApiKey)
-    const configModule = `-- MML Network Config (ServerStorage)\nreturn {\n\tapiKey = "${firstGameWithKey?.serverApiKey || 'GENERATE_API_KEY_FIRST'}",\n\tbaseUrl = "http://23.96.197.67:3000/api/v1",\n\tupdateInterval = 30,\n\tdebugMode = false,\n\tautoStart = true,\n\tenablePositionSync = true,\n}`
+    const configModule = `-- MML Network Config (ServerStorage)\nreturn {\n\tapiKey = "${firstGameWithKey?.serverApiKey || 'GENERATE_API_KEY_FIRST'}",\n\tbaseUrl = "http://23.96.197.67:3000/api/v1",\n\tupdateInterval = 30,\n\tdebugMode = false,\n\tautoStart = true,\n\tenablePositionSync = true,\n\tfallbackImageAssetId = "87978147915417",\n}`
     await writeFile(join(tempDir, 'MMLConfig.server.lua'), configModule)
     
     // Create custom Rojo project using temp/{Service} layout
