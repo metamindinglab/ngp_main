@@ -36,7 +36,7 @@ interface GameAd {
   name: string
   description?: string
   type: 'display' | 'video' | 'interactive' | 'multimedia_display' | 'dancing_npc' | 'minigame_ad'
-  status: 'active' | 'paused' | 'draft'
+  status: 'active' | 'paused' | 'draft' | 'broadcasting'
   impressions: number
   clicks: number
   ctr: number
@@ -687,9 +687,10 @@ export function GAPAdsManager() {
 
   // Calculate stats
   const totalAds = ads.length
-  const activeAds = ads.filter(ad => (ad.status || 'draft') === 'active').length
+  const activeAds = ads.filter(ad => (ad.status === 'broadcasting' || ad.status === 'active')).length
   const totalImpressions = ads.reduce((sum, ad) => sum + (ad.impressions || 0), 0)
-  const avgCTR = ads.length > 0 ? ads.reduce((sum, ad) => sum + (ad.ctr || 0), 0) / ads.length : 0
+  const ctrValues = ads.map(ad => Number(ad.ctr || 0)).filter(v => !isNaN(v))
+  const avgCTR = ctrValues.length > 0 ? ctrValues.reduce((s, v) => s + v, 0) / ctrValues.length : 0
 
   const sortedAds = useMemo(() => {
     const arr = Array.isArray(ads) ? [...ads] : []
