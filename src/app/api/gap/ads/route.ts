@@ -84,6 +84,21 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: 'desc' }
     })
 
+    // Compute aggregate performance (impressions/clicks) per ad
+    const adIds = gameAds.map((a: any) => a.id)
+    const agg = adIds.length > 0 ? await (prisma as any).gameAdPerformance.groupBy({
+      by: ['gameAdId'],
+      _sum: { views: true, touches: true },
+      where: { gameAdId: { in: adIds } }
+    }) : []
+    const perfByAd: Record<string, { views: number, touches: number }> = {}
+    for (const row of agg) {
+      perfByAd[row.gameAdId] = {
+        views: Number(row._sum?.views || 0),
+        touches: Number(row._sum?.touches || 0)
+      }
+    }
+
     // Transform data for GAP frontend
     const transformedAds = gameAds.map((ad: any) => {
       const latestPerformance = ad.performance[0]
@@ -104,15 +119,18 @@ export async function GET(request: NextRequest) {
       })
       const computedStatus = hasActiveWindow ? 'broadcasting' : (hasPending ? 'pending' : 'draft')
       
+      const totals = perfByAd[ad.id] || { views: 0, touches: 0 }
+      const ctr = totals.views > 0 ? (totals.touches / totals.views) * 100 : 0
+
       return {
         id: ad.id,
         name: ad.name,
         description: ad.description,
         type: ad.type,
         status: computedStatus,
-        impressions: metrics.impressions || 0,
-        clicks: metrics.clicks || 0,
-        ctr: metrics.clickThroughRate || 0,
+        impressions: totals.views,
+        clicks: totals.touches,
+        ctr,
         createdAt: (ad.createdAt instanceof Date ? ad.createdAt : new Date(ad.createdAt)).toISOString(),
         updatedAt: (ad.updatedAt instanceof Date ? ad.updatedAt : new Date(ad.updatedAt)).toISOString(),
         games: ad.games,
