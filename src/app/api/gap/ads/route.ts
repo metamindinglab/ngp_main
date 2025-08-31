@@ -45,8 +45,8 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url)
     const search = searchParams.get('search') || ''
-    const status = searchParams.get('status') || 'all'
-    const type = searchParams.get('type') || 'all'
+    const status = (searchParams.get('status') || 'all').toLowerCase()
+    const type = (searchParams.get('type') || 'all').toLowerCase()
 
     // Build where clause
     const where: any = { brandUserId: auth.userId }
@@ -58,9 +58,7 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    if (type !== 'all') {
-      where.type = type
-    }
+    // Do not filter by DB type here; we filter by normalized category after computing status
 
     // Fetch game ads with performance data
     const gameAds = await (prisma as any).gameAd.findMany({
@@ -118,6 +116,13 @@ export async function GET(request: NextRequest) {
         return (st === 'active' && now < start) || st === 'scheduled'
       })
       const computedStatus = hasActiveWindow ? 'broadcasting' : (hasPending ? 'pending' : 'draft')
+      const normalizedType = (() => {
+        const t = String(ad.type || '').toLowerCase()
+        if (t === 'multimedia_display' || t === 'display' || t === 'display_ad') return 'display'
+        if (t === 'dancing_npc' || t === 'kol' || t === 'npc') return 'npc'
+        if (t === 'minigame_ad' || t === 'minigame') return 'minigame'
+        return 'display'
+      })()
       
       const totals = perfByAd[ad.id] || { views: 0, touches: 0 }
       const ctr = totals.views > 0 ? (totals.touches / totals.views) * 100 : 0
@@ -128,6 +133,7 @@ export async function GET(request: NextRequest) {
         description: ad.description,
         type: ad.type,
         status: computedStatus,
+        category: normalizedType,
         impressions: totals.views,
         clicks: totals.touches,
         ctr,
@@ -138,10 +144,16 @@ export async function GET(request: NextRequest) {
       }
     })
 
+    const filtered = transformedAds.filter((ad: any) => {
+      const statusOk = status === 'all' || ad.status === status
+      const typeOk = type === 'all' || ad.category === type
+      return statusOk && typeOk
+    })
+
     return NextResponse.json({
       success: true,
-      ads: transformedAds,
-      total: transformedAds.length
+      ads: filtered,
+      total: filtered.length
     })
   } catch (error) {
     console.error('Error fetching GAP ads:', error)
